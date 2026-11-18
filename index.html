@@ -180,7 +180,7 @@ table.g tbody tr:hover td{background:var(--paper)}
 
       <section class="card">
         <h2><span class="step">2</span>Dados do aluno</h2>
-        <p class="hint">Campos em amarelo estão vazios e saem em branco no histórico.</p>
+        <p class="hint">Preenchidos pelos documentos anexados. Depois de anexar, os campos que faltarem ficam em amarelo.</p>
         <div class="form" id="aluno"></div>
       </section>
 
@@ -771,6 +771,7 @@ async function handleFiles(list){
     }catch(e){console.error(e);entry.status=e.message||'Não foi possível ler o arquivo.';entry.err=true}
     renderFiles();renderAll();
   }
+  renderAluno();
   for(const f of files)if(f.arf&&!f.arfDone){const st=matchArf(f.arf);if(st){applyArf(f.arf,st);f.arfDone=st.nome}}
   renderFiles();renderAll();
 }
@@ -901,8 +902,9 @@ function setStatus(t,bad){const s=$('#status');s.textContent=t;s.style.color=bad
 function renderFiles(){
   $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''}">${esc_(f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
 }
-function renderAluno(){
-  $('#aluno').innerHTML=ALUNO_FIELDS.map(([k,l,w,ph])=>`<label class="f ${w||''}">${l}<input id="al-${k}" data-al="${k}" value="${esc_(state.aluno[k]||'')}" ${ph?`placeholder="${ph}"`:''} class="${state.aluno[k]?'':'empty'}"></label>`).join('');
+function isPristine(){return !files.length&&!state.subjects.length&&!ALUNO_FIELDS.some(([k])=>k!=='nacionalidade'&&state.aluno[k])&&!state.deps.length}
+function renderAluno(){const pr=isPristine();
+  $('#aluno').innerHTML=ALUNO_FIELDS.map(([k,l,w,ph])=>`<label class="f ${w||''}">${l}<input id="al-${k}" data-al="${k}" value="${esc_(state.aluno[k]||'')}" ${ph?`placeholder="${ph}"`:''} class="${state.aluno[k]||pr?'':'empty'}"></label>`).join('');
 }
 function renderGrades(){
   const n=nPer(),L=LABELS[state.mode];
@@ -938,6 +940,8 @@ function renderSig(){
   $('#esc-form').innerHTML=ESC_FIELDS.map(([k,l,w])=>`<label class="f ${w||''}">${l}<input id="es-${k}" data-es="${k}" value="${esc_(esc[k]||'')}"></label>`).join('');
 }
 function renderChecks(){
+  const vazio=isPristine();
+  if(vazio){$('#checks-count').hidden=true;$('#checks').innerHTML='<li><span class="chip o" style="background:var(--accent-soft);color:var(--accent-2)">início</span><span>Anexe os documentos do aluno no passo 1. As pendências aparecem aqui.</span></li>';return}
   const out=[];const A=state.aluno;
   const miss=ALUNO_FIELDS.filter(([k])=>!A[k]).map(([,l])=>l.replace('Filiação — ',''));
   if(miss.length)out.push(['w','Dados do aluno vazios: '+miss.join(', ')]);
@@ -1055,7 +1059,7 @@ window.addEventListener('resize',schedulePreview);
 
 (async()=>{
   setStatus('Carregando o modelo…');
-  try{await loadAssets();state=exampleState('reg');renderAll();setStatus('')}
+  try{await loadAssets();state=blankState('reg');renderAll();setStatus('')}
   catch(e){console.error(e);setStatus('Não foi possível carregar o modelo. Recarregue a página.',true)}
   if(window.claude&&claude.use)claude.use('downloads').then(d=>{DL=d}).catch(()=>{DL=null});
 })();
