@@ -133,6 +133,9 @@ section.card>h2 .step{display:inline-grid;place-items:center;width:26px;height:2
 #dl-pdf{background:#a3262a;border-color:#a3262a;color:#fff}
 .actions+#btn-reset{width:100%;margin-top:-4px}
 #btn-reset.confirm{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.hello{background:var(--accent-soft);border-radius:10px;padding:12px 16px;margin:4px 0 14px;font-size:.9rem;line-height:1.5}
+.hello p{margin:0}
+.hello ul{margin:6px 0;padding-left:20px;display:flex;flex-direction:column;gap:2px}
 .count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font:700 .75rem var(--f-ui)}
 .preview{border-radius:12px;box-shadow:var(--shadow);padding:12px;background:var(--accent-soft)}
 .pvhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px;font-weight:700;font-size:.9rem}
@@ -168,7 +171,16 @@ table.g tbody tr:hover td{background:var(--paper)}
 
       <section class="card">
         <h2><span class="step">1</span>Anexar documentos do aluno</h2>
-        <p class="hint">FIA e ARF de cada ano, ficha de matrícula e, se houver, ficha de dependência ou um histórico gerado aqui. Pode anexar tudo de uma vez, em Excel ou PDF.</p>
+        <div class="hello">
+          <p><b>Oi, secretário(a)!</b> Baixe no sistema <b>Conexão Educação</b>:</p>
+          <ul>
+            <li>a <b>Ficha Individual do Aluno</b> (FIA) de cada ano;</li>
+            <li>as <b>Atas de Resultados Finais</b> (ARF) de cada ano;</li>
+            <li>a <b>Ficha de Matrícula</b>;</li>
+            <li>se houver, a <b>ficha de dependência</b> ou um <b>histórico antigo gerado aqui</b>.</li>
+          </ul>
+          <p>Pode anexar tudo de uma vez, em Excel ou PDF.</p>
+        </div>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivos">
           <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" class="dropico"><path fill="currentColor" d="M11 16V7.8l-2.6 2.6L7 9l5-5 5 5-1.4 1.4L13 7.8V16h-2Zm-6 4a2 2 0 0 1-2-2v-3h2v3h14v-3h2v3a2 2 0 0 1-2 2H5Z"/></svg>
           <strong>Arraste os arquivos aqui ou clique para escolher</strong>
@@ -179,13 +191,13 @@ table.g tbody tr:hover td{background:var(--paper)}
       </section>
 
       <section class="card">
-        <h2><span class="step">2</span>Dados do aluno</h2>
-        <p class="hint">Preenchidos pelos documentos anexados. Depois de anexar, os campos que faltarem ficam em amarelo.</p>
+        <h2><span class="step">2</span>Confira os dados do aluno</h2>
+        <p class="hint">Todos os campos daqui para baixo são preenchidos pelos documentos e servem para você conferir. Corrija o que precisar. Depois de anexar, o que faltar fica em amarelo.</p>
         <div class="form" id="aluno"></div>
       </section>
 
       <section class="card">
-        <h2><span class="step">3</span>Disciplinas, notas e carga horária</h2>
+        <h2><span class="step">3</span>Confira disciplinas, notas e carga horária</h2>
         <p class="hint">Só entram no histórico as disciplinas desta lista, na ordem mostrada. A carga horária total é somada automaticamente.</p>
         <div class="row" style="margin-bottom:10px">
           <label class="f" style="flex-direction:row;align-items:center;gap:8px">Nota no histórico:
@@ -208,7 +220,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       </section>
 
       <section class="card">
-        <h2><span class="step">4</span>Observações</h2>
+        <h2><span class="step">4</span>Confira as observações</h2>
         <p class="hint">Aprovações em regime de dependência. Sem dependência em nenhum ano, as linhas somem do histórico. Campo vazio sai como <b>(preencher)</b>.</p>
         <div class="deps" id="deps"></div>
         <div class="row" style="margin-top:10px">
