@@ -103,14 +103,53 @@ details.cfg[open] summary{margin-bottom:12px}
 .subhead{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin:16px 0 8px}
 .mono{font-family:var(--f-num)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---- visual v2 ---- */
+:root{--band:#1f2c3b;--band-ink:#f2f5f8;--band-muted:#b9c6d4;--gold:#c9a227;--shadow:0 1px 2px rgba(20,32,48,.06),0 4px 14px rgba(20,32,48,.06)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--band:#0d141c;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25)}}
+:root[data-theme="dark"]{--band:#0d141c;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25)}
+.wrap{padding-block:0 60px}
+header.top{background:var(--band);color:var(--band-ink);border:0;border-bottom:3px solid var(--gold);border-radius:0 0 14px 14px;padding:22px 24px;margin:0 0 22px;align-items:center;flex-wrap:wrap}
+header.top .crest{width:58px;height:auto;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+header.top .ttl{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:4px}
+header.top h1{font-size:clamp(1.35rem,2.6vw,1.9rem);letter-spacing:-.015em;color:var(--band-ink)}
+header.top p{color:var(--band-muted);margin:0}
+header.top .eyebrow{color:var(--gold)}
+.lock{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:6px;font-size:.78rem;font-weight:600;color:var(--band-ink);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);padding:4px 10px;border-radius:999px}
+header.top .seg{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
+header.top .seg button{color:var(--band-ink)}
+header.top .seg button[aria-pressed="true"]{background:var(--gold);color:#1b1b1b}
+section.card{border-radius:12px;box-shadow:var(--shadow);padding:20px 22px}
+section.card>h2{font-size:1.08rem;align-items:center}
+section.card>h2 .step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--sheet);font:700 .8rem var(--f-ui)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:4px;border-radius:12px;padding:26px 18px;background:var(--accent-soft);border-color:var(--accent)}
+.drop:hover,.drop:focus-visible{background:var(--paper)}
+.dropico{color:var(--accent)}
+.files li{border-radius:10px;background:var(--paper)}
+.btn{border-radius:8px;transition:transform .08s,box-shadow .15s}
+.btn.primary{box-shadow:var(--shadow)}
+.btn.primary:hover{transform:translateY(-1px)}
+.actions .btn{padding:12px 14px;font-size:.95rem}
+#dl-xlsx{background:#1f6f43;border-color:#1f6f43;color:#fff}
+#dl-pdf{background:#a3262a;border-color:#a3262a;color:#fff}
+.count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font:700 .75rem var(--f-ui)}
+.preview{border-radius:12px;box-shadow:var(--shadow);padding:12px;background:var(--accent-soft)}
+.pvhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px;font-weight:700;font-size:.9rem}
+.pvsub{font-weight:500;color:var(--muted);font-size:.78rem}
+.preview canvas{border-radius:2px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+table.g thead th{position:sticky;top:0;z-index:1}
+table.g tbody tr:hover td{background:var(--paper)}
+.banner{border-radius:10px}
+@media (max-width:640px){header.top{border-radius:0 0 10px 10px;padding:18px 16px}header.top .crest{width:44px}}
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div>
-      <div class="eyebrow">Colégio Estadual Oswaldo Teixeira · Secretaria</div>
+    <img id="crest" class="crest" alt="Brasão do Estado do Rio de Janeiro" hidden>
+    <div class="ttl">
+      <div class="eyebrow">Secretaria escolar · Ensino Médio</div>
       <h1>Gerador de Histórico do Beto</h1>
-      <p>Anexe as fichas do aluno (PDF ou Excel), confira os dados e baixe o histórico no modelo oficial, em Excel e PDF. Os arquivos são lidos só neste navegador; nada é enviado para fora.</p>
+      <p>Anexe as fichas do aluno, confira os dados e baixe o histórico no modelo oficial em Excel e PDF.</p>
+      <span class="lock"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"/></svg>Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.</span>
     </div>
     <div class="seg" role="group" aria-label="Tipo de ensino">
       <button type="button" id="mode-reg" aria-pressed="true">Ensino Médio Regular · 3 séries</button>
@@ -126,9 +165,10 @@ details.cfg[open] summary{margin-bottom:12px}
       </div>
 
       <section class="card">
-        <h2><span class="step">1</span>Anexar fichas e históricos</h2>
-        <p class="hint">Fichas individuais (FIA) e atas de resultados finais (ARF) de cada ano, mais a ficha de matrícula, em Excel ou PDF com texto. Pode anexar tudo de uma vez. A ata completa a matrícula e a situação; se vier sem ficha, escolha o aluno na lista. Também aceita a ficha de matrícula (para os dados pessoais e documentos), um histórico já gerado aqui, para corrigir, e a ficha de dependência, cuja nota vai para as observações.</p>
+        <h2><span class="step">1</span>Anexar documentos do aluno</h2>
+        <p class="hint">FIA e ARF de cada ano, ficha de matrícula e, se houver, ficha de dependência ou um histórico gerado aqui. Pode anexar tudo de uma vez, em Excel ou PDF.</p>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivos">
+          <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" class="dropico"><path fill="currentColor" d="M11 16V7.8l-2.6 2.6L7 9l5-5 5 5-1.4 1.4L13 7.8V16h-2Zm-6 4a2 2 0 0 1-2-2v-3h2v3h14v-3h2v3a2 2 0 0 1-2 2H5Z"/></svg>
           <strong>Arraste os arquivos aqui ou clique para escolher</strong>
           <span>.pdf · .xlsx · .xls · .csv — vários de uma vez</span>
         </div>
@@ -183,8 +223,11 @@ details.cfg[open] summary{margin-bottom:12px}
 
       <section class="card">
         <details class="cfg" id="cfg">
-          <summary>Assinaturas</summary>
-          <p class="hint">Ficam salvas neste navegador.</p>
+          <summary>Escola que emite o histórico e assinaturas</summary>
+          <p class="hint">Cabeçalho e assinaturas do histórico. Ficam salvos neste navegador. Mude só se o histórico for emitido por outra escola.</p>
+          <div class="subhead">Escola e ato autorizativo</div>
+          <div class="form" id="esc-form"></div>
+          <div class="row" style="margin-top:10px"><button type="button" class="btn small" id="esc-reset">Voltar para o CE Oswaldo Teixeira</button></div>
           <div class="subhead">Secretaria</div>
           <div class="form" id="sig-sec"></div>
           <div class="subhead">Direção</div>
@@ -195,15 +238,15 @@ details.cfg[open] summary{margin-bottom:12px}
 
     <aside class="side">
       <div class="actions">
-        <button type="button" class="btn primary" id="dl-xlsx">Baixar Excel</button>
-        <button type="button" class="btn primary" id="dl-pdf">Baixar PDF</button>
+        <button type="button" class="btn primary" id="dl-xlsx"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 3h10l4 4v14H5V3Zm9 1.5V8h3.5L14 4.5ZM8.2 11l2 3-2 3h1.9l1.1-1.8 1.1 1.8h1.9l-2-3 2-3h-1.9l-1.1 1.8-1.1-1.8H8.2Z"/></svg>Baixar Excel</button>
+        <button type="button" class="btn primary" id="dl-pdf"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 3h10l4 4v14H5V3Zm9 1.5V8h3.5L14 4.5ZM8 12v5h1.3v-1.6h.8a1.7 1.7 0 0 0 0-3.4H8Zm1.3 1.1h.7a.6.6 0 0 1 0 1.2h-.7v-1.2Zm3.2-1.1v5h1.4a2.5 2.5 0 0 0 0-5h-1.4Zm1.3 1.1a1.4 1.4 0 0 1 0 2.8V13Z"/></svg>Baixar PDF</button>
       </div>
       <div class="status" id="status" role="status"></div>
       <section class="card">
-        <h2>Pendências</h2>
+        <h2>Pendências <span class="count" id="checks-count"></span></h2>
         <ul class="checks" id="checks"></ul>
       </section>
-      <div class="preview"><canvas id="cv" width="595" height="842" aria-label="Pré-visualização do histórico"></canvas></div>
+      <div class="preview"><div class="pvhead"><span>Prévia do histórico</span><span class="pvsub">folha A4</span></div><canvas id="cv" width="595" height="842" aria-label="Pré-visualização do histórico"></canvas></div>
     </aside>
   </div>
 </div>
@@ -217,7 +260,7 @@ details.cfg[open] summary{margin-bottom:12px}
 /* ============ utilidades ============ */
 const $=s=>document.querySelector(s);
 const N=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9%]/g,'');
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const esc_=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const colL=c=>{let s='';while(c>0){const m=(c-1)%26;s=String.fromCharCode(65+m)+s;c=(c-m-1)/26}return s};
 const PH='(preencher)';
 function num(v){
@@ -240,7 +283,7 @@ function dateStr(v){
   const s=String(v??'').trim();const m=s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);return m?m[1].padStart(2,'0')+'/'+m[2].padStart(2,'0')+'/'+m[3]:s;
 }
 const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-function hojeLinha(){const d=new Date();return `Rio de Janeiro, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`}
+function hojeLinha(){const d=new Date();const c=(typeof esc!=='undefined'&&esc.municipio)?titleCase(esc.municipio):'Rio de Janeiro';return `${c}, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`}
 const SMALL=new Set(['de','da','do','das','dos','e','di','du']);
 const titleCase=s=>{s=String(s||'').trim();if(s!==s.toUpperCase())return s;return s.toLowerCase().split(/\s+/).map((w,i)=>i&&SMALL.has(w)?w:w.charAt(0).toUpperCase()+w.slice(1)).join(' ')};
 function mapSit(t){const k=N(t);if(!k)return '';if(/DEPENDENCIA/.test(k))return 'APROV. C/DEP';if(/(REPROVADO|RETIDO)POR(FALTA|FREQ)/.test(k))return 'REP FREQ';if(/REPROVADO|RETIDO/.test(k))return 'REP NOTA';if(/PROMOVID/.test(k))return 'PROMOV';if(/APROVAD/.test(k))return 'APROVADO';return ''}
@@ -265,6 +308,7 @@ async function loadAssets(){
     try{const ff=new FontFace('Carlito',buf,{weight:k.includes('bold')?'700':'400',style:k.includes('italic')?'italic':'normal'});await ff.load();document.fonts.add(ff)}catch(e){}
   }));
   if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='pdf.worker.min.js';
+  const cr=$('#crest');if(cr){cr.src=LOGO_URL;cr.hidden=false}
   READY=true;
 }
 
@@ -275,6 +319,9 @@ const SIT=['','APROVADO','APROV. C/DEP','PROMOV','REP FREQ','REP NOTA'];
 const ALIAS={ARTES:'ARTE',EDFISICA:'EDUCACAOFISICA',EDUCACAOFISICAI:'EDUCACAOFISICA',INGLES:'LINGUAINGLESA',LINGUAESTRANGEIRAINGLES:'LINGUAINGLESA',LINGUAESTRANGEIRAMODERNAINGLES:'LINGUAINGLESA',PORTUGUES:'LINGUAPORTUGUESALITERATURA',LINGUAPORTUGUESA:'LINGUAPORTUGUESALITERATURA',LINGUAPORTUGUESAELITERATURA:'LINGUAPORTUGUESALITERATURA',LITERATURA:'LINGUAPORTUGUESALITERATURA',PORTUGUESLITERATURA:'LINGUAPORTUGUESALITERATURA',MATEMATICAI:'MATEMATICA'};
 const DEFAULT_SIG={sec:{nome:'Prof. Roberto Farias',mat:'0920829-9',id:'41939638',cargo:'Secretário Escolar',escola:'Colégio Estadual Oswaldo Teixeira'},dir:{nome:'Prof. Jayme Nunes Jr',mat:'0249262-7',id:'36091057',cargo:'Diretor Geral',escola:'Colégio Estadual Oswaldo Teixeira'}};
 const ALUNO_FIELDS=[['nome','Nome do aluno','wide'],['matricula','Nº matrícula'],['nascimento','Data de nascimento','','dd/mm/aaaa'],['nacionalidade','Nacionalidade'],['naturalidade','Naturalidade'],['mae','Filiação — mãe','wide'],['pai','Filiação — pai','wide'],['identidade','Identidade'],['orgao','Órgão expedidor'],['expedicao','Data de expedição','','dd/mm/aaaa']];
+const DEFAULT_ESC={nome:'COLÉGIO ESTADUAL OSWALDO TEIXEIRA',curto:'CE OSWALDO TEIXEIRA',endereco:'RUA MILÃO 95',municipio:'RIO DE JANEIRO',uf:'RJ',cep:'21311-430',decreto:'32.416',do:'17/12/2002',ua:'186959',censo:'33140049'};
+const ESC_FIELDS=[['nome','Nome completo da escola','wide'],['curto','Nome curto (tabela “Onde cursou”)'],['endereco','Endereço','wide'],['municipio','Município'],['uf','UF'],['cep','CEP'],['decreto','Decreto nº'],['do','D.O. (data)'],['ua','U.A.'],['censo','Censo Escolar']];
+let esc=Object.assign({},DEFAULT_ESC,store.get('hist.esc')||{});
 let state,sig=Object.assign({},DEFAULT_SIG,store.get('hist.sig')||{});
 let files=[];
 const blankG=()=>({nota:'',ch:'',media:null,pad:false});
@@ -282,7 +329,7 @@ function blankState(mode){
   const n=mode==='eja'?4:3;
   return {mode,example:false,notaFonte:'total',
     aluno:{nome:'',matricula:'',nascimento:'',nacionalidade:'Brasileira',naturalidade:'',mae:'',pai:'',identidade:'',orgao:'',expedicao:''},
-    periods:Array.from({length:n},()=>({ano:'',freq:'',sit:'',escola:'CE OSWALDO TEIXEIRA',municipio:'RIO DE JANEIRO/RJ',semestre:''})),
+    periods:Array.from({length:n},()=>({ano:'',freq:'',sit:'',escola:esc.curto,municipio:`${esc.municipio}/${esc.uf}`,semestre:''})),
     subjects:[],deps:[],obsExtra:'',dataLocal:hojeLinha()};
 }
 function exampleState(mode){
@@ -341,6 +388,10 @@ function buildSheet(st){
   set(...F.nasc,date(A.nascimento));set(...F.mae,A.mae||null);set(...F.pai,A.pai||null);set(...F.e,(A.mae&&A.pai)?'e':null);
   set(...F.orgao,A.orgao||null);set(...F.exp,date(A.expedicao));
   set(22,2,runsWith(22,2,A.nacionalidade));set(26,2,runsWith(26,2,A.identidade));
+  const E=esc,ac=eja?9:7;
+  set(4,ac,'DECRETO Nº '+(E.decreto||''));set(5,ac,'D.O. '+(E.do||''));set(6,ac,'U.A: '+(E.ua||''));set(7,ac,'Censo Escolar: '+(E.censo||''));
+  set(14,2,runsWith(14,2,(E.nome||'').toUpperCase()));set(16,2,runsWith(16,2,(E.endereco||'').toUpperCase()));
+  set(16,eja?6:5,(E.municipio||'').toUpperCase()||null);set(16,eja?10:8,E.cep||null);
   const L=LABELS[st.mode];
   for(let p=0;p<n;p++){set(28,3+2*p,'Ano');set(28,4+2*p,num(st.periods[p].ano)??(st.periods[p].ano||null));set(29,3+2*p,L[p]);set(30,3+2*p,'Nota');set(30,4+2*p,'C/H')}
   for(let r=1;r<=30;r++)add(r,hov[r]||{});
@@ -365,7 +416,7 @@ function buildSheet(st){
   const fr={},si={};
   for(let p=0;p<n;p++){let f=num(st.periods[p].freq);if(f!=null&&f>1)f=+(f/100).toFixed(6);fr[3+2*p]=f;si[3+2*p]=st.periods[p].sit||null}
   add(53,fr);add(54,si);add(55);add(56);
-  for(let p=0;p<n;p++){const P=st.periods[p];const ov={2:ORD[p],3:P.escola||null};
+  for(let p=0;p<n;p++){const P=st.periods[p];const used=P.ano||st.subjects.some(x=>x.g[p]&&(x.g[p].nota!==''||x.g[p].ch!==''));const ov={2:ORD[p],3:used?(P.escola||null):null};if(!used){add(57,ov,true);continue}
     if(eja){ov[8]=P.municipio||null;ov[11]=P.semestre||semestreAuto(p)||null}else{ov[7]=P.municipio||null;ov[9]=num(P.ano)??(P.ano||null)}
     add(57,ov,true)}
   const lines=obsLines(st).map(l=>l.text);
@@ -404,8 +455,8 @@ function cellXml(ref,s,v){
   if(v==null||v==='')return `<c r="${ref}" s="${s}"/>`;
   if(typeof v==='number')return `<c r="${ref}" s="${s}"><v>${v}</v></c>`;
   if(v.f)return `<c r="${ref}" s="${s}"><f>${v.f}</f><v>${v.v}</v></c>`;
-  if(v.runs)return `<c r="${ref}" s="${s}" t="inlineStr"><is>${v.runs.map(r=>`<r>${r.rpr||''}<t xml:space="preserve">${esc(r.t)}</t></r>`).join('')}</is></c>`;
-  return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
+  if(v.runs)return `<c r="${ref}" s="${s}" t="inlineStr"><is>${v.runs.map(r=>`<r>${r.rpr||''}<t xml:space="preserve">${esc_(r.t)}</t></r>`).join('')}</is></c>`;
+  return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc_(v)}</t></is></c>`;
 }
 async function makeXlsx(sheet){
   const sp=sheet.spec,z=await JSZip.loadAsync(TPL[sheet.mode]);const Nr=sheet.rows.length;
@@ -832,42 +883,43 @@ function applyHist(h){
 /* ============ interface ============ */
 function setStatus(t,bad){const s=$('#status');s.textContent=t;s.style.color=bad?'var(--bad)':''}
 function renderFiles(){
-  $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''}">${esc(f.arfDone?f.status.replace(/ \| escolha o aluno abaixo/,''):f.status)}${f.arfDone?' · aluno: '+esc(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc(FIELD_LABEL[d.k])}</b>: na tela “${esc(d.cur)}”, neste arquivo “${esc(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
+  $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''}">${esc_(f.arfDone?f.status.replace(/ \| escolha o aluno abaixo/,''):f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
 }
 function renderAluno(){
-  $('#aluno').innerHTML=ALUNO_FIELDS.map(([k,l,w,ph])=>`<label class="f ${w||''}">${l}<input id="al-${k}" data-al="${k}" value="${esc(state.aluno[k]||'')}" ${ph?`placeholder="${ph}"`:''} class="${state.aluno[k]?'':'empty'}"></label>`).join('');
+  $('#aluno').innerHTML=ALUNO_FIELDS.map(([k,l,w,ph])=>`<label class="f ${w||''}">${l}<input id="al-${k}" data-al="${k}" value="${esc_(state.aluno[k]||'')}" ${ph?`placeholder="${ph}"`:''} class="${state.aluno[k]?'':'empty'}"></label>`).join('');
 }
 function renderGrades(){
   const n=nPer(),L=LABELS[state.mode];
-  let h=`<thead><tr><th class="left" rowspan="2">Disciplina</th>${L.map((l,p)=>`<th colspan="2">${l}<br><input id="ano-${p}" data-ano="${p}" value="${esc(state.periods[p].ano)}" placeholder="ano" style="width:70px;margin-top:3px"></th>`).join('')}<th rowspan="2">C/H total</th><th rowspan="2"></th></tr><tr>${L.map(()=>'<th>Nota</th><th>C/H</th>').join('')}</tr></thead><tbody>`;
+  let h=`<thead><tr><th class="left" rowspan="2">Disciplina</th>${L.map((l,p)=>`<th colspan="2">${l}<br><input id="ano-${p}" data-ano="${p}" value="${esc_(state.periods[p].ano)}" placeholder="ano" style="width:70px;margin-top:3px"></th>`).join('')}<th rowspan="2">C/H total</th><th rowspan="2"></th></tr><tr>${L.map(()=>'<th>Nota</th><th>C/H</th>').join('')}</tr></thead><tbody>`;
   state.subjects.forEach((s,i)=>{
-    let tot=0;h+=`<tr><td class="left"><input id="sn-${i}" data-sn="${i}" value="${esc(s.name)}" style="min-width:220px"></td>`;
+    let tot=0;h+=`<tr><td class="left"><input id="sn-${i}" data-sn="${i}" value="${esc_(s.name)}" style="min-width:220px"></td>`;
     for(let p=0;p<n;p++){const g=s.g[p];const c=num(g.ch);if(c!=null)tot+=c;
-      h+=`<td><input class="n ${isDep(g,p)?'dep':''}" id="gn-${i}-${p}" data-gn="${i},${p}" value="${esc(g.nota)}" inputmode="decimal"></td><td><input class="ch ${g.pad?'pad':''}" id="gc-${i}-${p}" data-gc="${i},${p}" value="${esc(g.ch)}" inputmode="numeric" title="${g.pad?'Carga horária padrão do modelo — confira':''}"></td>`}
+      h+=`<td><input class="n ${isDep(g,p)?'dep':''}" id="gn-${i}-${p}" data-gn="${i},${p}" value="${esc_(g.nota)}" inputmode="decimal"></td><td><input class="ch ${g.pad?'pad':''}" id="gc-${i}-${p}" data-gc="${i},${p}" value="${esc_(g.ch)}" inputmode="numeric" title="${g.pad?'Carga horária padrão do modelo — confira':''}"></td>`}
     h+=`<td class="tot" id="tot-${i}">${tot||''}</td><td><div class="rowbtns"><button type="button" class="ib" data-up="${i}" aria-label="Subir">↑</button><button type="button" class="ib" data-down="${i}" aria-label="Descer">↓</button><button type="button" class="ib" data-rm="${i}" aria-label="Remover disciplina">✕</button></div></td></tr>`;
   });
-  h+=`</tbody><tfoot><tr><th class="left">% Frequência anual</th>${state.periods.map((p,i)=>`<td colspan="2"><input id="fr-${i}" data-fr="${i}" value="${esc(p.freq)}" placeholder="ex.: 94,24" style="width:90px"></td>`).join('')}<td></td><td></td></tr>
+  h+=`</tbody><tfoot><tr><th class="left">% Frequência anual</th>${state.periods.map((p,i)=>`<td colspan="2"><input id="fr-${i}" data-fr="${i}" value="${esc_(p.freq)}" placeholder="ex.: 94,24" style="width:90px"></td>`).join('')}<td></td><td></td></tr>
   <tr><th class="left">Situação final</th>${state.periods.map((p,i)=>`<td colspan="2"><select id="si-${i}" data-si="${i}" style="width:auto">${SIT.map(s=>`<option ${s===p.sit?'selected':''} value="${s}">${s||'—'}</option>`).join('')}</select></td>`).join('')}<td></td><td></td></tr></tfoot>`;
   $('#grades').innerHTML=h;
 }
 function renderPlaces(){
   const eja=state.mode==='eja',L=LABELS[state.mode];
   $('#places').innerHTML=`<thead><tr><th class="left">${eja?'Módulo':'Série'}</th><th class="left">Estabelecimento de ensino</th><th class="left">Município/Estado</th>${eja?'<th class="left">Semestre</th>':''}</tr></thead><tbody>`+
-   state.periods.map((p,i)=>`<tr><td class="left">${L[i]}</td><td class="left"><input id="pe-${i}" data-pe="${i}" value="${esc(p.escola)}"></td><td class="left"><input id="pm-${i}" data-pm="${i}" value="${esc(p.municipio)}"></td>${eja?`<td class="left"><input id="ps-${i}" data-ps="${i}" value="${esc(p.semestre)}" placeholder="${esc(semestreAuto(i)||'ex.: 1º de 2024')}"></td>`:''}</tr>`).join('')+'</tbody>';
+   state.periods.map((p,i)=>`<tr><td class="left">${L[i]}</td><td class="left"><input id="pe-${i}" data-pe="${i}" value="${esc_(p.escola)}"></td><td class="left"><input id="pm-${i}" data-pm="${i}" value="${esc_(p.municipio)}"></td>${eja?`<td class="left"><input id="ps-${i}" data-ps="${i}" value="${esc_(p.semestre)}" placeholder="${esc_(semestreAuto(i)||'ex.: 1º de 2024')}"></td>`:''}</tr>`).join('')+'</tbody>';
 }
 function renderDeps(){
-  const subjOpts=state.subjects.map(s=>`<option value="${esc(s.name)}">`).join('');
+  const subjOpts=state.subjects.map(s=>`<option value="${esc_(s.name)}">`).join('');
   $('#deps').innerHTML=(state.deps.length?`<div class="dep-row" style="font-size:.76rem;font-weight:600;color:var(--muted)"><span>Ano</span><span>Disciplina</span><span>Nota final</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
-    state.deps.map((d,i)=>`<div class="dep-row"><input id="da-${i}" data-da="${i}" value="${esc(d.ano)}" placeholder="ano" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc(d.disc)}" list="subj-list" placeholder="disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc(d.nota)}" placeholder="(preencher)" class="${d.nota?'':'empty'}" inputmode="decimal"><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
+    state.deps.map((d,i)=>`<div class="dep-row"><input id="da-${i}" data-da="${i}" value="${esc_(d.ano)}" placeholder="ano" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc_(d.disc)}" list="subj-list" placeholder="disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc_(d.nota)}" placeholder="(preencher)" class="${d.nota?'':'empty'}" inputmode="decimal"><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
     `<datalist id="subj-list">${subjOpts}</datalist>`;
 }
 function renderObsPreview(){
   const ls=obsLines(state);
-  $('#obs-preview').innerHTML='<b style="font-style:normal">Observação:</b>\n'+(ls.length?ls.map(l=>esc(l.text).replace(/\(preencher\)/g,'<span class="ph">(preencher)</span>')).join('\n'):'<span style="color:var(--muted)">(sem linhas)</span>');
+  $('#obs-preview').innerHTML='<b style="font-style:normal">Observação:</b>\n'+(ls.length?ls.map(l=>esc_(l.text).replace(/\(preencher\)/g,'<span class="ph">(preencher)</span>')).join('\n'):'<span style="color:var(--muted)">(sem linhas)</span>');
 }
 function renderSig(){
-  const f=(who)=>[['nome','Nome'],['mat','Matrícula'],['id','ID'],['cargo','Cargo'],['escola','Unidade','wide']].map(([k,l,w])=>`<label class="f ${w||''}">${l}<input id="sg-${who}-${k}" data-sg="${who},${k}" value="${esc(sig[who][k]||'')}"></label>`).join('');
+  const f=(who)=>[['nome','Nome'],['mat','Matrícula'],['id','ID'],['cargo','Cargo'],['escola','Unidade','wide']].map(([k,l,w])=>`<label class="f ${w||''}">${l}<input id="sg-${who}-${k}" data-sg="${who},${k}" value="${esc_(sig[who][k]||'')}"></label>`).join('');
   $('#sig-sec').innerHTML=f('sec');$('#sig-dir').innerHTML=f('dir');
+  $('#esc-form').innerHTML=ESC_FIELDS.map(([k,l,w])=>`<label class="f ${w||''}">${l}<input id="es-${k}" data-es="${k}" value="${esc_(esc[k]||'')}"></label>`).join('');
 }
 function renderChecks(){
   const out=[];const A=state.aluno;
@@ -881,7 +933,8 @@ function renderChecks(){
   const nd=files.reduce((a,f)=>a+((f.diff||[]).length),0);if(nd)out.push(['w',`${nd} dado(s) do aluno diferentes entre os arquivos — veja na lista de arquivos`]);
   if(!state.subjects.length)out.push(['b','Nenhuma disciplina na lista']);
   if(!out.length)out.push(['o','Tudo preenchido. Pode baixar.']);
-  $('#checks').innerHTML=out.map(([c,t])=>`<li><span class="chip ${c}">${c==='o'?'ok':c==='b'?'atenção':'conferir'}</span><span>${esc(t)}</span></li>`).join('');
+  const nOpen=out.filter(o=>o[0]!=='o').length;const cc=$('#checks-count');cc.textContent=nOpen?String(nOpen):'';cc.hidden=!nOpen;
+  $('#checks').innerHTML=out.map(([c,t])=>`<li><span class="chip ${c}">${c==='o'?'ok':c==='b'?'atenção':'conferir'}</span><span>${esc_(t)}</span></li>`).join('');
 }
 function syncMode(){$('#mode-reg').setAttribute('aria-pressed',state.mode==='reg');$('#mode-eja').setAttribute('aria-pressed',state.mode==='eja')}
 function renderAll(){
@@ -913,11 +966,15 @@ document.addEventListener('input',e=>{
   else if(d.da!=null){state.deps[+d.da].ano=t.value.trim();t.classList.toggle('empty',!t.value)}
   else if(d.dd!=null){state.deps[+d.dd].disc=t.value;t.classList.toggle('empty',!t.value)}
   else if(d.dn!=null){state.deps[+d.dn].nota=t.value.trim();t.classList.toggle('empty',!t.value)}
+  else if(d.es){const old=Object.assign({},esc);esc=Object.assign({},esc,{[d.es]:t.value});store.set('hist.esc',esc);
+    state.periods.forEach(P=>{if(P.escola===old.curto)P.escola=esc.curto;if(P.municipio===`${old.municipio}/${old.uf}`)P.municipio=`${esc.municipio}/${esc.uf}`});
+    if(d.es==='municipio'&&state.dataLocal.startsWith(titleCase(old.municipio)+','))state.dataLocal=state.dataLocal.replace(titleCase(old.municipio),titleCase(esc.municipio));
+    renderPlaces();$('#dataLocal').value=state.dataLocal}
   else if(d.sg){const [w,k]=d.sg.split(',');sig[w]=Object.assign({},sig[w],{[k]:t.value});store.set('hist.sig',sig)}
   else if(t.id==='obsExtra')state.obsExtra=t.value;
   else if(t.id==='dataLocal')state.dataLocal=t.value;
   else return;
-  if(state.example&&!d.sg){state.example=false;$('#example-banner').hidden=true}
+  if(state.example&&!d.sg&&!d.es){state.example=false;$('#example-banner').hidden=true}
   schedulePreview();
 });
 document.addEventListener('change',e=>{
@@ -938,6 +995,7 @@ document.addEventListener('click',e=>{
   else if(d.rmfile!=null){files.splice(+d.rmfile,1);renderFiles();return}
   else if(d.usediff!=null){const [i,j]=d.usediff.split(',').map(Number);const f=files[i],x=f.diff[j];state.aluno[x.k]=x.v;f.diff.splice(j,1);renderFiles();renderAluno()}
   else if(b.id==='add-subj'){state.subjects.push({name:'',g:Array.from({length:nPer()},blankG)});renderGrades();const el=$('#sn-'+(state.subjects.length-1));if(el)el.focus()}
+  else if(b.id==='esc-reset'){esc=Object.assign({},DEFAULT_ESC);store.set('hist.esc',esc);renderSig()}
   else if(b.id==='add-dep'){state.deps.push({ano:'',disc:'',nota:''});renderDeps()}
   else if(b.id==='btn-new'){state=blankState(state.mode);files=[];renderFiles();renderAll()}
   else if(b.id==='mode-reg')setMode('reg');
