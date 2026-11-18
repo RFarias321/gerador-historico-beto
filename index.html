@@ -177,7 +177,7 @@ table.g tbody tr:hover td{background:var(--paper)}
             <li>a <b>Ficha Individual do Aluno</b> (FIA) de cada ano;</li>
             <li>as <b>Atas de Resultados Finais</b> (ARF) de cada ano;</li>
             <li>a <b>Ficha de Matrícula</b>;</li>
-            <li>se houver, a <b>ficha de dependência</b> ou um <b>histórico antigo gerado aqui</b>.</li>
+            <li>se houver, a <b>ficha de dependência</b> e o <b>histórico antigo</b> do aluno (feito no modelo da escola ou gerado aqui), também em PDF.</li>
           </ul>
           <p>Pode anexar tudo de uma vez, em Excel ou PDF.</p>
         </div>
@@ -714,7 +714,42 @@ function inferYear(info,ctx,rows){
   for(const r of rows)for(const t of r.toks){const m=t.t.match(/ano\s*letivo\D{0,3}(20\d\d)/i);if(m)return m[1]}
   return null;
 }
-function isDependencyFile(rows){return rows.some(r=>r.toks.some(t=>/DEPENDENCIA/.test(N(t.t))&&!/APROVADOEMREGIME/.test(N(t.t))))}
+function isDependencyFile(rows){return rows.some(r=>r.toks.some(t=>{if(/=/.test(t.t))return false;const k=N(t.t);return k.length<60&&/DEPENDENCIA/.test(k)&&!/APROVADO|LEGENDA/.test(k)}))}
+function parseHistPdf(rows){
+  const h=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&r.toks.some(t=>/CARGAHORARIATOTAL/.test(N(t.t))));
+  if(h<0)return null;
+  const mode=rows.slice(Math.max(0,h-2),h+3).some(r=>r.toks.some(t=>/MODULO/.test(N(t.t))))?'eja':'reg',n=mode==='eja'?4:3;
+  const hr=rows.slice(Math.max(0,h-2),h+3).flatMap(r=>r.toks).sort((a,b)=>a.xc-b.xc);
+  const anos=hr.filter(t=>N(t.t)==='ANO'),yrs=hr.filter(t=>/^(19|20)\d\d$/.test(t.t.trim()));
+  if(anos.length<n)return null;
+  const P=[];for(let p=0;p<n;p++){const a=anos[p];const y=yrs.find(q=>q.xc>a.xc&&(!anos[p+1]||q.xc<anos[p+1].xc));P.push({nx:a.xc,cx:y?y.xc:a.xc+(a.x1-a.x0)*2,ano:y?y.t.trim():''})}
+  const totX=(hr.find(t=>/CARGAHORARIATOTAL/.test(N(t.t)))||{xc:1e9}).xc;
+  const firstX=Math.min(...P.map(p=>p.nx))-((P[0].cx-P[0].nx)/2);
+  const cols=[];P.forEach((p,i)=>{cols.push({k:'n',p:i,x:p.nx},{k:'c',p:i,x:p.cx})});cols.push({k:'t',x:totX});
+  const near=(x,arr)=>{let b=null,d=1e9;for(const c of arr){const e=Math.abs(c.x-x);if(e<d){d=e;b=c}}return b};
+  let top=h;while(top>0&&rows[top-1].toks.some(t=>N(t.t)==='ANO'||/^(19|20)\d\d$/.test(t.t.trim())))top--;
+  const res={mode,info:extractInfo(rows.slice(0,top)),periods:P.map(p=>({ano:p.ano,freq:'',sit:''})),subjects:[],deps:[],dataLocal:null};
+  const mids=P.map((p,i)=>({p:i,x:(p.nx+p.cx)/2}));
+  let i=h+1;
+  for(;i<rows.length;i++){const T=rows[i].toks;if(!T.length)continue;
+    const nm=T.filter(t=>t.x1<firstX).map(t=>t.t).join(' ').trim();if(!nm)continue;const k=N(nm);
+    if(k==='TOTAL')break;if(/^(NOTA|CH|DISCIPLINAS|ANO)$/.test(k))continue;
+    const s={name:nm,g:P.map(()=>blankG())};
+    for(const t of T){if(t.x1<firstX)continue;const c=near(t.xc,cols);if(!c||c.k==='t')continue;const v=num(t.t);if(c.k==='n')s.g[c.p].nota=v!=null?fmtIn(v):t.t;else s.g[c.p].ch=v!=null?fmtIn(v):t.t}
+    res.subjects.push(s)}
+  for(;i<rows.length;i++){const T=rows[i].toks;const nm=T.filter(t=>t.x1<firstX).map(t=>t.t).join(' ');const k=N(nm);
+    if(/FREQUENCIA/.test(k))for(const t of T){if(t.x1<firstX||t.xc>totX-20)continue;const m=near(t.xc,mids);let f=num(t.t);if(f!=null){if(f<=1)f*=100;res.periods[m.p].freq=fmtIn(+f.toFixed(2))}}
+    if(/SITUACAO/.test(k)){for(const t of T){if(t.x1<firstX||t.xc>totX-20)continue;const m=near(t.xc,mids);res.periods[m.p].sit=mapSit(t.t)||t.t.trim()}break}}
+  const ph=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='ESTABELECIMENTODEENSINO'));
+  if(ph>=0){const hd=rows[ph].toks.slice().sort((a,b)=>a.xc-b.xc);const ce=hd.find(t=>N(t.t)==='ESTABELECIMENTODEENSINO'),cm=hd.find(t=>/MUNICIPIO/.test(N(t.t))),cl=hd[hd.length-1];
+    const pc=[{k:'escola',x:ce.xc},...(cm?[{k:'municipio',x:cm.xc}]:[]),{k:'ult',x:cl.xc}];
+    for(let p=0;p<n;p++){const r=rows[ph+1+p];if(!r)break;for(const t of r.toks){if(t.x1<firstX)continue;const c=near(t.xc,pc);if(c.k==='ult'){if(mode==='eja')res.periods[p].semestre=t.t.trim()}else res.periods[p][c.k]=t.t.trim()}}}
+  const re=/(\d{4}|\(preencher\))\s*[–-]\s*Aprovado em regime de depend[êe]ncia n[oa]\s*(?:\(a\)\s*)?(?:disciplina\s*)?(.+?),\s*com nota final\s*(.+?)\.?\s*$/i;
+  for(const r of rows){const line=r.toks.map(t=>t.t).join(' ');const m=line.match(re);
+    if(m){const cl=x=>/preencher|^\[?nota\]?$|^disciplina$/i.test(x.trim())?'':x.trim();res.deps.push({ano:cl(m[1]),disc:cl(m[2]),nota:cl(m[3])})}
+    else{const d=line.trim().match(/^[A-ZÀ-Úa-zà-ú ]+, \d{1,2} de [a-zç]+ de \d{4}$/);if(d)res.dataLocal=d[0]}}
+  return res;
+}
 function parseHist(rows){
   const h=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&r.toks.some(t=>/CARGAHORARIATOTAL/.test(N(t.t))));
   if(h<0)return null;
@@ -758,7 +793,7 @@ async function handleFiles(list){
       }
       const done=[];
       for(const g of groups){
-        if(!isPdf){const hist=parseHist(g.rows);if(hist){applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
+        {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
         if(arf){entry.arf=arf;done.push(`ata de resultados ${arf.ano||''} · ${arf.students.length} alunos`);continue}
         const subs=parseTable(g.rows,isPdf);if(!subs)continue;
@@ -843,6 +878,7 @@ const periodHasData=p=>state.subjects.some(s=>s.g[p]&&(s.g[p].nota!==''||s.g[p].
 function normField(k,v){v=String(v??'').trim();if(!v)return '';
   if(k==='nome')return v.toUpperCase();
   if(k==='naturalidade')return titleCase(v.replace(/\s*[-\/]\s*[A-Z]{2}$/,''));
+  if(k==='nacionalidade'&&/^BRASIL(I?ERA|EIRO)$/.test(N(v)))return 'Brasileira';
   if(k==='mae'||k==='pai'||k==='nacionalidade')return titleCase(v);
   if(k==='nascimento'||k==='expedicao')return dateStr(v);
   return v}
@@ -903,7 +939,7 @@ function applyDepResults(subs,ano){
 }
 function applyHist(h){
   const st=blankState(h.mode);
-  Object.keys(st.aluno).forEach(k=>{if(h.info[k])st.aluno[k]=k==='nome'?String(h.info[k]).toUpperCase():String(h.info[k])});
+  Object.keys(st.aluno).forEach(k=>{if(h.info[k])st.aluno[k]=normField(k,h.info[k])});
   h.periods.forEach((p,i)=>Object.assign(st.periods[i],Object.fromEntries(Object.entries(p).filter(([k,v])=>v!==''&&v!=null))));
   st.subjects=h.subjects;st.deps=h.deps;if(h.dataLocal)st.dataLocal=h.dataLocal;
   state=st;syncMode();
