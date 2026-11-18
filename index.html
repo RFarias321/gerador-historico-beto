@@ -136,6 +136,12 @@ section.card>h2 .step{display:inline-grid;place-items:center;width:26px;height:2
 .hello{background:var(--accent-soft);border-radius:10px;padding:12px 16px;margin:4px 0 14px;font-size:.9rem;line-height:1.5}
 .hello p{margin:0}
 .hello ul{margin:6px 0;padding-left:20px;display:flex;flex-direction:column;gap:2px}
+.readmode{margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:.86rem}
+.rm-title{font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.rm-opt{display:flex;gap:10px;align-items:flex-start;cursor:pointer;line-height:1.45}
+.rm-opt input{width:auto;margin-top:3px;flex:none}
+.rm-sub{margin-left:26px;display:flex;flex-direction:column;gap:6px}
+.rm-note{color:var(--muted);font-size:.8rem}
 .count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font:700 .75rem var(--f-ui)}
 .preview{border-radius:12px;box-shadow:var(--shadow);padding:12px;background:var(--accent-soft)}
 .pvhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px;font-weight:700;font-size:.9rem}
@@ -154,7 +160,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       <div class="eyebrow">Secretaria escolar · Ensino Médio</div>
       <h1>Gerador de Histórico do Beto</h1>
       <p>Anexe as fichas do aluno, confira os dados e baixe o histórico no modelo oficial em Excel e PDF.</p>
-      <span class="lock"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"/></svg>Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.</span>
+      <span class="lock"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"/></svg><span id="lock-txt">Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.</span></span>
     </div>
     <div class="seg" role="group" aria-label="Tipo de ensino">
       <button type="button" id="mode-reg" aria-pressed="true">Ensino Médio Regular · 3 séries</button>
@@ -179,14 +185,25 @@ table.g tbody tr:hover td{background:var(--paper)}
             <li>a <b>Ficha de Matrícula</b>;</li>
             <li>se houver, a <b>ficha de dependência</b> e o <b>histórico antigo</b> do aluno (feito no modelo da escola ou gerado aqui), também em PDF.</li>
           </ul>
-          <p>Pode anexar tudo de uma vez, em Excel ou PDF.</p>
+          <p>Pode anexar tudo de uma vez, em Excel ou PDF. Documento em papel? Pode mandar foto ou PDF escaneado.</p>
         </div>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivos">
           <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" class="dropico"><path fill="currentColor" d="M11 16V7.8l-2.6 2.6L7 9l5-5 5 5-1.4 1.4L13 7.8V16h-2Zm-6 4a2 2 0 0 1-2-2v-3h2v3h14v-3h2v3a2 2 0 0 1-2 2H5Z"/></svg>
           <strong>Arraste os arquivos aqui ou clique para escolher</strong>
-          <span>.pdf · .xlsx · .xls · .csv — vários de uma vez</span>
+          <span>.pdf · .xlsx · .xls · .csv · fotos .jpg e .png — vários de uma vez</span>
         </div>
-        <input type="file" id="file" multiple accept=".pdf,.xlsx,.xls,.xlsm,.csv" hidden>
+        <input type="file" id="file" multiple accept=".pdf,.xlsx,.xls,.xlsm,.csv,.jpg,.jpeg,.png,.webp,image/*" hidden>
+        <div class="readmode" id="readmode">
+          <div class="rm-title">Fotos e PDFs escaneados</div>
+          <label class="rm-opt"><input type="radio" name="rm" value="ocr" id="rm-ocr"><span><b>Ler no computador (OCR)</b> · grátis, a imagem não sai daqui. Funciona melhor com foto reta, nítida e bem iluminada. Confira os números.</span></label>
+          <label class="rm-opt"><input type="radio" name="rm" value="ia" id="rm-ia"><span><b>Ler com IA (Claude)</b> · mais precisa, lê fotos ruins e históricos de outras escolas. <b>A imagem do documento é enviada à Anthropic</b> para ser lida.</span></label>
+          <div id="ia-key" class="rm-sub" hidden>
+            <label class="f">Chave da API Anthropic<input type="password" id="apikey" autocomplete="off" placeholder="sk-ant-…"></label>
+            <span class="rm-note">A chave fica salva só neste navegador. Crie em console.anthropic.com; a Anthropic cobra por uso, alguns centavos por documento.</span>
+            <button type="button" class="btn small" id="apikey-clear">Esquecer a chave</button>
+          </div>
+          <div id="ia-claude" class="rm-sub rm-note" hidden>Usa a sua conta do Claude. Na primeira leitura, o Claude pede permissão.</div>
+        </div>
         <ul class="files" id="files"></ul>
       </section>
 
@@ -594,21 +611,163 @@ function rowsFromSheet(ws){
   return a.map((row,i)=>({y:i,toks:(row||[]).map((v,j)=>v==null||String(v).trim()===''?null:{t:valStr(v),raw:v,x0:j+rng.s.c,x1:j+rng.s.c,xc:j+rng.s.c}).filter(Boolean)}));
 }
 async function rowsFromPdf(buf){
-  const pdf=await pdfjsLib.getDocument({data:buf}).promise;const pages=[];
+  const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;const pages=[];
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);const tc=await page.getTextContent();
     const items=tc.items.filter(it=>it.str&&it.str.trim()).map(it=>({t:it.str,x:it.transform[4],y:it.transform[5],w:it.width,h:Math.abs(it.transform[3])||8}));
-    items.sort((a,b)=>b.y-a.y||a.x-b.x);
-    const rows=[];for(const it of items){let row=rows.find(r=>Math.abs(r.yc-it.y)<=Math.max(2,it.h*.35));if(!row){row={yc:it.y,items:[]};rows.push(row)}row.items.push(it)}
-    rows.sort((a,b)=>b.yc-a.yc);
-    pages.push(rows.map(r=>{r.items.sort((a,b)=>a.x-b.x);const toks=[];
-      for(const it of r.items){const last=toks[toks.length-1];const gap=last?it.x-last.x1:99;
-        if(last&&gap<it.h*.45&&!(/^[\d.,%_-]+$/.test(it.t.trim())&&/^[\d.,%_-]+$/.test(last.t.trim()))){last.t+=(gap>it.h*.12?' ':'')+it.t;last.x1=it.x+it.w}
-        else toks.push({t:it.t,x0:it.x,x1:it.x+it.w})}
-      toks.forEach(t=>{t.t=t.t.replace(/\s+/g,' ').trim();t.xc=(t.x0+t.x1)/2});
-      return {y:r.yc,toks:toks.filter(t=>t.t)}}));
+    pages.push(itemsToRows(items,.35));
   }
   return pages;
+}
+function itemsToRows(items,tolF){
+  items=items.slice().sort((a,b)=>b.y-a.y||a.x-b.x);
+  const rows=[];for(const it of items){let row=rows.find(r=>Math.abs(r.yc-it.y)<=Math.max(2,it.h*tolF));if(!row){row={yc:it.y,items:[]};rows.push(row)}row.items.push(it)}
+  rows.sort((a,b)=>b.yc-a.yc);
+  return rows.map(r=>{r.items.sort((a,b)=>a.x-b.x);const toks=[];
+    for(const it of r.items){const last=toks[toks.length-1];const gap=last?it.x-last.x1:99;
+      if(last&&gap<it.h*.45&&!(/^[\d.,%_-]+$/.test(it.t.trim())&&/^[\d.,%_-]+$/.test(last.t.trim()))){last.t+=(gap>it.h*.12?' ':'')+it.t;last.x1=it.x+it.w}
+      else toks.push({t:it.t,x0:it.x,x1:it.x+it.w})}
+    toks.forEach(t=>{t.t=t.t.replace(/\s+/g,' ').trim();t.xc=(t.x0+t.x1)/2});
+    return {y:r.yc,toks:toks.filter(t=>t.t)}});
+}
+/* ---------- imagens: PDF escaneado -> imagens; foto -> canvas ---------- */
+async function pdfToCanvases(buf,maxPages){
+  const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;const out=[];
+  for(let p=1;p<=Math.min(pdf.numPages,maxPages||6);p++){const page=await pdf.getPage(p);const vp0=page.getViewport({scale:1});const sc=Math.min(3,1700/vp0.width);const vp=page.getViewport({scale:sc});
+    const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:ctx,viewport:vp}).promise;out.push(c)}
+  return out;
+}
+async function imageToCanvas(file){
+  let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){throw new Error('Não consegui abrir esta imagem. Use JPG ou PNG (fotos do iPhone em HEIC precisam ser convertidas).')}
+  const k=Math.max(Math.min(2.5,2300/bmp.width),Math.min(1,3200/Math.max(bmp.width,bmp.height)))||1;const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(bmp,0,0,c.width,c.height);return c;
+}
+/* ---------- OCR no computador (Tesseract.js) ---------- */
+let OCR=null;
+function loadScript(src){return new Promise((ok,err)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>err(new Error('Não consegui carregar o leitor de imagens. Verifique a internet.'));document.head.appendChild(s)})}
+async function ocrWorker(progress){
+  if(OCR)return OCR;
+  if(!window.Tesseract)await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js');
+  const base=new URL('ocr/',location.href).href;
+  if(IN_CLAUDE)try{const b64=await fetch('ocr/por.traineddata.txt').then(r=>{if(!r.ok)throw 0;return r.text()});
+    await seedOcrCache('./por.traineddata',Uint8Array.from(atob(b64.trim()),c=>c.charCodeAt(0)))}catch(e){}
+  OCR=await Tesseract.createWorker('por',1,{workerPath:base+'worker.min.js',corePath:base,langPath:base.replace(/\/$/,''),workerBlobURL:false,cacheMethod:'readOnly',logger:m=>{if(progress&&m.status==='recognizing text')progress(m.progress)}});
+  await OCR.setParameters({preserve_interword_spaces:'1'});
+  return OCR;
+}
+function seedOcrCache(key,val){return new Promise((ok,err)=>{const rq=indexedDB.open('keyval-store');rq.onupgradeneeded=()=>rq.result.createObjectStore('keyval');
+  rq.onerror=()=>err(rq.error);rq.onsuccess=()=>{const db=rq.result;if(!db.objectStoreNames.contains('keyval')){db.close();return err(new Error('store'))}const tx=db.transaction('keyval','readwrite');tx.objectStore('keyval').put(val,key);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>err(tx.error)}})}
+let ocrProgress=null;
+function deskew(src){
+  const k=Math.min(1,900/src.width),w=Math.round(src.width*k),h=Math.round(src.height*k);const t=document.createElement('canvas');t.width=w;t.height=h;const tx=t.getContext('2d');
+  let best=0,bestScore=-1;
+  for(let a=-4;a<=4.001;a+=0.25){tx.setTransform(1,0,0,1,0,0);tx.fillStyle='#fff';tx.fillRect(0,0,w,h);tx.translate(w/2,h/2);tx.rotate(a*Math.PI/180);tx.drawImage(src,-w/2,-h/2,w,h);
+    const d=tx.getImageData(0,0,w,h).data;let prev=0,score=0;for(let y=0;y<h;y++){let n=0;for(let x=0;x<w;x+=2){if(d[4*(y*w+x)]<140)n++}score+=(n-prev)*(n-prev);prev=n}
+    if(score>bestScore){bestScore=score;best=a}}
+  if(Math.abs(best)<0.2)return src;
+  const c=document.createElement('canvas');c.width=src.width;c.height=src.height;const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);cx.translate(c.width/2,c.height/2);cx.rotate(best*Math.PI/180);cx.drawImage(src,-src.width/2,-src.height/2);return c;
+}
+function cleanForOcr(src0){
+  const src=deskew(src0);
+  const W=src.width,H=src.height,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');ctx.drawImage(src,0,0);
+  const im=ctx.getImageData(0,0,W,H),d=im.data,g=new Uint8Array(W*H);let sum=0;
+  for(let i=0;i<W*H;i++){const v=(d[4*i]*299+d[4*i+1]*587+d[4*i+2]*114)/1000;g[i]=v;sum+=v}
+  const thr=Math.min(200,sum/(W*H)*0.78);const dark=new Uint8Array(W*H);for(let i=0;i<W*H;i++)dark[i]=g[i]<thr?1:0;
+  const kill=new Uint8Array(W*H);const minH=Math.round(W*0.12),minV=Math.round(H*0.04);
+  for(let y=0;y<H;y++){let run=0;for(let x=0;x<=W;x++){if(x<W&&dark[y*W+x])run++;else{if(run>=minH)for(let k=x-run;k<x;k++){kill[y*W+k]=1;if(y>0)kill[(y-1)*W+k]=1;if(y<H-1)kill[(y+1)*W+k]=1}run=0}}}
+  for(let x=0;x<W;x++){let run=0;for(let y=0;y<=H;y++){if(y<H&&dark[y*W+x])run++;else{if(run>=minV)for(let k=y-run;k<y;k++){kill[k*W+x]=1;if(x>0)kill[k*W+x-1]=1;if(x<W-1)kill[k*W+x+1]=1}run=0}}}
+  for(let i=0;i<W*H;i++){const v=kill[i]?255:(dark[i]?0:255);d[4*i]=d[4*i+1]=d[4*i+2]=v;d[4*i+3]=255}
+  ctx.putImageData(im,0,0);return c;
+}
+async function ocrCanvas(c0){
+  const c=cleanForOcr(c0);
+  const w=await ocrWorker(p=>ocrProgress&&ocrProgress(p));
+  const {data}=await w.recognize(c,{},{blocks:true});
+  const k=595/c.width,items=[];
+  for(const b of data.blocks||[])for(const pa of b.paragraphs||[])for(const ln of pa.lines||[])for(const wd of ln.words||[]){
+    let t=String(wd.text||'').replace(/[|¦\[\]]/g,'').trim();if(!t||wd.confidence<20)continue;
+    if(/\d/.test(t)&&/^[\dOoDIlSsBZ,.\/%-]+$/.test(t))t=t.replace(/[OoD]/g,'0').replace(/[Il]/g,'1').replace(/[Ss]/g,'5').replace(/B/g,'8').replace(/Z/g,'2');
+    const bb=wd.bbox;items.push({t,x:bb.x0*k,y:-bb.y1*k,w:(bb.x1-bb.x0)*k,h:Math.max(4,(bb.y1-bb.y0)*k)})}
+  return itemsToRows(items,.55);
+}
+/* ---------- leitura com IA (Claude) ---------- */
+const IN_CLAUDE=!!(window.claude&&window.claude.use);
+const readMode=()=>{try{return localStorage.getItem('hist.rm')||'ocr'}catch(e){return 'ocr'}};
+const apiKey=()=>{try{return localStorage.getItem('hist.apikey')||''}catch(e){return ''}};
+const AI_SCHEMA={type:'object',additionalProperties:false,required:['tipo','aluno','periodos','dependencias'],properties:{
+  tipo:{type:'string',enum:['historico','ficha_individual','ata_resultados','ficha_matricula','dependencia','outro']},
+  aluno:{type:'object',additionalProperties:false,required:['nome','matricula','nascimento','nacionalidade','naturalidade','mae','pai','identidade','orgao','expedicao'],properties:Object.fromEntries(['nome','matricula','nascimento','nacionalidade','naturalidade','mae','pai','identidade','orgao','expedicao'].map(k=>[k,{type:'string'}]))},
+  periodos:{type:'array',items:{type:'object',additionalProperties:false,required:['etapa','ano','escola','municipio','frequencia','situacao','disciplinas'],properties:{
+    etapa:{type:'integer'},ano:{type:'string'},escola:{type:'string'},municipio:{type:'string'},frequencia:{type:'string'},situacao:{type:'string'},
+    disciplinas:{type:'array',items:{type:'object',additionalProperties:false,required:['nome','nota','media','carga_horaria'],properties:{nome:{type:'string'},nota:{type:'string'},media:{type:'string'},carga_horaria:{type:'string'}}}}}}},
+  dependencias:{type:'array',items:{type:'object',additionalProperties:false,required:['ano','disciplina','nota_final'],properties:{ano:{type:'string'},disciplina:{type:'string'},nota_final:{type:'string'}}}}}};
+function aiPrompt(){
+  const alvo=state.aluno.nome&&!state.example?`\nSe o documento listar vários alunos (ata da turma), extraia somente o aluno ${state.aluno.nome}${state.aluno.matricula?' (matrícula '+state.aluno.matricula+')':''}.`:'';
+  return `As imagens são páginas de um documento escolar brasileiro do Ensino Médio (${state.mode==='eja'?'EJA, por módulos':'regular, por séries'}): pode ser histórico escolar, ficha individual do aluno, ata de resultados finais, ficha de matrícula ou ficha de dependência.
+Transcreva os dados exatamente como aparecem, sem inventar nada. Campo que não aparece ou está ilegível fica como "".
+- tipo: o tipo do documento.
+- aluno: dados pessoais. Datas no formato dd/mm/aaaa. Nomes como escritos.
+- periodos: um item por série/ano letivo (ou módulo, na EJA). etapa = número da série ou módulo (1 a 4); 0 se não souber. ano = ano letivo com 4 dígitos. escola e municipio daquele ano. frequencia = frequência anual em %, só o número (ex.: "94,24"). situacao = resultado final escrito no documento (ex.: "APROVADO", "PROMOVIDO", "APROVADO COM DEPENDÊNCIA", "REPROVADO").
+- disciplinas: nome da disciplina; nota = nota final ou total de pontos que o documento mostra para o ano; media = média final, se houver coluna própria; carga_horaria = horas do ano.
+- dependencias: aprovações em regime de dependência citadas no documento (ano, disciplina, nota final).
+Números como escritos, com vírgula decimal.${alvo}`;
+}
+async function canvasesToImages(cs){
+  const out=[];for(const c of cs){let w=c.width,h=c.height;const k=Math.min(1,1600/Math.max(w,h));const d=document.createElement('canvas');d.width=Math.round(w*k);d.height=Math.round(h*k);d.getContext('2d').drawImage(c,0,0,d.width,d.height);
+    const blob=await new Promise(r=>d.toBlob(r,'image/jpeg',.85));out.push(blob)}
+  return out;
+}
+let ANTHROPIC=null;
+async function readWithAI(canvases){
+  const blobs=await canvasesToImages(canvases);
+  if(IN_CLAUDE){
+    const sample=await claude.use('sample');if(!sample)throw new Error('A leitura com IA não está disponível nesta visualização.');
+    const lim=await sample.limits().catch(()=>null);if(!lim||!lim.images)throw new Error('Esta visualização não pode enviar imagens para o Claude.');
+    const imgs=blobs.slice(0,lim.images.maxImages||blobs.length);
+    try{return await sample.json(aiPrompt()+'\n\nResponda somente com um objeto JSON neste formato (JSON Schema):\n'+JSON.stringify(AI_SCHEMA),{images:imgs,modelTier:'complex'})}
+    catch(e){if(e&&e.code==='not_granted')throw new Error('Leitura com IA não autorizada. Permita o uso do Claude nesta página ou use a leitura no computador.');throw new Error('A IA não conseguiu ler: '+(e&&e.message||e))}
+  }
+  const key=apiKey();if(!key)throw new Error('Para ler com IA no site, informe a chave da API Anthropic no quadro "Fotos e PDFs escaneados".');
+  if(!ANTHROPIC)ANTHROPIC=(await import('https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.4.0/+esm')).default;
+  const client=new ANTHROPIC({apiKey:key,dangerouslyAllowBrowser:true});
+  const b64s=await Promise.all(blobs.map(b=>b.arrayBuffer().then(x=>b64(x))));
+  let resp;
+  try{
+    resp=await client.beta.messages.create({model:'claude-opus-5-5',max_tokens:16000,betas:['server-side-fallback-2026-07-01'],fallbacks:'default',
+      output_config:{effort:'medium',format:{type:'json_schema',schema:AI_SCHEMA}},
+      messages:[{role:'user',content:[...b64s.map(d=>({type:'image',source:{type:'base64',media_type:'image/jpeg',data:d}})),{type:'text',text:aiPrompt()}]}]});
+  }catch(e){
+    if(e instanceof ANTHROPIC.AuthenticationError)throw new Error('Chave da API recusada. Confira a chave no quadro "Fotos e PDFs escaneados".');
+    if(e instanceof ANTHROPIC.PermissionDeniedError)throw new Error('Esta chave não tem permissão para usar o modelo. Confira a conta no console da Anthropic.');
+    if(e instanceof ANTHROPIC.RateLimitError)throw new Error('Limite de uso da API atingido. Espere um pouco e tente de novo.');
+    if(e instanceof ANTHROPIC.APIConnectionError)throw new Error('Sem conexão com a API da Anthropic. Verifique a internet.');
+    if(e instanceof ANTHROPIC.APIError)throw new Error('A API recusou o pedido: '+e.message);
+    throw e;
+  }
+  if(resp.stop_reason==='refusal')throw new Error('A IA não aceitou ler este documento.');
+  if(resp.stop_reason==='max_tokens')throw new Error('O documento é grande demais para ler de uma vez. Envie uma página por vez.');
+  const txt=resp.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+  try{return JSON.parse(txt)}catch(e){throw new Error('A IA respondeu num formato inesperado. Tente de novo.')}
+}
+function applyAI(r,entry){
+  resetIfExample();const done=[];const tipo=r.tipo||'outro';
+  const filled=applyAlunoDoc(r.aluno||{},entry,tipo==='ficha_matricula');
+  if(filled.length)done.push((tipo==='ficha_matricula'?'ficha de matrícula (IA)':'dados do aluno (IA)')+': '+filled.join(', '));
+  const per=(r.periodos||[]).filter(p=>p&&((p.disciplinas||[]).some(d=>d.nome)||p.ano));
+  if(tipo==='dependencia'){const subs=per.flatMap(p=>p.disciplinas.map(d=>({name:d.nome,total:num(d.nota),media:num(d.media)})));const k=applyDepResults(subs,(per[0]||{}).ano);done.push(`dependência (IA): ${k} resultado(s)`)}
+  else for(const p of per){
+    const idx=(p.etapa>=1&&p.etapa<=nPer())?p.etapa-1:nextFreePeriod(p.ano);
+    const subs=(p.disciplinas||[]).filter(d=>d.nome).map(d=>{const nt=num(d.nota),md=num(d.media);return {name:d.nome,total:nt,media:md!=null?md:(nt!=null&&nt<=10?nt:null),ch:num(d.carga_horaria)}});
+    if(subs.length)applyFicha({subs,info:{},ano:p.ano,sit:mapSit(p.situacao),freqGlobal:num(p.frequencia),escola:cleanEscola(p.escola)},idx);
+    else if(p.ano)state.periods[idx].ano=String(p.ano);
+    if(p.municipio)state.periods[idx].municipio=p.municipio.toUpperCase().replace(/\/R[IL1]$/,'/RJ');
+    done.push(`${LABELS[state.mode][idx]}${p.ano?' · '+p.ano:''} · ${subs.length} disciplinas (IA)`)}
+  for(const d of r.dependencias||[]){if(!d.disciplina&&!d.ano)continue;const c=canon(d.disciplina||'').name;
+    let x=state.deps.find(y=>N(canon(y.disc||'').name)===N(c)&&(!d.ano||!y.ano||y.ano===d.ano));
+    if(!x){x={ano:d.ano||'',disc:d.disciplina?c:'',nota:''};state.deps.push(x)}
+    if(d.nota_final&&!x.nota)x.nota=d.nota_final}
+  return done;
 }
 const LBL=[['nome',/^(NOMEDOALUNO|NOMEDAALUNA|NOMEDOAALUNOA|NOMEDOALUNOA|ALUNO|ALUNOA|ALUNA|ESTUDANTE|NOMEDOESTUDANTE|NOMECOMPLETO|NOMECIVIL|NOMEDOALUNOCIVIL|NOME)$/],
   ['pai',/^(NOMEDOPAI|NOMEPAI|PAI|FILIACAOPAI|FILIACAO2|NOMEDOPAIRESPONSAVEL)$/],['mae',/^(NOMEDAMAE|NOMEDOMAE|NOMEMAE|MAE|FILIACAOMAE|FILIACAO1|NOMEDAMAERESPONSAVEL)$/],
@@ -635,7 +794,8 @@ function extractInfo(rows0){
       if(ci<0&&lab.length>40)continue;
       let val=rest,raws=null,k=j+1;
       if(!val){while(k<T.length&&(T[k].t===raw||N(T[k].t)===N(raw)))k++;
-        if(k<T.length&&!lblKey(T[k].t.split(':')[0])&&!/:\s*$/.test(T[k].t)){val=T[k].t;raws=T[k].raw}}
+        if(k<T.length&&!lblKey(T[k].t.split(':')[0])&&!/:\s*$/.test(T[k].t)){val=T[k].t;raws=T[k].raw;
+          if(T[k].raw===undefined){let q=k+1;while(q<T.length&&!lblKey(T[q].t.split(':')[0])&&!/:/.test(T[q].t)&&N(T[q].t)!=='E'&&T[q].x0-T[q-1].x1<22){val+=' '+T[q].t;q++}}}}
       if(!val){const lx=T[j].x1,nx=(T.slice(j+1).find(q=>lblKey(q.t.split(':')[0]))||{x0:1e9}).x0;
         const ri=rows.indexOf(row),isX=T[j].raw!==undefined;const isLbl=q=>!!lblKey(q.t.split(':')[0]);
         const rb=rows[ri+1];
@@ -644,7 +804,7 @@ function extractInfo(rows0){
           if(c.length){val=c[0].t;raws=c[0].raw}}
         if(!val&&ci>=0)for(const rr of [rows[ri-1],rows[ri+1]]){if(!rr||rr.toks.some(isLbl))continue;const q=rr.toks.find(q=>q.x0>lx&&q.x0<nx);if(q){val=q.t;raws=q.raw;break}}}
       if(!val)continue;
-      if(key==='filiacao'){info.mae=info.mae||val;let q=k+1;while(q<T.length&&T[q].t===val)q++;if(q<T.length&&N(T[q].t)==='E')q++;while(q<T.length&&T[q].t==='e')q++;if(q<T.length&&!lblKey(T[q].t))info.pai=info.pai||T[q].t;continue}
+      if(key==='filiacao'){let q=k+1;while(q<T.length&&T[q].t===T[k].t)q++;const ie=T.findIndex((x,i)=>i>k&&N(x.t)==='E');let mae=val;if(ie>0&&T[k].raw===undefined)mae=T.slice(k,ie).map(x=>x.t).join(' ');info.mae=info.mae||mae;let pq=ie>0?ie+1:q;while(pq<T.length&&N(T[pq].t)==='E')pq++;if(pq<T.length&&!lblKey(T[pq].t)){let pai=T[pq].t;if(T[pq].raw===undefined){let r2=pq+1;while(r2<T.length&&!lblKey(T[r2].t)&&!/:/.test(T[r2].t)){pai+=' '+T[r2].t;r2++}}info.pai=info.pai||pai}continue}
       if(key==='nascimento'||key==='expedicao')val=dateStr(raws!=null?raws:val);
       info[key]=val;
     }}
@@ -734,8 +894,13 @@ function parseHistPdf(rows){
   for(;i<rows.length;i++){const T=rows[i].toks;if(!T.length)continue;
     const nm=T.filter(t=>t.x1<firstX).map(t=>t.t).join(' ').trim();if(!nm)continue;const k=N(nm);
     if(k==='TOTAL')break;if(/^(NOTA|CH|DISCIPLINAS|ANO)$/.test(k))continue;
-    const s={name:nm,g:P.map(()=>blankG())};
-    for(const t of T){if(t.x1<firstX)continue;const c=near(t.xc,cols);if(!c||c.k==='t')continue;const v=num(t.t);if(c.k==='n')s.g[c.p].nota=v!=null?fmtIn(v):t.t;else s.g[c.p].ch=v!=null?fmtIn(v):t.t}
+    const cn=canon(nm);const s={name:cn.idx<999?cn.name:nm,g:P.map(()=>blankG())};
+    let tot=null;
+    for(const t of T){if(t.x1<firstX)continue;const c=near(t.xc,cols);if(!c)continue;const v=num(t.t);if(c.k==='t'){tot=v;continue}if(c.k==='n')s.g[c.p].nota=v!=null?fmtIn(v):t.t;else s.g[c.p].ch=v!=null?fmtIn(v):t.t}
+    if(!s.g.some(g=>g.nota!==''||g.ch!==''))continue;
+    const bad=s.g.filter(g=>g.ch!==''&&num(g.ch)==null);
+    if(tot!=null&&bad.length===1){const known=s.g.reduce((a,g)=>a+(num(g.ch)||0),0);const v=tot-known;if(v>0&&v%20===0){bad[0].ch=fmtIn(v);bad[0].pad=true}}
+    else if(bad.length){const ok=s.g.map(g=>num(g.ch)).filter(v=>v!=null);for(const g of bad){if(ok.length){g.ch=fmtIn(ok[0]);g.pad=true}}}
     res.subjects.push(s)}
   for(;i<rows.length;i++){const T=rows[i].toks;const nm=T.filter(t=>t.x1<firstX).map(t=>t.t).join(' ');const k=N(nm);
     if(/FREQUENCIA/.test(k))for(const t of T){if(t.x1<firstX||t.xc>totX-20)continue;const m=near(t.xc,mids);let f=num(t.t);if(f!=null){if(f<=1)f*=100;res.periods[m.p].freq=fmtIn(+f.toFixed(2))}}
@@ -743,7 +908,7 @@ function parseHistPdf(rows){
   const ph=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='ESTABELECIMENTODEENSINO'));
   if(ph>=0){const hd=rows[ph].toks.slice().sort((a,b)=>a.xc-b.xc);const ce=hd.find(t=>N(t.t)==='ESTABELECIMENTODEENSINO'),cm=hd.find(t=>/MUNICIPIO/.test(N(t.t))),cl=hd[hd.length-1];
     const pc=[{k:'escola',x:ce.xc},...(cm?[{k:'municipio',x:cm.xc}]:[]),{k:'ult',x:cl.xc}];
-    for(let p=0;p<n;p++){const r=rows[ph+1+p];if(!r)break;for(const t of r.toks){if(t.x1<firstX)continue;const c=near(t.xc,pc);if(c.k==='ult'){if(mode==='eja')res.periods[p].semestre=t.t.trim()}else res.periods[p][c.k]=t.t.trim()}}}
+    for(let p=0;p<n;p++){const r=rows[ph+1+p];if(!r)break;for(const t of r.toks){if(t.x1<firstX)continue;const c=near(t.xc,pc);const v=t.t.trim();if(c.k==='ult'){if(mode==='eja')res.periods[p].semestre=((res.periods[p].semestre||'')+' '+v).trim();else if(!res.periods[p].ano&&/^(19|20)\d\d$/.test(v))res.periods[p].ano=v}else res.periods[p][c.k]=((res.periods[p][c.k]||'')+' '+v).trim()}}}
   const re=/(\d{4}|\(preencher\))\s*[–-]\s*Aprovado em regime de depend[êe]ncia n[oa]\s*(?:\(a\)\s*)?(?:disciplina\s*)?(.+?),\s*com nota final\s*(.+?)\.?\s*$/i;
   for(const r of rows){const line=r.toks.map(t=>t.t).join(' ');const m=line.match(re);
     if(m){const cl=x=>/preencher|^\[?nota\]?$|^disciplina$/i.test(x.trim())?'':x.trim();res.deps.push({ano:cl(m[1]),disc:cl(m[2]),nota:cl(m[3])})}
@@ -781,11 +946,22 @@ async function handleFiles(list){
   for(const file of list){
     const entry={name:file.name,status:'lendo…',period:null};files.push(entry);renderFiles();
     try{
-      const buf=await file.arrayBuffer();const isPdf=/\.pdf$/i.test(file.name)||file.type==='application/pdf';
-      let groups=[];
+      const buf=await file.arrayBuffer();const isImg=/^image\//.test(file.type)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
+      const isPdf=isImg||/\.pdf$/i.test(file.name)||file.type==='application/pdf';
+      let groups=[],canvases=null;
       if(isPdf){
-        const pages=await rowsFromPdf(buf);const chars=pages.flat().reduce((a,r)=>a+r.toks.reduce((b,t)=>b+t.t.length,0),0);
-        if(chars<30)throw new Error('PDF sem texto (digitalizado). Use o arquivo original do sistema ou preencha à mão.');
+        let pages=isImg?[]:await rowsFromPdf(buf);const chars=pages.flat().reduce((a,r)=>a+r.toks.reduce((b,t)=>b+t.t.length,0),0);
+        if(isImg||chars<30){
+          entry.status=isImg?'abrindo a foto…':'PDF escaneado: abrindo as páginas…';renderFiles();
+          canvases=isImg?[await imageToCanvas(file)]:await pdfToCanvases(buf,6);
+          if(readMode()==='ia'){
+            entry.status='lendo com IA (Claude)… pode levar até 1 minuto';renderFiles();
+            const r=await readWithAI(canvases);const d=applyAI(r,entry);
+            entry.status=(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue;
+          }
+          pages=[];for(let i=0;i<canvases.length;i++){ocrProgress=p=>{entry.status=`lendo a imagem no computador${canvases.length>1?` (página ${i+1} de ${canvases.length})`:''}… ${Math.round(p*100)}%`;renderFiles()};pages.push(await ocrCanvas(canvases[i]))}
+          ocrProgress=null;entry.ocr=true;
+        }
         let cur=null;for(const pg of pages){const hasHead=pg.some(r=>r.toks.some(t=>/^(DISCIPLINAS?|COMPONENTE)/.test(N(t.t))));if(hasHead||!cur){cur={rows:[],sheet:''};groups.push(cur)}cur.rows.push(...pg)}
       }else{
         const wb=XLSX.read(buf,{type:'array',cellDates:true});
@@ -809,12 +985,16 @@ async function handleFiles(list){
       if(!done.length){
         const info=extractInfo(groups.flatMap(g=>g.rows));
         const n=ALUNO_FIELDS.filter(([k])=>info[k]).length;
-        if(n<2)throw new Error('Não encontrei notas nem dados do aluno neste arquivo. Se for PDF, confira se tem texto selecionável.');
+        if(n<2){
+          if(readMode()==='ia'&&isPdf){entry.status='formato não reconhecido; lendo com IA (Claude)…';renderFiles();
+            const r=await readWithAI(canvases||await pdfToCanvases(buf,6));const d=applyAI(r,entry);
+            entry.status=(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue}
+          throw new Error(entry.ocr?'Não consegui ler esta imagem. Tente uma foto mais nítida, reta e com boa luz, ou ative "Ler com IA".':'Não encontrei notas nem dados do aluno neste arquivo. Se for de outra escola, ative "Ler com IA" no quadro abaixo da área de anexos.')}
         const oficial=isFichaMatricula(groups.flatMap(g=>g.rows));
         const filled=applyAlunoDoc(info,entry,oficial);
         done.push((oficial?'ficha de matrícula (dados pessoais têm prioridade)':'dados do aluno')+(filled.length?' · '+(oficial?'usado: ':'preenchido: ')+filled.join(', '):' · tudo já conferia'));
       }
-      entry.status=done.join(' | ');entry.ok=true;state.example=false;
+      entry.status=done.join(' | ')+(entry.ocr?' · lido por OCR: confira os números':'');entry.ok=true;state.example=false;
     }catch(e){console.error(e);entry.status=e.message||'Não foi possível ler o arquivo.';entry.err=true}
     renderFiles();renderAll();
   }
@@ -876,6 +1056,7 @@ function nextFreePeriod(ano){
 }
 const periodHasData=p=>state.subjects.some(s=>s.g[p]&&(s.g[p].nota!==''||s.g[p].ch!==''));
 function normField(k,v){v=String(v??'').trim();if(!v)return '';
+  if(k==='orgao')return v.replace(/\s*\/\s*/g,' / ').replace(/\/ R[IlJ1]$/,'/ RJ');
   if(k==='nome')return v.toUpperCase();
   if(k==='naturalidade')return titleCase(v.replace(/\s*[-\/]\s*[A-Z]{2}$/,''));
   if(k==='nacionalidade'&&/^BRASIL(I?ERA|EIRO)$/.test(N(v)))return 'Brasileira';
@@ -940,7 +1121,7 @@ function applyDepResults(subs,ano){
 function applyHist(h){
   const st=blankState(h.mode);
   Object.keys(st.aluno).forEach(k=>{if(h.info[k])st.aluno[k]=normField(k,h.info[k])});
-  h.periods.forEach((p,i)=>Object.assign(st.periods[i],Object.fromEntries(Object.entries(p).filter(([k,v])=>v!==''&&v!=null))));
+  h.periods.forEach((p,i)=>{if(p.municipio)p.municipio=p.municipio.replace(/\/\s*R[IL1]$/,'/RJ');Object.assign(st.periods[i],Object.fromEntries(Object.entries(p).filter(([k,v])=>v!==''&&v!=null)))});
   st.subjects=h.subjects;st.deps=h.deps;if(h.dataLocal)st.dataLocal=h.dataLocal;
   state=st;syncMode();
 }
@@ -1004,6 +1185,7 @@ function renderChecks(){
   const nOpen=out.filter(o=>o[0]!=='o').length;const cc=$('#checks-count');cc.textContent=nOpen?String(nOpen):'';cc.hidden=!nOpen;
   $('#checks').innerHTML=out.map(([c,t])=>`<li><span class="chip ${c}">${c==='o'?'ok':c==='b'?'atenção':'conferir'}</span><span>${esc_(t)}</span></li>`).join('');
 }
+function syncReadMode(){const m=readMode();const lt=$('#lock-txt');if(lt)lt.textContent=m==='ia'?'Leitura com IA ligada: fotos e PDFs escaneados são enviados à Anthropic. O resto é lido só neste computador.':'Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.';$('#rm-ocr').checked=m==='ocr';$('#rm-ia').checked=m==='ia';$('#ia-key').hidden=!(m==='ia'&&!IN_CLAUDE);$('#ia-claude').hidden=!(m==='ia'&&IN_CLAUDE);if(!IN_CLAUDE)$('#apikey').value=apiKey()}
 function syncMode(){$('#mode-reg').setAttribute('aria-pressed',state.mode==='reg');$('#mode-eja').setAttribute('aria-pressed',state.mode==='eja')}
 function renderAll(){
   syncMode();$('#example-banner').hidden=!state.example;$('#notaFonte').value=state.notaFonte;
@@ -1034,6 +1216,7 @@ document.addEventListener('input',e=>{
   else if(d.da!=null){state.deps[+d.da].ano=t.value.trim();t.classList.toggle('empty',!t.value)}
   else if(d.dd!=null){state.deps[+d.dd].disc=t.value;t.classList.toggle('empty',!t.value)}
   else if(d.dn!=null){state.deps[+d.dn].nota=t.value.trim();t.classList.toggle('empty',!t.value)}
+  else if(t.id==='apikey'){try{localStorage.setItem('hist.apikey',t.value.trim())}catch(e){}return}
   else if(d.es){const old=Object.assign({},esc);esc=Object.assign({},esc,{[d.es]:t.value});store.set('hist.esc',esc);
     state.periods.forEach(P=>{if(P.escola===old.curto)P.escola=esc.curto;if(P.municipio===`${old.municipio}/${old.uf}`)P.municipio=`${esc.municipio}/${esc.uf}`});
     if(d.es==='municipio'&&state.dataLocal.startsWith(titleCase(old.municipio)+','))state.dataLocal=state.dataLocal.replace(titleCase(old.municipio),titleCase(esc.municipio));
@@ -1047,6 +1230,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target,d=t.dataset;
+  if(t.name==='rm'){try{localStorage.setItem('hist.rm',t.value)}catch(e){}syncReadMode();return}
   if(d.arf!=null&&t.value!==''){const f=files[+d.arf];const stu=f.arf.students[+t.value];applyArf(f.arf,stu);f.arfDone=stu.nome;renderFiles();renderAll();return}
   if(d.si!=null){const p=+d.si;state.periods[p].sit=t.value;const ano=state.periods[p].ano;
     if(t.value==='APROV. C/DEP'&&!state.deps.some(x=>x.ano&&x.ano===ano)){state.deps.push({ano,disc:'',nota:''});renderDeps()}
@@ -1063,6 +1247,7 @@ document.addEventListener('click',e=>{
   else if(d.rmfile!=null){files.splice(+d.rmfile,1);renderFiles();return}
   else if(d.usediff!=null){const [i,j]=d.usediff.split(',').map(Number);const f=files[i],x=f.diff[j];state.aluno[x.k]=x.v;f.diff.splice(j,1);renderFiles();renderAluno()}
   else if(b.id==='add-subj'){state.subjects.push({name:'',g:Array.from({length:nPer()},blankG)});renderGrades();const el=$('#sn-'+(state.subjects.length-1));if(el)el.focus()}
+  else if(b.id==='apikey-clear'){try{localStorage.removeItem('hist.apikey')}catch(e){}$('#apikey').value='';setStatus('Chave da API apagada deste navegador.');return}
   else if(b.id==='esc-reset'){esc=Object.assign({},DEFAULT_ESC);store.set('hist.esc',esc);renderSig()}
   else if(b.id==='add-dep'){state.deps.push({ano:'',disc:'',nota:''});renderDeps()}
   else if(b.id==='btn-new'){state=blankState(state.mode);files=[];renderFiles();renderAll()}
@@ -1107,7 +1292,7 @@ window.addEventListener('resize',schedulePreview);
 
 (async()=>{
   setStatus('Carregando o modelo…');
-  try{await loadAssets();state=blankState('reg');renderAll();setStatus('')}
+  try{await loadAssets();state=blankState('reg');renderAll();syncReadMode();setStatus('')}
   catch(e){console.error(e);setStatus('Não foi possível carregar o modelo. Recarregue a página.',true)}
   if(window.claude&&claude.use)claude.use('downloads').then(d=>{DL=d}).catch(()=>{DL=null});
 })();
