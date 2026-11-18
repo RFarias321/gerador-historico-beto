@@ -758,13 +758,14 @@ async function handleFiles(list){
         applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola)},p);entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
       }
-      if(entry.arf){const st=matchArf(entry.arf);if(st){applyArf(entry.arf,st);entry.arfDone=st.nome}else done.push('escolha o aluno abaixo')}
+      if(entry.arf){const st=matchArf(entry.arf);if(st){applyArf(entry.arf,st);entry.arfDone=st.nome}}
       if(!done.length){
         const info=extractInfo(groups.flatMap(g=>g.rows));
         const n=ALUNO_FIELDS.filter(([k])=>info[k]).length;
         if(n<2)throw new Error('Não encontrei notas nem dados do aluno neste arquivo. Se for PDF, confira se tem texto selecionável.');
-        const filled=applyAlunoDoc(info,entry);
-        done.push('dados do aluno'+(filled.length?' · preenchido: '+filled.join(', '):' · nada novo para preencher'));
+        const oficial=isFichaMatricula(groups.flatMap(g=>g.rows));
+        const filled=applyAlunoDoc(info,entry,oficial);
+        done.push((oficial?'ficha de matrícula (dados pessoais têm prioridade)':'dados do aluno')+(filled.length?' · '+(oficial?'usado: ':'preenchido: ')+filled.join(', '):' · tudo já conferia'));
       }
       entry.status=done.join(' | ');entry.ok=true;state.example=false;
     }catch(e){console.error(e);entry.status=e.message||'Não foi possível ler o arquivo.';entry.err=true}
@@ -795,7 +796,17 @@ function parseArf(rows,isPdf){
   const info=extractInfo(rows.slice(0,h-1));
   return {info,ano:inferYear(info,{},rows.slice(0,h-1)),escola:cleanEscola(info.escola),students};
 }
-function matchArf(arf){if(state.example)return null;const k=N(state.aluno.nome),m=N(state.aluno.matricula);return (m&&arf.students.find(s=>N(s.mat)===m))||(k&&arf.students.find(s=>N(s.nome)===k))||null}
+function matchArf(arf){
+  if(state.example)return null;
+  const dig=x=>String(x||'').replace(/\D/g,'');const m=dig(state.aluno.matricula),k=N(state.aluno.nome);
+  let s=m.length>=6&&arf.students.find(x=>dig(x.mat)===m);if(s)return s;
+  if(!k)return null;
+  s=arf.students.find(x=>N(x.nome)===k);if(s)return s;
+  const words=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().split(/[^A-Z]+/).filter(w=>w.length>2&&!['DOS','DAS','DES'].includes(w));
+  const a=words(state.aluno.nome);let best=null,bs=0;
+  for(const x of arf.students){const b=words(x.nome);const inter=a.filter(w=>b.includes(w)).length;const sc=inter/Math.max(a.length,b.length);if(sc>bs){bs=sc;best=x}}
+  return bs>=0.75?best:null;
+}
 function applyArf(arf,stu){
   resetIfExample();
   if(!state.aluno.nome)state.aluno.nome=stu.nome.toUpperCase();
@@ -823,15 +834,17 @@ function normField(k,v){v=String(v??'').trim();if(!v)return '';
   if(k==='nascimento'||k==='expedicao')return dateStr(v);
   return v}
 const FIELD_LABEL=Object.fromEntries(ALUNO_FIELDS.map(([k,l])=>[k,l]));
-function applyAlunoDoc(info,entry){
+function applyAlunoDoc(info,entry,oficial){
   if(state.example){state=blankState(state.mode)}
   const filled=[],diff=[];
   for(const [k] of ALUNO_FIELDS){const v=normField(k,info[k]);if(!v)continue;const cur=state.aluno[k]||'';
+    if(oficial){if(N(cur)!==N(v)){state.aluno[k]=v;filled.push(FIELD_LABEL[k]+(cur&&k!=='nacionalidade'?` (antes: ${cur})`:''))}state.fromMatricula=state.fromMatricula||{};state.fromMatricula[k]=v;continue}
     if(!cur||(k==='nacionalidade'&&cur==='Brasileira'&&N(v)!==N(cur))){state.aluno[k]=v;filled.push(FIELD_LABEL[k])}
     else if(N(cur)!==N(v))diff.push({k,cur,v})}
   entry.diff=diff;
   return filled;
 }
+const isFichaMatricula=rows=>rows.some(r=>r.toks.some(t=>/^(FICHADEMATRICULA|CONFIRMACAODEMATRICULA)/.test(N(t.t))));
 function fillAluno(info){
   const A=state.aluno;const m={nome:'nome',matricula:'matricula',nascimento:'nascimento',naturalidade:'naturalidade',mae:'mae',pai:'pai',identidade:'identidade',orgao:'orgao',expedicao:'expedicao',nacionalidade:'nacionalidade'};
   if(state.example){state.aluno=blankState(state.mode).aluno}
@@ -886,7 +899,7 @@ function applyHist(h){
 /* ============ interface ============ */
 function setStatus(t,bad){const s=$('#status');s.textContent=t;s.style.color=bad?'var(--bad)':''}
 function renderFiles(){
-  $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''}">${esc_(f.arfDone?f.status.replace(/ \| escolha o aluno abaixo/,''):f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
+  $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''}">${esc_(f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
 }
 function renderAluno(){
   $('#aluno').innerHTML=ALUNO_FIELDS.map(([k,l,w,ph])=>`<label class="f ${w||''}">${l}<input id="al-${k}" data-al="${k}" value="${esc_(state.aluno[k]||'')}" ${ph?`placeholder="${ph}"`:''} class="${state.aluno[k]?'':'empty'}"></label>`).join('');
