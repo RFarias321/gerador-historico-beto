@@ -87,7 +87,7 @@ input.pad{border-style:dashed;border-color:var(--warn);color:var(--warn)}
 .obs-preview .ph{background:var(--warn-bg);color:var(--warn);font-style:normal;font-weight:600;padding:0 3px;border-radius:3px}
 aside.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:14px;min-width:0}
 @media (max-width:1100px){aside.side{position:static}}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .preview{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:10px}
 .preview canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18)}
 .checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.84rem}
@@ -142,6 +142,8 @@ section.card>h2 .step{display:inline-grid;place-items:center;width:26px;height:2
 .rm-opt input{width:auto;margin-top:3px;flex:none}
 .rm-sub{margin-left:26px;display:flex;flex-direction:column;gap:6px}
 .rm-note{color:var(--muted);font-size:.8rem}
+#btn-print{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
+@media (max-width:420px){.actions .btn{padding:10px 6px;font-size:.85rem;gap:5px}}
 .count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font:700 .75rem var(--f-ui)}
 .preview{border-radius:12px;box-shadow:var(--shadow);padding:12px;background:var(--accent-soft)}
 .pvhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px;font-weight:700;font-size:.9rem}
@@ -271,6 +273,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       <div class="actions">
         <button type="button" class="btn primary" id="dl-xlsx"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 3h10l4 4v14H5V3Zm9 1.5V8h3.5L14 4.5ZM8.2 11l2 3-2 3h1.9l1.1-1.8 1.1 1.8h1.9l-2-3 2-3h-1.9l-1.1 1.8-1.1-1.8H8.2Z"/></svg>Baixar Excel</button>
         <button type="button" class="btn primary" id="dl-pdf"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 3h10l4 4v14H5V3Zm9 1.5V8h3.5L14 4.5ZM8 12v5h1.3v-1.6h.8a1.7 1.7 0 0 0 0-3.4H8Zm1.3 1.1h.7a.6.6 0 0 1 0 1.2h-.7v-1.2Zm3.2-1.1v5h1.4a2.5 2.5 0 0 0 0-5h-1.4Zm1.3 1.1a1.4 1.4 0 0 1 0 2.8V13Z"/></svg>Baixar PDF</button>
+        <button type="button" class="btn primary" id="btn-print"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M7 3h10v4H7V3Zm-2 5h14a3 3 0 0 1 3 3v6h-4v4H6v-4H2v-6a3 3 0 0 1 3-3Zm3 8v3h8v-3H8Zm10-5.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>Imprimir</button>
       </div>
       <button type="button" class="btn" id="btn-reset"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8Z"/></svg><span>Novo aluno</span></button>
       <div class="status" id="status" role="status"></div>
@@ -1259,6 +1262,7 @@ document.addEventListener('click',e=>{
   else if(b.id==='mode-eja')setMode('eja');
   else if(b.id==='dl-xlsx')download('xlsx');
   else if(b.id==='dl-pdf')download('pdf');
+  else if(b.id==='btn-print')printHistorico();
   else return;
   if(state.example&&!['mode-reg','mode-eja','btn-new','dl-xlsx','dl-pdf'].includes(b.id)){state.example=false;$('#example-banner').hidden=true}
   schedulePreview();
@@ -1271,6 +1275,28 @@ fin.addEventListener('change',()=>{handleFiles([...fin.files]);fin.value=''});
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
 drop.addEventListener('drop',e=>handleFiles([...e.dataTransfer.files]));
 
+async function printHistorico(){
+  if(!READY)return;
+  if(IN_CLAUDE){setStatus('Dentro do Claude a impressão direta é bloqueada. Baixe o PDF e imprima, ou use o site do GitHub.');download('pdf');return}
+  const btn=$('#btn-print');btn.disabled=true;
+  try{
+    const sheet=buildSheet(state);const k=4;const cv=document.createElement('canvas');cv.width=Math.round(PAGE.w*k);cv.height=Math.round(PAGE.h*k);
+    const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.setTransform(k,0,0,k,0,0);ctx.lineCap='square';
+    paintSheet(sheet,canvasPainter(ctx));
+    const url=URL.createObjectURL(await new Promise(r=>cv.toBlob(r,'image/png')));
+    let fr=document.getElementById('printframe');
+    if(fr)fr.remove();
+    fr=document.createElement('iframe');fr.id='printframe';fr.title='Impressão';fr.setAttribute('aria-hidden','true');fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(fr);
+    const d=fr.contentWindow.document;d.open();
+    d.write('<!doctype html><html><head><meta charset="utf-8"><title>Histórico Escolar</title><style>@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0;background:#fff}img{display:block;width:210mm;height:297mm}</style></head><body><img alt="Histórico escolar"></body></html>');d.close();
+    const img=d.querySelector('img');await new Promise((ok,err)=>{img.onload=ok;img.onerror=()=>err(new Error('imagem'));img.src=url});
+    fr.contentWindow.focus();fr.contentWindow.print();
+    setStatus('Janela de impressão aberta. Para o próximo aluno, clique em “Novo aluno”.');
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){console.error(e);setStatus('Não foi possível abrir a impressão. Baixe o PDF e imprima por ele.',true)}
+  finally{btn.disabled=false}
+}
 let DL=null;
 async function download(kind){
   if(!READY)return;
