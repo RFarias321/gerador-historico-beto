@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Como usar o Gerador de Histórico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: manual de secretaria — coluna de leitura com passos numerados e capturas da tela real */
+:root{
+  --paper:#f3f5f7;--sheet:#fff;--ink:#1d2733;--muted:#5b6876;--line:#d6dde4;
+  --accent:#44546a;--accent-2:#2f3d50;--accent-soft:#e6ebf1;--band:#1f2c3b;--band-ink:#f2f5f8;--band-muted:#b9c6d4;--gold:#c9a227;
+  --warn:#9a5b00;--warn-bg:#fff4e0;--bad:#a3262a;--bad-bg:#fde9e9;--ok:#2c6e49;--ok-bg:#e5f3ea;
+  --f-ui:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#12171d;--sheet:#1a2129;--ink:#e3e8ee;--muted:#9aa7b4;--line:#2e3944;--accent:#9fb3cc;--accent-2:#c4d3e5;--accent-soft:#243140;--band:#0d141c;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--warn:#f0b35a;--warn-bg:#33270f;--bad:#f08a8d;--bad-bg:#3a1c1e;--ok:#7fcf9f;--ok-bg:#16301f;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#12171d;--sheet:#1a2129;--ink:#e3e8ee;--muted:#9aa7b4;--line:#2e3944;--accent:#9fb3cc;--accent-2:#c4d3e5;--accent-soft:#243140;--band:#0d141c;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--warn:#f0b35a;--warn-bg:#33270f;--bad:#f08a8d;--bad-bg:#3a1c1e;--ok:#7fcf9f;--ok-bg:#16301f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--f-ui)}
+img{max-width:100%;height:auto}
+.band{background:var(--band);color:var(--band-ink);border-bottom:3px solid var(--gold)}
+.band .in{max-width:980px;margin:0 auto;padding-block:28px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.09em;color:var(--gold);font-weight:700}
+h1{margin:0;font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.15;letter-spacing:-.015em;text-wrap:balance}
+.band p{margin:0;color:var(--band-muted);max-width:62ch}
+.back{display:inline-flex;align-self:flex-start;margin-top:10px;gap:6px;align-items:center;color:var(--band-ink);border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px;text-decoration:none;font-weight:600;font-size:.88rem}
+.back:hover{background:rgba(255,255,255,.08)}
+main{max-width:980px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+nav.toc{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+nav.toc h2{margin:0 0 8px;font-size:1rem}
+nav.toc ol{margin:0;padding-left:22px;columns:2;column-gap:28px}
+@media (max-width:640px){nav.toc ol{columns:1}}
+nav.toc a{color:var(--accent-2);text-decoration:none}
+nav.toc a:hover{text-decoration:underline}
+section.step{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;scroll-margin-top:16px}
+section.step>h2{margin:0;display:flex;align-items:center;gap:12px;font-size:1.25rem;line-height:1.3;text-wrap:balance}
+.n{flex:none;display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--sheet);font-weight:700;font-size:.95rem}
+section.step p,section.step li{max-width:68ch}
+section.step p{margin:0}
+section.step ul,section.step ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+figure{margin:4px 0 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+figure img{display:block;width:100%}
+figcaption{padding:8px 12px;font-size:.84rem;color:var(--muted);border-top:1px solid var(--line);background:var(--sheet)}
+.tip{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.94rem}
+.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+kbd{font:600 .82em var(--f-ui);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--sheet)}
+.btnlike{font-weight:700;white-space:nowrap}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;font-size:.94rem}
+.sw{display:inline-block;width:42px;height:24px;border-radius:5px;border:1px solid}
+.sw.y{background:var(--warn-bg);border-color:var(--warn)}
+.sw.r{background:var(--bad-bg);border-color:var(--bad)}
+.sw.o{border:1.5px dashed var(--warn);background:transparent}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--accent-soft);font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+tbody tr:last-child td{border-bottom:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:720px){.two{grid-template-columns:minmax(0,1fr)}}
+.card2{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.card2 h3{margin:0;font-size:1rem}
+footer{text-align:center;color:var(--muted);font-size:.85rem}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="band"><div class="in">
+  <div class="eyebrow">Tutorial · Secretaria escolar</div>
+  <h1>Como usar o Gerador de Histórico do Beto</h1>
+  <p>Do download no Conexão Educação até o histórico impresso, passo a passo. As imagens mostram um aluno fictício.</p>
+  <a class="back" href="./">← Voltar para o gerador</a>
+</div></div>
+
+<main>
+  <nav class="toc" aria-label="Sumário">
+    <h2>Sumário</h2>
+    <ol>
+      <li><a href="#baixar">Baixar os documentos no Conexão</a></li>
+      <li><a href="#tipo">Escolher Regular ou EJA</a></li>
+      <li><a href="#anexar">Anexar os documentos</a></li>
+      <li><a href="#aluno">Conferir os dados do aluno</a></li>
+      <li><a href="#notas">Conferir notas e carga horária</a></li>
+      <li><a href="#onde">Conferir onde o aluno cursou</a></li>
+      <li><a href="#obs">Conferir as observações</a></li>
+      <li><a href="#baixar-imprimir">Baixar, imprimir e começar outro aluno</a></li>
+      <li><a href="#escola">Escola emissora e assinaturas</a></li>
+      <li><a href="#editar">Guia rápido: como editar cada informação</a></li>
+      <li><a href="#fotos">Fotos e PDFs escaneados</a></li>
+      <li><a href="#duvidas">Dúvidas comuns</a></li>
+    </ol>
+  </nav>
+
+  <section class="step" id="baixar">
+    <h2><span class="n">1</span>Baixar os documentos no Conexão Educação</h2>
+    <p>Para cada aluno, baixe no sistema Conexão Educação, em Excel ou PDF:</p>
+    <ul>
+      <li><b>Ficha Individual do Aluno (FIA)</b> de cada ano cursado. Traz notas, carga horária, frequência, escola e resultado do ano.</li>
+      <li><b>Ata de Resultados Finais (ARF)</b> da turma de cada ano. Traz o número de matrícula e confirma a situação final.</li>
+      <li><b>Ficha de Matrícula</b>. Traz os dados pessoais e o documento de identidade (RG, órgão e data de expedição).</li>
+      <li>Se houver: a <b>ficha de dependência</b> e o <b>histórico antigo</b> do aluno.</li>
+    </ul>
+    <p class="tip">Os dados pessoais (nome, nascimento, filiação, naturalidade, RG) sempre vêm da <b>ficha de matrícula</b> quando ela é anexada. FIA e ata só completam o que faltar.</p>
+  </section>
+
+  <section class="step" id="tipo">
+    <h2><span class="n">2</span>Escolher Regular ou EJA</h2>
+    <p>No topo da página, escolha <span class="btnlike">Ensino Médio Regular · 3 séries</span> ou <span class="btnlike">EJA · 4 módulos</span>. O histórico muda de modelo na hora: 3 colunas no Regular, 4 na EJA.</p>
+    <figure><img src="tutorial/01-inicio.webp" alt="Tela inicial do gerador, com o seletor Regular ou EJA no topo e a área de anexos" width="1600" height="1012" loading="lazy"><figcaption>Tela inicial: o seletor de tipo de ensino fica no canto direito da faixa azul.</figcaption></figure>
+  </section>
+
+  <section class="step" id="anexar">
+    <h2><span class="n">3</span>Anexar os documentos</h2>
+    <p>Arraste todos os arquivos do aluno para a área tracejada, ou clique nela para escolher. Pode mandar tudo de uma vez e em qualquer ordem.</p>
+    <p>Cada arquivo aparece numa lista, com o que foi lido nele. Por exemplo: "1ª série · 2023 · 13 disciplinas".</p>
+    <figure><img src="tutorial/02-anexos.webp" alt="Área de anexos com quatro arquivos lidos e um aviso de dado diferente" width="1568" height="1914" loading="lazy"><figcaption>Lista de arquivos lidos. No último, um aviso "Diferente" com o botão "Usar deste arquivo".</figcaption></figure>
+    <ul>
+      <li><b>Aviso "Diferente":</b> um arquivo traz um dado diferente do que já está na tela. Nada é trocado sozinho. Clique em <span class="btnlike">Usar deste arquivo</span> se o novo valor estiver certo.</li>
+      <li><b>Ata da turma sem aluno identificado:</b> se você anexar só a ata, aparece uma lista para escolher o aluno. Com a FIA ou a ficha de matrícula anexada, o aluno é encontrado sozinho.</li>
+      <li><b>Arquivo errado?</b> Clique no <span class="btnlike">✕</span> ao lado dele para tirá-lo da lista.</li>
+    </ul>
+  </section>
+
+  <section class="step" id="aluno">
+    <h2><span class="n">4</span>Conferir os dados do aluno</h2>
+    <p>Todos os campos são preenchidos pelos documentos, e todos podem ser editados: clique no campo e digite. A prévia do histórico, à direita, muda na hora.</p>
+    <figure><img src="tutorial/03-aluno.webp" alt="Formulário de dados do aluno com o campo Identidade vazio destacado em amarelo" width="1568" height="900" loading="lazy"><figcaption>Campo em amarelo: nenhum documento trouxe esse dado. Aqui, a identidade.</figcaption></figure>
+    <p>Datas no formato <b>dd/mm/aaaa</b>, por exemplo 08/07/2005.</p>
+  </section>
+
+  <section class="step" id="notas">
+    <h2><span class="n">5</span>Conferir notas e carga horária</h2>
+    <p>A tabela mostra só as disciplinas que o aluno cursou. Cada série (ou módulo, na EJA) tem uma coluna de <b>Nota</b> e uma de <b>C/H</b>. A carga horária total é somada sozinha.</p>
+    <figure><img src="tutorial/04-notas.webp" alt="Tabela de disciplinas com notas, cargas horárias, uma nota em vermelho e cargas horárias com borda tracejada" width="1600" height="2300" loading="lazy"><figcaption>Tabela de notas. No fim ficam a frequência, a situação final e a tabela "Onde cursou".</figcaption></figure>
+    <div class="legend">
+      <span class="sw r" aria-hidden="true"></span><span><b>Vermelho:</b> nota abaixo da média num ano com dependência. Confira a observação no passo 7.</span>
+      <span class="sw o" aria-hidden="true"></span><span><b>Borda laranja tracejada:</b> carga horária que o documento não trazia. A página usou o valor do modelo; confira.</span>
+      <span class="sw y" aria-hidden="true"></span><span><b>Amarelo:</b> campo vazio que deveria estar preenchido.</span>
+    </div>
+    <ul>
+      <li><b>Ano da série:</b> o campo com o ano fica no topo de cada coluna.</li>
+      <li><b>Nota no histórico:</b> o padrão é o <b>total de pontos</b>, como no modelo da escola. Se preferir a média final, troque em "Nota no histórico".</li>
+      <li><b>Frequência</b> e <b>situação final</b> de cada ano ficam no fim da tabela. Ao escolher "APROV. C/DEP", uma linha de dependência é criada nas observações.</li>
+    </ul>
+  </section>
+
+  <section class="step" id="onde">
+    <h2><span class="n">6</span>Conferir onde o aluno cursou</h2>
+    <p>Logo abaixo da tabela de notas, em <b>Onde cursou</b>, ficam a escola e o município de cada série (na EJA, também o semestre). A escola vem da FIA de cada ano. Quando o documento não traz o município, confira esse campo.</p>
+  </section>
+
+  <section class="step" id="obs">
+    <h2><span class="n">7</span>Conferir as observações</h2>
+    <p>Aqui ficam as aprovações em regime de dependência. Cada linha tem ano, disciplina e nota final.</p>
+    <figure><img src="tutorial/05-observacoes.webp" alt="Seção de observações com uma dependência em Física sem nota final" width="1568" height="928" loading="lazy"><figcaption>Dependência sem nota: no histórico sai "(preencher)", para lembrar de completar.</figcaption></figure>
+    <ul>
+      <li><b>Sem dependência em nenhum ano:</b> as linhas somem do histórico.</li>
+      <li><b>Nota da dependência:</b> digite no campo "Nota final" ou anexe a ficha de dependência, que preenche sozinha.</li>
+      <li><span class="btnlike">+ Adicionar dependência</span> cria uma linha nova; o <span class="btnlike">✕</span> remove.</li>
+      <li><b>Outras observações:</b> escreva uma por linha na caixa de texto. Elas entram no histórico.</li>
+      <li><b>Local e data:</b> já vem com a data de hoje. Pode trocar.</li>
+    </ul>
+  </section>
+
+  <section class="step" id="baixar-imprimir">
+    <h2><span class="n">8</span>Baixar, imprimir e começar outro aluno</h2>
+    <div class="two">
+      <figure><img src="tutorial/07-lateral.webp" alt="Coluna da direita com os botões Baixar Excel, Baixar PDF, Imprimir e Novo aluno, as pendências e a prévia do histórico" width="1040" height="2186" loading="lazy"><figcaption>Botões, pendências e prévia.</figcaption></figure>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <p><b>Pendências</b> lista o que falta conferir. Quando aparecer "Tudo preenchido. Pode baixar.", o histórico está completo.</p>
+        <ul>
+          <li><span class="btnlike">Baixar Excel</span>: a planilha no modelo da escola, com o brasão. Dá para fazer ajustes finais no próprio Excel.</li>
+          <li><span class="btnlike">Baixar PDF</span>: pronto para enviar por e-mail ou arquivar.</li>
+          <li><span class="btnlike">Imprimir</span>: imprime só o histórico, numa folha A4.</li>
+          <li><span class="btnlike">Novo aluno</span>: limpa tudo para o próximo aluno. Clique duas vezes para confirmar.</li>
+        </ul>
+        <p class="tip">Na página dentro do Claude, a impressão direta é bloqueada. Lá, o botão Imprimir baixa o PDF para você imprimir.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="escola">
+    <h2><span class="n">9</span>Escola emissora e assinaturas</h2>
+    <p>No fim da página, abra <b>Escola que emite o histórico e assinaturas</b>. Ali ficam o nome da escola, endereço, município, CEP, decreto, D.O., U.A., Censo e as assinaturas da secretaria e da direção.</p>
+    <figure><img src="tutorial/06-escola.webp" alt="Painel com os dados da escola emissora e os campos das assinaturas" width="1568" height="1574" loading="lazy"><figcaption>Preencha uma vez: os dados ficam salvos neste navegador.</figcaption></figure>
+    <p>Só mude se o histórico for emitido por outra escola. O botão <span class="btnlike">Voltar para o CE Oswaldo Teixeira</span> restaura o padrão.</p>
+  </section>
+
+  <section class="step" id="editar">
+    <h2><span class="n">10</span>Guia rápido: como editar cada informação</h2>
+    <div class="tablebox"><table>
+      <thead><tr><th>Quero mudar…</th><th>Onde e como</th></tr></thead>
+      <tbody>
+        <tr><td>Nome, nascimento, filiação, RG</td><td>Passo 2 da página, "Confira os dados do aluno": clique no campo e digite.</td></tr>
+        <tr><td>Uma nota ou carga horária</td><td>Tabela do passo 3: clique na célula e digite. Use vírgula: 7,5.</td></tr>
+        <tr><td>O ano de uma série</td><td>Campo com o ano no topo da coluna da série.</td></tr>
+        <tr><td>Incluir uma disciplina</td><td><span class="btnlike">+ Adicionar disciplina</span> embaixo da tabela, depois digite o nome.</td></tr>
+        <tr><td>Tirar uma disciplina</td><td><span class="btnlike">✕</span> no fim da linha.</td></tr>
+        <tr><td>Mudar a ordem das disciplinas</td><td>Setas <span class="btnlike">↑</span> e <span class="btnlike">↓</span> no fim da linha.</td></tr>
+        <tr><td>Frequência ou situação final</td><td>Últimas linhas da tabela de notas.</td></tr>
+        <tr><td>Escola ou município de um ano</td><td>Tabela "Onde cursou", logo abaixo das notas.</td></tr>
+        <tr><td>Dependência e sua nota</td><td>Passo 4 da página, "Confira as observações".</td></tr>
+        <tr><td>Data no fim do histórico</td><td>Campo "Local e data", no passo 4 da página.</td></tr>
+        <tr><td>Cabeçalho da escola e assinaturas</td><td>Painel "Escola que emite o histórico e assinaturas", no fim da página.</td></tr>
+        <tr><td>Total de pontos ou média</td><td>"Nota no histórico", acima da tabela de notas.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="tip">Toda mudança aparece na prévia à direita na hora. Confira a prévia antes de baixar.</p>
+  </section>
+
+  <section class="step" id="fotos">
+    <h2><span class="n">11</span>Fotos e PDFs escaneados</h2>
+    <p>Documento só em papel? Mande uma foto (JPG ou PNG) ou um PDF escaneado. No quadro <b>Fotos e PDFs escaneados</b>, embaixo da área de anexos, escolha como ler:</p>
+    <div class="two">
+      <div class="card2"><h3>Ler no computador (OCR)</h3><p>Grátis, e a imagem não sai do computador. Funciona bem com digitalização ou foto reta, nítida e com boa luz. Sempre confira os números.</p></div>
+      <div class="card2"><h3>Ler com IA (Claude)</h3><p>Mais precisa, lê fotos ruins e históricos de outras escolas. A imagem é enviada à Anthropic. No site, pede uma chave da API Anthropic, cobrada por uso.</p></div>
+    </div>
+    <p class="tip warn">Para o OCR ler bem: foto tirada de cima, papel inteiro e reto, sem sombra. Fotos de iPhone em HEIC precisam ser convertidas para JPG.</p>
+  </section>
+
+  <section class="step" id="duvidas">
+    <h2><span class="n">12</span>Dúvidas comuns</h2>
+    <ul>
+      <li><b>Os dados dos alunos vão para a internet?</b> Não. Os arquivos são lidos no seu navegador. A única exceção é a opção "Ler com IA", desligada por padrão.</li>
+      <li><b>Apareceu "Não encontrei a tabela de disciplinas".</b> O arquivo não é uma ficha, ata ou histórico, ou é de outro formato. Para documentos de outras escolas, use "Ler com IA".</li>
+      <li><b>PDF que é só imagem:</b> a página percebe e usa o OCR, ou a IA se estiver ligada.</li>
+      <li><b>A página mostra a versão antiga.</b> Aperte <kbd>Ctrl</kbd> + <kbd>F5</kbd>.</li>
+      <li><b>Quero corrigir um histórico já gerado.</b> Anexe o Excel ou o PDF dele: a página lê de volta tudo o que estava preenchido.</li>
+    </ul>
+  </section>
+
+  <footer>Gerador de Histórico do Beto · <a href="./">voltar para o gerador</a></footer>
+</main>
+</body>
+</html>

@@ -144,6 +144,12 @@ section.card>h2 .step{display:inline-grid;place-items:center;width:26px;height:2
 .rm-note{color:var(--muted);font-size:.8rem}
 #btn-print{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
 @media (max-width:420px){.actions .btn{padding:10px 6px;font-size:.85rem;gap:5px}}
+.topright{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+@media (max-width:640px){.topright{align-items:flex-start}}
+.howto{display:inline-flex;align-items:center;gap:6px;color:var(--band-ink);text-decoration:none;font-weight:600;font-size:.88rem;border:1px solid rgba(255,255,255,.25);padding:5px 12px;border-radius:999px}
+.howto:hover{background:rgba(255,255,255,.1)}
+.firsttime{margin-top:6px!important;font-weight:600}
+.firsttime a{color:var(--accent-2)}
 .count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font:700 .75rem var(--f-ui)}
 .preview{border-radius:12px;box-shadow:var(--shadow);padding:12px;background:var(--accent-soft)}
 .pvhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px;font-weight:700;font-size:.9rem}
@@ -164,9 +170,12 @@ table.g tbody tr:hover td{background:var(--paper)}
       <p>Anexe as fichas do aluno, confira os dados e baixe o histórico no modelo oficial em Excel e PDF.</p>
       <span class="lock"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"/></svg><span id="lock-txt">Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.</span></span>
     </div>
+    <div class="topright">
+    <a class="howto" href="tutorial.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 15.5a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm1.6-6.1c-.7.5-1 .8-1 1.6h-2c0-1.6.7-2.3 1.6-3 .6-.4 1-.7 1-1.4a1.2 1.2 0 0 0-2.4 0h-2a3.2 3.2 0 0 1 6.4 0c0 1.4-.8 2.1-1.6 2.8Z"/></svg>Como usar</a>
     <div class="seg" role="group" aria-label="Tipo de ensino">
       <button type="button" id="mode-reg" aria-pressed="true">Ensino Médio Regular · 3 séries</button>
       <button type="button" id="mode-eja" aria-pressed="false">EJA · 4 módulos</button>
+    </div>
     </div>
   </header>
 
@@ -188,6 +197,7 @@ table.g tbody tr:hover td{background:var(--paper)}
             <li>se houver, a <b>ficha de dependência</b> e o <b>histórico antigo</b> do aluno (feito no modelo da escola ou gerado aqui), também em PDF.</li>
           </ul>
           <p>Pode anexar tudo de uma vez, em Excel ou PDF. Documento em papel? Pode mandar foto ou PDF escaneado.</p>
+          <p class="firsttime">Primeira vez? <a href="tutorial.html" target="_blank" rel="noopener">Veja o tutorial passo a passo</a>.</p>
         </div>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivos">
           <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" class="dropico"><path fill="currentColor" d="M11 16V7.8l-2.6 2.6L7 9l5-5 5 5-1.4 1.4L13 7.8V16h-2Zm-6 4a2 2 0 0 1-2-2v-3h2v3h14v-3h2v3a2 2 0 0 1-2 2H5Z"/></svg>

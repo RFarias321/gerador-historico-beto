@@ -3,7 +3,7 @@
 Gera o histórico escolar do Ensino Médio (Regular, 3 séries, e EJA, 4 módulos) no modelo oficial do
 Colégio Estadual Oswaldo Teixeira, em **Excel** e **PDF**, a partir dos documentos do Conexão Educação.
 
-**Usar:** abra o site publicado pelo GitHub Pages deste repositório.
+**Usar:** abra o site publicado pelo GitHub Pages deste repositório. O passo a passo está em `tutorial.html` (link "Como usar" no topo do gerador).
 
 ## Documentos que o gerador lê
 - **FIA** – Ficha Individual do Aluno (Histórico), um por ano: notas, C/H, frequência, escola e resultado.
