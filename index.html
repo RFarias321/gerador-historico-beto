@@ -150,6 +150,7 @@ section.card>h2 .step{display:inline-grid;place-items:center;width:26px;height:2
 .howto:hover{background:rgba(255,255,255,.1)}
 .firsttime{margin-top:6px!important;font-weight:600}
 .firsttime a{color:var(--accent-2)}
+.ffund{color:var(--accent-2);font-weight:600}
 .count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font:700 .75rem var(--f-ui)}
 .preview{border-radius:12px;box-shadow:var(--shadow);padding:12px;background:var(--accent-soft)}
 .pvhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px;font-weight:700;font-size:.9rem}
@@ -483,13 +484,18 @@ function buildSheet(st){
     seq.forEach((it,i)=>{if(it.src!==m[1])return;for(let k=1;k<=h;k++)if(!seq[i+k]||seq[i+k].src!==m[1]+k)return;merges.push([m[0],i+1,m[2],i+1+h])})}
   return {spec:sp,rows,merges,mode:st.mode};
 }
+const RESOLUCAO_PROMOV={
+  '2020':'Amparado pela Resolução SEEDUC/SUGEN nº 5.879/2020 publicada no D.O. de 14/10/2020.',
+  '2021':'Amparado pela Resolução SEEDUC/SUGEN nº 6015/2021 publicada no D.O. de 14/12/2021.'};
 function obsLines(st){
-  const out=[];
+  const auto=[];
+  st.periods.forEach(p=>{const a=String(p.ano||'').trim();if(p.sit==='PROMOV'&&RESOLUCAO_PROMOV[a]&&!auto.some(x=>x.res&&x.ano===a))auto.push({ano:a,res:true,ph:false,text:`${a} – ${RESOLUCAO_PROMOV[a]}`})});
   for(const d of st.deps){
     const nv=num(d.nota);const nota=d.nota?(nv!=null?nv.toFixed(2).replace('.',','):String(d.nota).trim()):'';
-    out.push({text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
+    auto.push({ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
   }
-  st.periods.forEach((p,i)=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>d.ano&&d.ano===p.ano))out.push({text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
+  st.periods.forEach(p=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>d.ano&&d.ano===p.ano))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
+  const out=auto.map((x,i)=>[x,i]).sort((a,b)=>((a[0].ano||'9999').localeCompare(b[0].ano||'9999'))||a[1]-b[1]).map(x=>x[0]);
   for(const l of (st.obsExtra||'').split('\n'))if(l.trim())out.push({text:l.trim(),ph:false});
   return out;
 }
@@ -708,8 +714,9 @@ async function ocrCanvas(c0){
 const IN_CLAUDE=!!(window.claude&&window.claude.use);
 const readMode=()=>{try{return localStorage.getItem('hist.rm')||'ocr'}catch(e){return 'ocr'}};
 const apiKey=()=>{try{return localStorage.getItem('hist.apikey')||''}catch(e){return ''}};
-const AI_SCHEMA={type:'object',additionalProperties:false,required:['tipo','aluno','periodos','dependencias'],properties:{
+const AI_SCHEMA={type:'object',additionalProperties:false,required:['tipo','nivel','aluno','periodos','dependencias'],properties:{
   tipo:{type:'string',enum:['historico','ficha_individual','ata_resultados','ficha_matricula','dependencia','outro']},
+  nivel:{type:'string',enum:['medio','fundamental','desconhecido']},
   aluno:{type:'object',additionalProperties:false,required:['nome','matricula','nascimento','nacionalidade','naturalidade','mae','pai','identidade','orgao','expedicao'],properties:Object.fromEntries(['nome','matricula','nascimento','nacionalidade','naturalidade','mae','pai','identidade','orgao','expedicao'].map(k=>[k,{type:'string'}]))},
   periodos:{type:'array',items:{type:'object',additionalProperties:false,required:['etapa','ano','escola','municipio','frequencia','situacao','disciplinas'],properties:{
     etapa:{type:'integer'},ano:{type:'string'},escola:{type:'string'},municipio:{type:'string'},frequencia:{type:'string'},situacao:{type:'string'},
@@ -720,6 +727,7 @@ function aiPrompt(){
   return `As imagens são páginas de um documento escolar brasileiro do Ensino Médio (${state.mode==='eja'?'EJA, por módulos':'regular, por séries'}): pode ser histórico escolar, ficha individual do aluno, ata de resultados finais, ficha de matrícula ou ficha de dependência.
 Transcreva os dados exatamente como aparecem, sem inventar nada. Campo que não aparece ou está ilegível fica como "".
 - tipo: o tipo do documento.
+- nivel: "fundamental" se o documento for do Ensino Fundamental (1º ao 9º ano), "medio" se for do Ensino Médio ou EJA de Ensino Médio, "desconhecido" se não der para saber.
 - aluno: dados pessoais. Datas no formato dd/mm/aaaa. Nomes como escritos.
 - periodos: um item por série/ano letivo (ou módulo, na EJA). etapa = número da série ou módulo (1 a 4); 0 se não souber. ano = ano letivo com 4 dígitos. escola e municipio daquele ano. frequencia = frequência anual em %, só o número (ex.: "94,24"). situacao = resultado final escrito no documento (ex.: "APROVADO", "PROMOVIDO", "APROVADO COM DEPENDÊNCIA", "REPROVADO").
 - disciplinas: nome da disciplina; nota = nota final ou total de pontos que o documento mostra para o ano; media = média final, se houver coluna própria; carga_horaria = horas do ano.
@@ -764,6 +772,7 @@ async function readWithAI(canvases){
   try{return JSON.parse(txt)}catch(e){throw new Error('A IA respondeu num formato inesperado. Tente de novo.')}
 }
 function applyAI(r,entry){
+  if(r&&r.nivel==='fundamental'){entry.fund=true;return [FUND_MSG]}
   resetIfExample();const done=[];const tipo=r.tipo||'outro';
   const filled=applyAlunoDoc(r.aluno||{},entry,tipo==='ficha_matricula');
   if(filled.length)done.push((tipo==='ficha_matricula'?'ficha de matrícula (IA)':'dados do aluno (IA)')+': '+filled.join(', '));
@@ -887,6 +896,16 @@ function inferYear(info,ctx,rows){
   for(const r of rows)for(const t of r.toks){const m=t.t.match(/ano\s*letivo\D{0,3}(20\d\d)/i);if(m)return m[1]}
   return null;
 }
+const FUND_MSG='Documentação do ensino fundamental: dados não são necessários no histórico do ensino médio.';
+function isFundamental(rows){
+  let fund=false,medio=false;
+  for(const r of rows)for(const t of r.toks){const k=N(t.t);
+    if(/ENSINOFUNDAMENTAL|^CURSOFUNDAMENTAL|^NIVELFUNDAMENTAL|^MODALIDADEFUNDAMENTAL|^ETAPAFUNDAMENTAL/.test(k)||(/^CURSO/.test(k)&&/FUNDAMENTAL/.test(k)))fund=true;
+    if(/ENSINOMEDIO|^CURSOMEDIO|^NIVELMEDIO|^MEDIO$|SERIEDOENSINOMEDIO/.test(k)||(/^CURSO/.test(k)&&/MEDIO/.test(k)))medio=true}
+  const curso=rows.flatMap(r=>r.toks).findIndex(t=>/^CURSO:?$/.test(N(t.t)));
+  if(curso>=0){const all=rows.flatMap(r=>r.toks);const nx=all[curso+1];if(nx){const k=N(nx.t);if(/FUNDAMENTAL/.test(k))fund=true;if(/MEDIO/.test(k))medio=true}}
+  return fund&&!medio;
+}
 function isDependencyFile(rows){return rows.some(r=>r.toks.some(t=>{if(/=/.test(t.t))return false;const k=N(t.t);return k.length<60&&/DEPENDENCIA/.test(k)&&!/APROVADO|LEGENDA/.test(k)}))}
 function parseHistPdf(rows){
   const h=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&r.toks.some(t=>/CARGAHORARIATOTAL/.test(N(t.t))));
@@ -970,7 +989,7 @@ async function handleFiles(list){
           if(readMode()==='ia'){
             entry.status='lendo com IA (Claude)… pode levar até 1 minuto';renderFiles();
             const r=await readWithAI(canvases);const d=applyAI(r,entry);
-            entry.status=(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue;
+            entry.status=entry.fund?FUND_MSG:(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue;
           }
           pages=[];for(let i=0;i<canvases.length;i++){ocrProgress=p=>{entry.status=`lendo a imagem no computador${canvases.length>1?` (página ${i+1} de ${canvases.length})`:''}… ${Math.round(p*100)}%`;renderFiles()};pages.push(await ocrCanvas(canvases[i]))}
           ocrProgress=null;entry.ocr=true;
@@ -980,8 +999,10 @@ async function handleFiles(list){
         const wb=XLSX.read(buf,{type:'array',cellDates:true});
         for(const sn of wb.SheetNames){const rows=rowsFromSheet(wb.Sheets[sn]);if(rows.length)groups.push({rows,sheet:sn})}
       }
-      const done=[];
+      const done=[];let fundOnly=groups.length>0;
       for(const g of groups){
+        if(isFundamental(g.rows)){if(!done.includes(FUND_MSG))done.push(FUND_MSG);continue}
+        fundOnly=false;
         {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
         if(arf){entry.arf=arf;done.push(`ata de resultados ${arf.ano||''} · ${arf.students.length} alunos`);continue}
@@ -995,13 +1016,14 @@ async function handleFiles(list){
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
       }
       if(entry.arf){const st=matchArf(entry.arf);if(st){applyArf(entry.arf,st);entry.arfDone=st.nome}}
+      if(fundOnly&&done.length){entry.status=FUND_MSG;entry.fund=true;entry.ok=true;renderFiles();continue}
       if(!done.length){
         const info=extractInfo(groups.flatMap(g=>g.rows));
         const n=ALUNO_FIELDS.filter(([k])=>info[k]).length;
         if(n<2){
           if(readMode()==='ia'&&isPdf){entry.status='formato não reconhecido; lendo com IA (Claude)…';renderFiles();
             const r=await readWithAI(canvases||await pdfToCanvases(buf,6));const d=applyAI(r,entry);
-            entry.status=(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue}
+            entry.status=entry.fund?FUND_MSG:(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue}
           throw new Error(entry.ocr?'Não consegui ler esta imagem. Tente uma foto mais nítida, reta e com boa luz, ou ative "Ler com IA".':'Não encontrei notas nem dados do aluno neste arquivo. Se for de outra escola, ative "Ler com IA" no quadro abaixo da área de anexos.')}
         const oficial=isFichaMatricula(groups.flatMap(g=>g.rows));
         const filled=applyAlunoDoc(info,entry,oficial);
@@ -1142,7 +1164,7 @@ function applyHist(h){
 /* ============ interface ============ */
 function setStatus(t,bad){const s=$('#status');s.textContent=t;s.style.color=bad?'var(--bad)':''}
 function renderFiles(){
-  $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''}">${esc_(f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
+  $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''} ${f.fund?'ffund':''}">${esc_(f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
 }
 function isPristine(){return !files.length&&!state.subjects.length&&!ALUNO_FIELDS.some(([k])=>k!=='nacionalidade'&&state.aluno[k])&&!state.deps.length}
 function renderAluno(){const pr=isPristine();
