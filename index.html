@@ -332,7 +332,7 @@ const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agos
 function hojeLinha(){const d=new Date();const c=(typeof esc!=='undefined'&&esc.municipio)?titleCase(esc.municipio):'Rio de Janeiro';return `${c}, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`}
 const SMALL=new Set(['de','da','do','das','dos','e','di','du']);
 const titleCase=s=>{s=String(s||'').trim();if(s!==s.toUpperCase())return s;return s.toLowerCase().split(/\s+/).map((w,i)=>i&&SMALL.has(w)?w:w.charAt(0).toUpperCase()+w.slice(1)).join(' ')};
-function mapSit(t){const k=N(t);if(!k)return '';if(/CLASSIFICAD/.test(k)&&!/RECLASSIF/.test(k))return 'CLASSIFICADO (VIDE OBSERVAÇÃO)';if(/DEPENDENCIA/.test(k))return 'APROV. C/DEP';if(/(REPROVADO|RETIDO)POR(FALTA|FREQ)/.test(k))return 'REP FREQ';if(/REPROVADO|RETIDO/.test(k))return 'REP NOTA';if(/PROMOVID/.test(k))return 'PROMOV';if(/APROVAD/.test(k))return 'APROVADO';return ''}
+function mapSit(t){const k=N(t);if(!k)return '';if(/CLASSIFICAD/.test(k)&&!/RECLASSIF/.test(k))return 'CLASSIFICADO (OBS.)';if(/DEPENDENCIA/.test(k))return 'APROV. C/DEP';if(/(REPROVADO|RETIDO)POR(FALTA|FREQ)/.test(k))return 'REP FREQ';if(/REPROVADO|RETIDO/.test(k))return 'REP NOTA';if(/PROMOVID/.test(k))return 'PROMOV';if(/APROVAD/.test(k))return 'APROVADO';return ''}
 function findSit(rows){for(const r of rows)for(const t of r.toks){const m=t.t.match(/CONSIDERAD[OA]\s*(?:\(A\))?\s*:\s*(.+)$/i);if(m)return mapSit(m[1])}return ''}
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 
@@ -361,7 +361,7 @@ async function loadAssets(){
 /* ============ estado ============ */
 const LABELS={reg:['1ª série','2ª série','3ª série'],eja:['1º módulo','2º módulo','3º módulo','4º módulo']};
 const ORD=['1º','2º','3º','4º'];
-const CLASSIF='CLASSIFICADO (VIDE OBSERVAÇÃO)';
+const CLASSIF='CLASSIFICADO (OBS.)';
 const SIT=['','APROVADO','APROV. C/DEP','PROMOV',CLASSIF,'REP FREQ','REP NOTA'];
 const ALIAS={ARTES:'ARTE',EDFISICA:'EDUCACAOFISICA',EDUCACAOFISICAI:'EDUCACAOFISICA',INGLES:'LINGUAINGLESA',LINGUAESTRANGEIRAINGLES:'LINGUAINGLESA',LINGUAESTRANGEIRAMODERNAINGLES:'LINGUAINGLESA',PORTUGUES:'LINGUAPORTUGUESALITERATURA',LINGUAPORTUGUESA:'LINGUAPORTUGUESALITERATURA',LINGUAPORTUGUESAELITERATURA:'LINGUAPORTUGUESALITERATURA',LITERATURA:'LINGUAPORTUGUESALITERATURA',PORTUGUESLITERATURA:'LINGUAPORTUGUESALITERATURA',MATEMATICAI:'MATEMATICA'};
 const DEFAULT_SIG={sec:{nome:'Prof. Roberto Farias',mat:'0920829-9',id:'41939638',cargo:'Secretário Escolar',escola:'Colégio Estadual Oswaldo Teixeira'},dir:{nome:'Prof. Jayme Nunes Jr',mat:'0249262-7',id:'36091057',cargo:'Diretor Geral',escola:'Colégio Estadual Oswaldo Teixeira'}};
@@ -481,7 +481,7 @@ function buildSheet(st){
   if(st.periods.some(p=>p.sit===CLASSIF)){
     const r54=sp.rows[54].cells;const ovS={};
     for(let p=0;p<n;p++)if(st.periods[p].sit===CLASSIF)for(const c of [3+2*p,4+2*p]){const cell=r54.find(x=>x.c===c);if(cell)ovS[c]=sitStyle(sp,cell.s)}
-    add(54,si,false,{ht:24,cs:ovS});
+    add(54,si,false,{cs:ovS});
   }else add(54,si);
   add(55);add(56);
   for(let p=0;p<n;p++){const P=st.periods[p];const used=P.ano||st.subjects.some(x=>x.g[p]&&(x.g[p].nota!==''||x.g[p].ch!==''));const ov={2:ORD[p],3:used?(P.escola||null):null};if(!used){add(57,ov,true);continue}
@@ -521,7 +521,7 @@ function obsStyle(sp,src){
   const base=(sp.rows[src].cells.find(c=>c.c===2)||sp.rows[src].cells[0]).s;
   return extraStyle(sp,'obs',base,{sz:OBS_SZ,h:'left',v:'center',wrap:false});
 }
-function sitStyle(sp,base){return extraStyle(sp,'sit'+base,base,{sz:7.5,h:'center',v:'center',wrap:true})}
+function sitStyle(sp,base){return extraStyle(sp,'sit'+base,base,{sz:7,h:'center',v:'center',wrap:false})}
 function obsWidth(sp){
   const last=sp.lastcol-1;let w=0;for(let c=2;c<=last;c++){const k=sp.cols.find(q=>c>=q.min&&c<=q.max);w+=Math.round((k?k.width:8.43)*7)*0.75}
   return w-4;
