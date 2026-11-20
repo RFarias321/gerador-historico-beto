@@ -370,6 +370,21 @@ const ESC_FIELDS=[['nome','Nome completo da escola','wide'],['curto','Nome curto
 let esc=Object.assign({},DEFAULT_ESC,store.get('hist.esc')||{});
 let state,sig=Object.assign({},DEFAULT_SIG,store.get('hist.sig')||{});
 let files=[];
+let SESSION=0;
+function resetAll(){
+  SESSION++;
+  state=blankState(state&&state.mode||'reg');files=[];ocrProgress=null;
+  try{$('#file').value=''}catch(e){}
+  renderFiles();renderAll();
+  const ok=!state.subjects.length&&!state.deps.length&&!files.length&&!state.obsExtra&&ALUNO_FIELDS.every(([k])=>k==='nacionalidade'||!state.aluno[k])&&state.periods.every(p=>!p.ano&&!p.freq&&!p.sit);
+  return ok;
+}
+function nomeParecido(a,b){
+  const w=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().split(/[^A-Z]+/).filter(x=>x.length>2&&!['DOS','DAS','DES'].includes(x));
+  const A=w(a),B=w(b);if(!A.length||!B.length)return true;const inter=A.filter(x=>B.includes(x)).length;return inter/Math.min(A.length,B.length)>=0.6;
+}
+function outroAluno(nome){return !!(nome&&state.aluno.nome&&!state.example&&!nomeParecido(state.aluno.nome,nome))}
+const OUTRO_MSG=n=>`Este documento é de outro aluno (${n}) e não foi usado. Para fazer o histórico dele, clique em “Novo aluno” e anexe de novo.`;
 const blankG=()=>({nota:'',ch:'',media:null,pad:false});
 function blankState(mode){
   const n=mode==='eja'?4:3;
@@ -403,7 +418,7 @@ function defCh(name,p){
   const cnt={};vals.forEach(v=>cnt[v]=(cnt[v]||0)+1);return +Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
 }
 function canon(name){
-  let k=N(name);k=ALIAS[k]||k;
+  name=collapseRepeat(name);let k=N(name);k=ALIAS[k]||k;
   const order=SPEC[state.mode].order;const i=order.findIndex(o=>N(o)===k);
   return i>=0?{key:k,name:order[i],idx:i}:{key:k,name:String(name).trim().toUpperCase(),idx:999};
 }
@@ -667,10 +682,10 @@ function valStr(v){if(v instanceof Date)return dateStr(v);if(typeof v==='number'
 function rowsFromSheet(ws){
   if(!ws||!ws['!ref'])return [];
   const rng=XLSX.utils.decode_range(ws['!ref']);
-  const a=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true});
+  const a=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true});const dup={};
   for(const m of ws['!merges']||[]){const v=(a[m.s.r-rng.s.r]||[])[m.s.c-rng.s.c];if(v==null)continue;
-    for(let r=m.s.r;r<=m.e.r;r++)for(let c=m.s.c;c<=m.e.c;c++){const rr=r-rng.s.r,cc=c-rng.s.c;a[rr]=a[rr]||[];if(a[rr][cc]==null)a[rr][cc]=v}}
-  return a.map((row,i)=>({y:i,toks:(row||[]).map((v,j)=>v==null||String(v).trim()===''?null:{t:valStr(v),raw:v,x0:j+rng.s.c,x1:j+rng.s.c,xc:j+rng.s.c}).filter(Boolean)}));
+    for(let r=m.s.r;r<=m.e.r;r++)for(let c=m.s.c;c<=m.e.c;c++){const rr=r-rng.s.r,cc=c-rng.s.c;a[rr]=a[rr]||[];if(a[rr][cc]==null||(String(a[rr][cc]).trim()===''&&(r!==m.s.r||c!==m.s.c))){a[rr][cc]=v;(dup[rr]=dup[rr]||{})[cc]=1}}}
+  return a.map((row,i)=>({y:i,toks:(row||[]).map((v,j)=>v==null||String(v).trim()===''?null:{t:valStr(v),raw:v,x0:j+rng.s.c,x1:j+rng.s.c,xc:j+rng.s.c,dup:!!(dup[i]&&dup[i][j])}).filter(Boolean)}));
 }
 async function rowsFromPdf(buf){
   const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;const pages=[];
@@ -892,6 +907,12 @@ function classify(lbl,grp){
   return null;
 }
 const STOP=/^(TOTAL|TOTAIS|FREQUENCIAGERAL|SITUACAO|RESULTADOFINAL|OBSERV|ASSINATURA|PROF|SECRETAR|DIRET|LEGENDA|INSPETOR|MATRICULA\d)/;
+function collapseRepeat(name){
+  const t=String(name||'').replace(/\s+/g,' ').trim();if(!t)return t;
+  for(let k=2;k<=6;k++){const w=t.split(' ');if(w.length%k)continue;const n=w.length/k;const part=w.slice(0,n).join(' ');let ok=true;for(let i=1;i<k;i++)if(w.slice(i*n,(i+1)*n).join(' ')!==part){ok=false;break}if(ok)return part}
+  return t;
+}
+function joinName(toks){const out=[];for(const t of toks){if(t.dup)continue;if(out.length&&out[out.length-1]===t.t)continue;out.push(t.t)}return collapseRepeat(out.join(' ').trim())}
 function parseTable(rows,isPdf){
   const h=rows.findIndex(r=>r.toks.some(t=>/^(DISCIPLINAS?|COMPONENTESCURRICULARES|COMPONENTECURRICULAR|COMPONENTES?)$/.test(N(t.t))));
   if(h<0)return null;
@@ -913,7 +934,7 @@ function parseTable(rows,isPdf){
   const subs=[];let empty=0;
   for(let i=start;i<rows.length;i++){
     const T=rows[i].toks;if(!T.length){empty++;if(!isPdf&&subs.length&&empty>=1)break;continue}empty=0;
-    const nameT=T.filter(t=>isPdf?t.x1<firstX-2:t.xc<firstX-tol);const name=nameT.map(t=>t.t).join(' ').trim();
+    const nameT=T.filter(t=>isPdf?t.x1<firstX-2:t.xc<firstX-tol);const name=joinName(nameT);
     if(name&&STOP.test(N(name)))break;
     const vals={};
     for(const t of T){if(nameT.includes(t))continue;let best=null,bd=1e9;for(const a of anchors){const d=Math.abs(a.xc-t.xc);if(d<bd){bd=d;best=a}}
@@ -1018,23 +1039,27 @@ function parseHist(rows){
 }
 async function handleFiles(list){
   if(!READY){setStatus('Aguarde o carregamento do modelo…');return}
+  const my=SESSION;const alive=()=>my===SESSION;
   for(const file of list){
+    if(!alive())return;
     const entry={name:file.name,status:'lendo…',period:null};files.push(entry);renderFiles();
     try{
-      const buf=await file.arrayBuffer();const isImg=/^image\//.test(file.type)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
+      const buf=await file.arrayBuffer();if(!alive())return;const isImg=/^image\//.test(file.type)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
       const isPdf=isImg||/\.pdf$/i.test(file.name)||file.type==='application/pdf';
       let groups=[],canvases=null;
       if(isPdf){
-        let pages=isImg?[]:await rowsFromPdf(buf);const chars=pages.flat().reduce((a,r)=>a+r.toks.reduce((b,t)=>b+t.t.length,0),0);
+        let pages=isImg?[]:await rowsFromPdf(buf);if(!alive())return;const chars=pages.flat().reduce((a,r)=>a+r.toks.reduce((b,t)=>b+t.t.length,0),0);
         if(isImg||chars<30){
           entry.status=isImg?'abrindo a foto…':'PDF escaneado: abrindo as páginas…';renderFiles();
-          canvases=isImg?[await imageToCanvas(file)]:await pdfToCanvases(buf,6);
+          canvases=isImg?[await imageToCanvas(file)]:await pdfToCanvases(buf,6);if(!alive())return;
           if(readMode()==='ia'){
             entry.status='lendo com IA (Claude)… pode levar até 1 minuto';renderFiles();
-            const r=await readWithAI(canvases);const d=applyAI(r,entry);
+            const r=await readWithAI(canvases);if(!alive())return;
+            if(r&&r.aluno&&outroAluno(r.aluno.nome)&&r.tipo!=='ata_resultados')throw new Error(OUTRO_MSG(r.aluno.nome));
+            const d=applyAI(r,entry);
             entry.status=entry.fund?FUND_MSG:(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue;
           }
-          pages=[];for(let i=0;i<canvases.length;i++){ocrProgress=p=>{entry.status=`lendo a imagem no computador${canvases.length>1?` (página ${i+1} de ${canvases.length})`:''}… ${Math.round(p*100)}%`;renderFiles()};pages.push(await ocrCanvas(canvases[i]))}
+          pages=[];for(let i=0;i<canvases.length;i++){ocrProgress=p=>{entry.status=`lendo a imagem no computador${canvases.length>1?` (página ${i+1} de ${canvases.length})`:''}… ${Math.round(p*100)}%`;renderFiles()};pages.push(await ocrCanvas(canvases[i]));if(!alive())return}
           ocrProgress=null;entry.ocr=true;
         }
         let cur=null;for(const pg of pages){const hasHead=pg.some(r=>r.toks.some(t=>/^(DISCIPLINAS?|COMPONENTE)/.test(N(t.t))));if(hasHead||!cur){cur={rows:[],sheet:''};groups.push(cur)}cur.rows.push(...pg)}
@@ -1046,11 +1071,12 @@ async function handleFiles(list){
       for(const g of groups){
         if(isFundamental(g.rows)){if(!done.includes(FUND_MSG))done.push(FUND_MSG);continue}
         fundOnly=false;
-        {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
+        {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){if(outroAluno(hist.info.nome))throw new Error(OUTRO_MSG(String(hist.info.nome).toUpperCase()));applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
         if(arf){entry.arf=arf;done.push(`ata de resultados ${arf.ano||''} · ${arf.students.length} alunos`);continue}
         const subs=parseTable(g.rows,isPdf);if(!subs)continue;
         const info=extractInfo(g.rows);const ctx={sheet:g.sheet,file:file.name};
+        if(outroAluno(info.nome))throw new Error(OUTRO_MSG(String(info.nome).toUpperCase()));
         const ano=inferYear(info,ctx,g.rows);
         if(isDependencyFile(g.rows)){const k=applyDepResults(subs,ano);fillAluno(info);done.push(`dependência: ${k} resultado(s) nas observações`);continue}
         let p=inferPeriod(info,ctx,state.mode);
@@ -1068,6 +1094,7 @@ async function handleFiles(list){
             const r=await readWithAI(canvases||await pdfToCanvases(buf,6));const d=applyAI(r,entry);
             entry.status=entry.fund?FUND_MSG:(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue}
           throw new Error(entry.ocr?'Não consegui ler esta imagem. Tente uma foto mais nítida, reta e com boa luz, ou ative "Ler com IA".':'Não encontrei notas nem dados do aluno neste arquivo. Se for de outra escola, ative "Ler com IA" no quadro abaixo da área de anexos.')}
+        if(outroAluno(info.nome))throw new Error(OUTRO_MSG(String(info.nome).toUpperCase()));
         const oficial=isFichaMatricula(groups.flatMap(g=>g.rows));
         const filled=applyAlunoDoc(info,entry,oficial);
         done.push((oficial?'ficha de matrícula (dados pessoais têm prioridade)':'dados do aluno')+(filled.length?' · '+(oficial?'usado: ':'preenchido: ')+filled.join(', '):' · tudo já conferia'));
@@ -1076,6 +1103,7 @@ async function handleFiles(list){
     }catch(e){console.error(e);entry.status=e.message||'Não foi possível ler o arquivo.';entry.err=true}
     renderFiles();renderAll();
   }
+  if(!alive())return;
   renderAluno();
   for(const f of files)if(f.arf&&!f.arfDone){const st=matchArf(f.arf);if(st){applyArf(f.arf,st);f.arfDone=st.nome}}
   renderFiles();renderAll();
@@ -1328,11 +1356,11 @@ document.addEventListener('click',e=>{
   else if(b.id==='apikey-clear'){try{localStorage.removeItem('hist.apikey')}catch(e){}$('#apikey').value='';setStatus('Chave da API apagada deste navegador.');return}
   else if(b.id==='esc-reset'){esc=Object.assign({},DEFAULT_ESC);store.set('hist.esc',esc);renderSig()}
   else if(b.id==='add-dep'){state.deps.push({ano:'',disc:'',nota:''});renderDeps()}
-  else if(b.id==='btn-new'){state=blankState(state.mode);files=[];renderFiles();renderAll()}
+  else if(b.id==='btn-new'){resetAll()}
   else if(b.id==='btn-reset'){
     if(!b.classList.contains('confirm')){b.classList.add('confirm');b.querySelector('span').textContent='Clique de novo para limpar tudo';clearTimeout(b._t);b._t=setTimeout(()=>{b.classList.remove('confirm');b.querySelector('span').textContent='Novo aluno'},4000);return}
     clearTimeout(b._t);b.classList.remove('confirm');b.querySelector('span').textContent='Novo aluno';
-    state=blankState(state.mode);files=[];renderFiles();renderAll();setStatus('Pronto para o próximo aluno.');window.scrollTo({top:0,behavior:'smooth'});$('#drop').focus({preventScroll:true});return}
+    const ok=resetAll();setStatus(ok?'Tudo zerado. Pronto para o próximo aluno.':'Atenção: algo não foi limpo. Recarregue a página (F5) antes de continuar.',!ok);window.scrollTo({top:0,behavior:'smooth'});$('#drop').focus({preventScroll:true});return}
   else if(b.id==='mode-reg')setMode('reg');
   else if(b.id==='mode-eja')setMode('eja');
   else if(b.id==='dl-xlsx')download('xlsx');
