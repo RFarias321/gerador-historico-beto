@@ -423,7 +423,7 @@ function semestreAuto(p){
 /* ============ montagem da planilha (modelo) ============ */
 function buildSheet(st){
   const sp=SPEC[st.mode],n=sp.ncols,eja=st.mode==='eja';
-  const seq=[];const add=(src,ov={},clear=false)=>{seq.push({src,ov,clear});return seq.length};
+  const seq=[];const add=(src,ov={},clear=false,ro=null)=>{seq.push({src,ov,clear,ro});return seq.length};
   const A=st.aluno;
   const F=eja?{nome:[20,3],matricula:[20,11],nat:[22,5],nasc:[22,11],mae:[24,3],e:[24,8],pai:[24,9],orgao:[26,7],exp:[26,11]}
              :{nome:[20,3],matricula:[20,9],nat:[22,4],nasc:[22,9],mae:[24,3],e:[24,6],pai:[24,7],orgao:[26,5],exp:[26,9]};
@@ -467,7 +467,8 @@ function buildSheet(st){
     add(57,ov,true)}
   const lines=obsLines(st).map(l=>l.text);
   if(eja){add(61);add(62)}else{add(60);add(61)}
-  lines.forEach(t=>add(eja?63:62,{2:t},true));
+  const obsSrc=eja?63:62,obsS=obsStyle(sp,obsSrc);
+  for(const t of lines)for(const seg of wrapObs(t,obsWidth(sp)))add(obsSrc,{2:seg},true,{s:obsS,ht:OBS_HT});
   const S=sig,sigRows=r0=>{const a=eja?7:5;return {[r0]:{2:S.sec.nome,[a]:S.dir.nome},[r0+1]:{2:'Matrícula '+S.sec.mat,[a]:'Matrícula '+S.dir.mat},[r0+2]:{2:'ID '+S.sec.id,[a]:'ID '+S.dir.id},[r0+3]:{2:S.sec.cargo,[a]:S.dir.cargo},[r0+4]:{2:S.sec.escola,[a]:S.dir.escola}}};
   const tailOv=Object.assign({[eja?78:79]:{2:st.dataLocal||null}},sigRows(eja?82:83));
   for(let r=eja?67:66;r<=(eja?86:87);r++)add(r,tailOv[r]||{});
@@ -475,9 +476,9 @@ function buildSheet(st){
   // linhas -> células
   const rows=seq.map(it=>{
     const tr=sp.rows[it.src]||{ht:null,cells:[]};
-    const cells=tr.cells.map(c=>({c:c.c,s:c.s,val:c.vm?{logo:true}:it.clear?null:(c.runs?{runs:c.runs}:(c.v!==undefined?c.v:null))}));
+    const cells=tr.cells.map(c=>({c:c.c,s:it.ro&&it.ro.s!=null?it.ro.s:c.s,val:c.vm?{logo:true}:it.clear?null:(c.runs?{runs:c.runs}:(c.v!==undefined?c.v:null))}));
     for(const k in it.ov){const c=+k;let cell=cells.find(x=>x.c===c);if(!cell){cell={c,s:0,val:null};cells.push(cell)}cell.val=it.ov[k]}
-    cells.sort((a,b)=>a.c-b.c);return {ht:tr.ht,cells,src:it.src};
+    cells.sort((a,b)=>a.c-b.c);return {ht:it.ro&&it.ro.ht?it.ro.ht:tr.ht,cells,src:it.src};
   });
   const merges=[];
   for(const m of sp.mrg){const h=m[3]-m[1];
@@ -487,6 +488,31 @@ function buildSheet(st){
 const RESOLUCAO_PROMOV={
   '2020':'Amparado pela Resolução SEEDUC/SUGEN nº 5.879/2020 publicada no D.O. de 14/10/2020.',
   '2021':'Amparado pela Resolução SEEDUC/SUGEN nº 6015/2021 publicada no D.O. de 14/12/2021.'};
+/* ---- observações: quebra de linha dentro das margens, fonte 7 ---- */
+const OBS_SZ=7,OBS_HT=9;
+function obsStyle(sp,src){
+  if(sp.obsS!=null)return sp.obsS;
+  const base=(sp.rows[src].cells.find(c=>c.c===2)||sp.rows[src].cells[0]).s;
+  const st=JSON.parse(JSON.stringify(sp.styles[base]));st.font.sz=OBS_SZ;st.h='left';st.v='center';
+  sp.obsBase=base;sp.obsS=sp.styles.length;sp.styles.push(st);return sp.obsS;
+}
+function obsWidth(sp){
+  const last=sp.lastcol-1;let w=0;for(let c=2;c<=last;c++){const k=sp.cols.find(q=>c>=q.min&&c<=q.max);w+=Math.round((k?k.width:8.43)*7)*0.75}
+  return w-4;
+}
+let MEAS=null;
+function textW(t,italic){if(!MEAS)MEAS=document.createElement('canvas').getContext('2d');MEAS.font=`${italic?'italic ':''}400 ${OBS_SZ*10}px Carlito, Calibri, sans-serif`;return MEAS.measureText(t).width/10}
+function wrapObs(text,maxW){
+  const out=[];
+  for(const para of String(text).split('\n')){
+    const words=para.split(/\s+/).filter(Boolean);let cur='';
+    for(let w of words){
+      while(textW(w,true)>maxW){let i=w.length;while(i>1&&textW(w.slice(0,i),true)>maxW)i--;if(cur){out.push(cur);cur=''}out.push(w.slice(0,i));w=w.slice(i)}
+      const t=cur?cur+' '+w:w;if(cur&&textW(t,true)>maxW){out.push(cur);cur=w}else cur=t}
+    if(cur)out.push(cur);
+  }
+  return out.length?out:[''];
+}
 function obsLines(st){
   const auto=[];
   st.periods.forEach(p=>{const a=String(p.ano||'').trim();if(p.sit==='PROMOV'&&RESOLUCAO_PROMOV[a]&&!auto.some(x=>x.res&&x.ano===a))auto.push({ano:a,res:true,ph:false,text:`${a} – ${RESOLUCAO_PROMOV[a]}`})});
@@ -516,6 +542,23 @@ async function makeXlsx(sheet){
   const mg=sheet.merges.map(m=>`<mergeCell ref="${colL(m[0])}${m[1]}:${colL(m[2])}${m[3]}"/>`);
   const xml=sp.head.replace('{{DIM}}',`B2:${colL(sp.lastcol-1)}${Nr-1}`)+'<sheetData>'+rx+'</sheetData>'+sp.tail.replace('{{MERGES}}',mg.length?`<mergeCells count="${mg.length}">${mg.join('')}</mergeCells>`:'');
   z.file('xl/worksheets/sheet1.xml',xml);
+  if(sp.obsS!=null){
+    let st=await z.file('xl/styles.xml').async('string');
+    const xfsM=st.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
+    const xfs=xfsM[2].match(/<xf\b[^>]*?(?:\/>|>[\s\S]*?<\/xf>)/g);
+    if(xfs.length===sp.obsS){
+      const fontsM=st.match(/<fonts count="(\d+)"([^>]*)>([\s\S]*?)<\/fonts>/);
+      const fonts=fontsM[3].match(/<font\b[^>]*?(?:\/>|>[\s\S]*?<\/font>)/g);
+      const bx=xfs[sp.obsBase];const fid=+(bx.match(/fontId="(\d+)"/)||[0,0])[1];
+      const nf=fonts[fid].replace(/<sz val="[\d.]+"\/>/,`<sz val="${OBS_SZ}"/>`);
+      const newFid=fonts.length;
+      st=st.replace(fontsM[0],`<fonts count="${newFid+1}"${fontsM[2]}>${fontsM[3]}${nf}</fonts>`);
+      let nx=bx.replace(/fontId="\d+"/,`fontId="${newFid}"`);if(!/applyFont=/.test(nx))nx=nx.replace('<xf ','<xf applyFont="1" ');
+      nx=nx.replace(/<alignment\b[^>]*\/>/,'<alignment horizontal="left" vertical="center"/>');
+      st=st.replace(xfsM[0],`<cellXfs count="${sp.obsS+1}">${xfsM[2]}${nx}</cellXfs>`);
+      z.file('xl/styles.xml',st);
+    }
+  }
   let wb=await z.file('xl/workbook.xml').async('string');
   const area=`Historico!$A$1:$${colL(sp.lastcol)}$${Nr}`;
   wb=wb.replace(/(<definedName name="_xlnm\.Print_Area"[^>]*>)[^<]*/,(m,a)=>a+area).replace(/<calcPr([^>]*?)\/>/,(m,a)=>a.includes('fullCalcOnLoad')?m:`<calcPr${a} fullCalcOnLoad="1"/>`);
