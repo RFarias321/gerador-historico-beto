@@ -105,17 +105,9 @@
     "2025"
   ],
   "sessaoRecuperada": true,
-  "turma": {
-    "alunos": 1,
-    "atas": 4,
-    "depoisDasAtas": 19,
-    "comDependencia": [
-      2,
-      1,
-      2,
-      1
-    ]
-  },
+  "turmaDesligada": true,
+  "item5": "true ✓ CE OSWALDO TEIXEIRA",
+  "previaAmpliada": true,
   "regras": {
     "eja_9_5": true,
     "eja_10": false,

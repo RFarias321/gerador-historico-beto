@@ -109,6 +109,7 @@ input.pad{border-style:dashed;border-color:var(--warn);color:var(--warn)}
 .help-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--sheet,#fff);color:var(--accent-2);font-weight:700;font-size:.78rem;cursor:pointer;flex:none;padding:0}
 .helpbox{background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:.86rem;margin:0 0 12px}
 #mat-form input.inval{border-color:var(--bad);background:var(--bad-bg)}
+.esc-q{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:8px 12px;font-size:.9rem;margin:0 0 10px}.big-pv{display:flex;justify-content:center;background:var(--paper);overflow:auto}.big-pv canvas{box-shadow:0 2px 12px rgba(0,0,0,.18);background:#fff}.tm-left{font-size:.85rem;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .app-ver{font-size:.75rem;color:var(--muted);text-align:center;margin:4px 0 0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn.danger{color:var(--bad);border-color:var(--bad)}
@@ -312,8 +313,9 @@ table.g tbody tr:hover td{background:var(--paper)}
       </section>
 
       <section class="card">
-        <details class="cfg" id="cfg" open>
-          <summary><span class="step">5</span>Escola que emite o histórico e assinaturas</summary>
+        <h2><span class="step">5</span>Escola que emite o histórico e assinaturas</h2>
+        <div id="cfg">
+          <p class="esc-q" id="esc-q"></p>
           <p class="hint">Cabeçalho e assinaturas do histórico. Ficam salvos neste navegador. Mude só se o histórico for emitido por outra escola.</p>
           <div class="subhead">Escola e ato autorizativo</div>
           <div class="form" id="esc-form"></div>
@@ -322,7 +324,7 @@ table.g tbody tr:hover td{background:var(--paper)}
           <div class="form" id="sig-sec"></div>
           <div class="subhead">Direção</div>
           <div class="form" id="sig-dir"></div>
-        </details>
+        </div>
       </section>
     </div>
 
@@ -2198,6 +2200,7 @@ function initSections(){document.querySelectorAll('.grid section.card').forEach(
   const hb=document.createElement('button');hb.type='button';hb.className='help-btn';hb.textContent='?';hb.setAttribute('aria-label','Ajuda sobre esta etapa');hb.dataset.help=n;h.appendChild(hb);
   if(sec.querySelector('h2')&&n!=='1'){sec.classList.add('sec');const bd=document.createElement('span');bd.className='sec-badge';h.appendChild(bd);h.classList.add('sec-h');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded','true')}})}
 function secBadges(per){document.querySelectorAll('.sec').forEach(sec=>{const n=sec.dataset.sec;const b=sec.querySelector('.sec-badge');if(!b)return;const k=per[n]||0;
+  if(n==='5'){b.className='sec-badge o';b.hidden=false;b.textContent='✓ '+(esc.curto||esc.nome||'escola');const q=document.getElementById('esc-q');if(q)q.innerHTML=`É para o <b>${esc_(esc.curto||esc.nome||'')}</b>? Se o histórico for emitido por outra escola, mude os dados abaixo.`;sec.querySelector('.sec-h').setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')));return}
   b.className='sec-badge '+(isPristine()?'':k?'w':'o');b.textContent=isPristine()?'':k?`${k} para conferir`:'✓ conferido';b.hidden=isPristine();
   sec.querySelector('.sec-h').setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))})}
 function autoCollapse(){if(isPristine())return;const per={};for(const li of document.querySelectorAll('#checks [data-go]')){const s=SEC_OF(li.dataset.go);if(s)per[s]=(per[s]||0)+1}
@@ -2245,9 +2248,21 @@ function finishPrompt(what){if(typeof TURMA!=='undefined'&&TURMA&&TURMA.on){tmFi
 /* ---------- depois de cada lote de arquivos: recolher o que está conferido ---------- */
 {const _hf=handleFiles;handleFiles=async function(list){AI_OK=false;const r=await _hf(list);try{renderChecks();autoCollapse()}catch(e){}return r}}
 window.addEventListener('error',e=>{try{setStatus('Algo deu errado na página. Se o problema continuar, recarregue (F5): o trabalho fica guardado. (detalhe: '+(e.message||'')+')',true)}catch(_){}});
-function initV2(){initSections();
+function initV2(){initSections();{const s5=document.querySelector('.sec[data-sec="5"]');if(s5)s5.classList.add('collapsed')}
+  {const cv=$('#cv');if(cv){cv.title='Clique para ampliar';cv.style.cursor='zoom-in';cv.tabIndex=0;cv.setAttribute('role','button');cv.setAttribute('aria-label','Ampliar a prévia do histórico');const pv=cv.closest('.preview');const h=pv&&pv.querySelector('.pvsub');if(h)h.textContent='folha A4 · clique para ampliar'}}
   const side=document.querySelector('aside.side');if(side&&!document.getElementById('app-ver')){const p=document.createElement('p');p.id='app-ver';p.className='app-ver';p.innerHTML=`Versão ${APP_VERSION} · ${APP_DATA} · <a href="tutorial.html#novidades" target="_blank">o que mudou</a>`;side.appendChild(p)}
   renderChecks()}
+
+/* ---------- prévia do histórico ampliada ---------- */
+function bigPreview(){const page=A4.p;const vw=Math.min(window.innerWidth-80,900);let zoom=1;
+  const draw=box=>{box.innerHTML='';const w=Math.round(vw*zoom),k=w/page.w,dpr=Math.min(window.devicePixelRatio||1,2);const cv=document.createElement('canvas');cv.width=Math.round(page.w*k*dpr);cv.height=Math.round(page.h*k*dpr);cv.style.width=w+'px';cv.style.height=Math.round(page.h*k)+'px';
+    const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.setTransform(k*dpr,0,0,k*dpr,0,0);try{paintSheet(buildSheet(state),canvasPainter(ctx))}catch(e){console.warn(e)}box.appendChild(cv)};
+  const bg=document.createElement('div');bg.className='mdl-bg';bg.innerHTML=`<div class="mdl wide" role="dialog" aria-modal="true" aria-label="Prévia do histórico ampliada"><div class="mdl-body big-pv"></div><div class="mdl-foot"><button type="button" class="btn small" data-z="-">− Menor</button><button type="button" class="btn small" data-z="+">+ Maior</button><span style="flex:1"></span><button type="button" class="btn small" data-z="print">Imprimir histórico</button><button type="button" class="btn small primary" data-z="x">Fechar</button></div></div>`;
+  document.body.appendChild(bg);const box=bg.querySelector('.big-pv');draw(box);const close=()=>bg.remove();
+  bg.addEventListener('click',e=>{const z=e.target.dataset&&e.target.dataset.z;if(e.target===bg||z==='x')return close();if(z==='+'){zoom=Math.min(zoom+.25,2.5);draw(box)}else if(z==='-'){zoom=Math.max(zoom-.25,.5);draw(box)}else if(z==='print'){close();document.getElementById('btn-print').click()}});
+  bg.addEventListener('keydown',e=>{if(e.key==='Escape')close()});bg.querySelector('[data-z="x"]').focus()}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='cv')bigPreview()});
+document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='cv'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();bigPreview()}});
 
 /* ===== v2: prévia da impressão para assinatura, salvar/abrir aluno, gov.br ===== */
 const GOVBR_TXT='Para assinar sem imprimir: baixe o PDF, abra <a href="https://assinador.iti.br" target="_blank" rel="noopener">assinador.iti.br</a> (conta gov.br, gratuito), envie o arquivo e posicione a assinatura sobre o nome de cada um. A assinatura gov.br tem validade legal.';
@@ -2295,6 +2310,7 @@ function initV2Files(){const side=document.querySelector('aside.side .packrow');
 document.addEventListener('click',e=>{if(e.target.closest('#btn-save'))saveAluno()});
 
 /* ===== v2: modo turma — vários alunos, cada arquivo vai para o aluno certo ===== */
+const TURMA_ATIVA=false; /* modo turma desligado por enquanto; o código fica para a próxima versão */
 let TURMA=null,TM_BUSY=false;const HF_ONE=handleFiles;
 const tmNew=()=>({on:true,mode:state&&state.mode||'reg',alunos:[],arfs:[],orfaos:[],fps:[],cur:null,seq:1,criada:Date.now()});
 const tmW=id=>TURMA.alunos.find(a=>a.id===id);
@@ -2371,7 +2387,7 @@ async function tmSaveFile(){tmSync();const txt=serialize({app:'gerador-historico
 async function tmKv(v,get){const db=await sessDb();const r=await new Promise((res,rej)=>{const tx=db.transaction('kv',get?'readonly':'readwrite');const s=tx.objectStore('kv');let q;if(get)q=s.get('turma');else if(v==null)s.delete('turma');else s.put(v,'turma');tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error)});db.close();return r}
 let tmSaveT=null;function tmSave(){clearTimeout(tmSaveT);tmSaveT=setTimeout(()=>{if(TURMA&&!TM_BUSY){tmSync();tmKv(TURMA).catch(e=>console.warn('turma',e))}},400)}
 {const _s=sessSaveNow;sessSaveNow=async function(){if(TURMA&&TURMA.on){if(!TM_BUSY){tmSync();try{await tmKv(TURMA)}catch(e){console.warn(e)}}return}return _s()}}
-{const _r=sessRestore;sessRestore=async function(){try{const t=await tmKv(null,true);if(t&&t.on){TURMA=t;const c=TURMA.cur;TURMA.cur=null;tmBlank();if(c!=null&&tmW(c)){await tmOpen(c)}else{renderFiles();renderAll();tmRender()}setStatus(`Turma recuperada: ${TURMA.alunos.length} aluno(s).`);return true}if(t)TURMA=t}catch(e){console.warn(e)}return _r()}}
+{const _r=sessRestore;sessRestore=async function(){try{const t=await tmKv(null,true);if(t&&!TURMA_ATIVA){const n=(t.alunos||[]).length;setTimeout(()=>tmLeftover(n),1500)}else if(t&&t.on){TURMA=t;const c=TURMA.cur;TURMA.cur=null;tmBlank();if(c!=null&&tmW(c)){await tmOpen(c)}else{renderFiles();renderAll();tmRender()}setStatus(`Turma recuperada: ${TURMA.alunos.length} aluno(s).`);return true}if(t)TURMA=t}catch(e){console.warn(e)}return _r()}}
 {const _sc=scheduleConf;scheduleConf=function(){if(TM_BUSY)return;return _sc.apply(this,arguments)}}
 {const _h=handleFiles;handleFiles=async function(list){if(TURMA&&TURMA.on&&!TM_BUSY){return tmRoute([...list])}return _h(list)}}
 {const _rs=resetAll;resetAll=function(){if(TURMA&&TURMA.on&&TURMA.cur!=null&&!TM_BUSY){const w=tmW(TURMA.cur);const r=_rs.apply(this,arguments);if(w){w.state=state;w.files=files;w.done=false}tmRender();tmSave();return r}return _rs.apply(this,arguments)}}
@@ -2394,7 +2410,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-tm],
   else if(a==='clear'){const ok=await askModal(`<h3>Limpar a turma?</h3><p>Os ${TURMA.alunos.length} aluno(s) e todos os arquivos somem deste computador. Se quiser guardar, use antes "Salvar turma em arquivo".</p>`,[{label:'Cancelar',value:false},{label:'Limpar turma',value:true,primary:true}]);if(!ok)return;
     TURMA=null;await tmKv(null).catch(()=>{});state=blankState(state.mode);files=[];renderFiles();renderAll();tmRender();setStatus('Turma apagada deste computador.')}});
 document.addEventListener('change',async e=>{const s=e.target;if(s.dataset&&s.dataset.tmorf!=null&&s.value){const o=TURMA.orfaos.splice(+s.dataset.tmorf,1)[0];const w=tmW(+s.value);tmSync();await tmRunIn(w,[o]);if(TURMA.cur===w.id){state=w.state;files=w.files;renderFiles();renderAll()}tmRender();tmSave();setStatus(`“${o.name}” enviado para ${w.nome}.`)}});
-function initTurma(){const seg=document.querySelector('.topright .seg');if(seg&&!document.getElementById('tm-all')){const d=document.createElement('div');d.className='seg';d.setAttribute('role','group');d.setAttribute('aria-label','Um aluno ou turma');d.innerHTML='<button type="button" id="tm-one" aria-pressed="true">Um aluno</button><button type="button" id="tm-all" aria-pressed="false">Turma</button>';seg.parentNode.insertBefore(d,seg)}tmRender()}
+function tmLeftover(n){const st=$('#status');const d=document.createElement('div');d.className='tm-left';d.innerHTML=`Há uma turma de teste guardada neste computador (${n} aluno(s)). O modo turma está desligado por enquanto. <button type="button" class="btn small" id="tm-left-del">Apagar a turma guardada</button>`;st.after(d);d.querySelector('button').onclick=async()=>{await tmKv(null).catch(()=>{});d.remove();setStatus('Turma de teste apagada deste computador.')}}
+function initTurma(){if(!TURMA_ATIVA)return;const seg=document.querySelector('.topright .seg');if(seg&&!document.getElementById('tm-all')){const d=document.createElement('div');d.className='seg';d.setAttribute('role','group');d.setAttribute('aria-label','Um aluno ou turma');d.innerHTML='<button type="button" id="tm-one" aria-pressed="true">Um aluno</button><button type="button" id="tm-all" aria-pressed="false">Turma</button>';seg.parentNode.insertBefore(d,seg)}tmRender()}
 
 let DL=null;
 async function download(kind){

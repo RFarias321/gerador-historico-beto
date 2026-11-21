@@ -43,13 +43,11 @@ async function main(){const browser=await chromium.launch();const res={};
     await pg.waitForTimeout(1200);const antes=await pg.evaluate(()=>state.aluno.nome+'|'+files.length);
     await pg.goto('http://local/tutorial.html');await pg.goto('http://local/');await pg.waitForTimeout(3000);
     res.sessaoRecuperada=(await pg.evaluate(()=>state.aluno.nome+'|'+files.length))===antes;
-    // 6. turma
-    pg=await newPage(browser);await pg.evaluate(()=>document.getElementById('tm-all').click());await pg.waitForTimeout(300);
-    await pg.setInputFiles('#file',EJA);await pg.waitForFunction(()=>/Turma: \d+ arquivo/.test(document.querySelector('#status').textContent),null,{timeout:180000});
-    res.turma={alunos:await pg.evaluate(()=>TURMA.alunos.length),atas:await pg.evaluate(()=>TURMA.arfs.length)};
-    await pg.evaluate(()=>document.querySelector('[data-tm="fromarf"]').click());await pg.waitForFunction(()=>/criado/.test(document.querySelector('#status').textContent),null,{timeout:180000});
-    res.turma.depoisDasAtas=await pg.evaluate(()=>TURMA.alunos.length);
-    res.turma.comDependencia=await pg.evaluate(()=>TURMA.alunos.filter(w=>w.state.deps.length).map(w=>w.state.deps.length));
+    // 6. turma: desligada por enquanto (o botão não aparece)
+    res.turmaDesligada=await pg.evaluate(()=>!document.getElementById('tm-all'));
+    // 6b. item 5 recolhido com a escola em verde e prévia ampliada
+    res.item5=await pg.evaluate(()=>{const s=document.querySelector('.sec[data-sec="5"]');return s.classList.contains('collapsed')+' '+s.querySelector('.sec-badge').textContent});
+    res.previaAmpliada=await pg.evaluate(()=>{document.getElementById('cv').click();const ok=!!document.querySelector('.big-pv canvas');document.querySelector('[data-z="x"]').click();return ok});
     // 7. regra de aprovação (soma mínima)
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});
   }finally{await browser.close()}
