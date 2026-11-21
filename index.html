@@ -851,7 +851,7 @@ function applyAI(r,entry){
   const filled=applyAlunoDoc(r.aluno||{},entry,tipo==='ficha_matricula');
   if(filled.length)done.push((tipo==='ficha_matricula'?'ficha de matrícula (IA)':'dados do aluno (IA)')+': '+filled.join(', '));
   const per=(r.periodos||[]).filter(p=>p&&((p.disciplinas||[]).some(d=>d.nome)||p.ano));
-  if(tipo==='dependencia'){const subs=per.flatMap(p=>p.disciplinas.map(d=>({name:d.nome,total:num(d.nota),media:num(d.media)})));const k=applyDepResults(subs,(per[0]||{}).ano);done.push(`dependência (IA): ${k} resultado(s)`)}
+  if(tipo==='dependencia'){const subs=per.flatMap(p=>p.disciplinas.map(d=>({name:d.nome,total:num(d.nota),media:num(d.media)!=null?num(d.media):num(d.nota)})));const k=applyDepResults(subs,(per[0]||{}).ano);done.push(`dependência (IA): ${k} resultado(s)`)}
   else for(const p of per){
     const idx=(p.etapa>=1&&p.etapa<=nPer())?p.etapa-1:nextFreePeriod(p.ano);
     const subs=(p.disciplinas||[]).filter(d=>d.nome).map(d=>{let nt=num(d.nota),md=num(d.media);if(nt!=null&&nt<=10&&md==null){md=nt;nt=null}return {name:d.nome,total:nt,media:md,ch:num(d.carga_horaria)}});
@@ -1242,9 +1242,10 @@ function applyFicha(res,p){
 }
 function applyDepResults(subs,ano){
   resetIfExample();let k=0;
-  for(const r of subs){const c=canon(r.name);const bims=[r.n1,r.n2,r.n3,r.n4].filter(v=>typeof v==='number');
-    const tot=r.total!=null?r.total:(bims.length?bims.reduce((a,b)=>a+b,0):null),med=r.media!=null?r.media:(bims.length?tot/bims.length:null);
-    const v=tot!=null?tot:(med!=null?med*(subs.nPer===3?3:4):null);if(v==null)continue;
+  for(const r of subs){const c=canon(r.name);
+    // nota informada: média final; senão a última nota lançada (bimestre/trimestre em que passou); senão o total da ficha
+    const lancadas=[r.n1,r.n2,r.n3,r.n4].filter(v=>typeof v==='number');
+    const v=r.media!=null?r.media:(lancadas.length?lancadas[lancadas.length-1]:(r.total!=null?r.total:null));if(v==null)continue;
     let d=state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name)&&!x.nota)||state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name));
     if(!d){d=state.deps.find(x=>!x.disc);if(d)d.disc=c.name}
     if(!d){d={ano:ano?String(ano):'',disc:c.name,nota:''};state.deps.push(d)}
