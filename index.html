@@ -111,6 +111,11 @@ input.pad{border-style:dashed;border-color:var(--warn);color:var(--warn)}
 #mat-form input.inval{border-color:var(--bad);background:var(--bad-bg)}
 .esc-q{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:8px 12px;font-size:.9rem;margin:0 0 10px}.big-pv{display:flex;justify-content:center;background:var(--paper);overflow:auto}.big-pv canvas{box-shadow:0 2px 12px rgba(0,0,0,.18);background:#fff}.tm-left{font-size:.85rem;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .files-box{margin-top:12px}.files-box>summary{cursor:pointer;font-weight:600;font-size:.9rem;margin-bottom:8px}.dc-oktxt{color:var(--ok)}
+.doc-check ul.dck{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}.doc-check .dck li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.84rem}.dck .dk-l{font-weight:600;min-width:190px}
+.dk-c{display:inline-flex;align-items:center;gap:4px;padding:1px 8px 1px 3px;border-radius:999px;font-size:.76rem;border:1px solid var(--line);background:var(--sheet,#fff)}.dk-c .dc-ic{width:15px;height:15px;font-size:.62rem}
+.files.compact{gap:4px}.files.compact li{padding:4px 8px;gap:2px 8px;font-size:.8rem}.files.compact .fname{font-weight:600;font-size:.8rem}.files.compact .fsum{grid-column:auto;font-size:.76rem;gap:4px}.files.compact .chip{font-size:.6rem;padding:1px 5px}
+.files.compact li{grid-template-columns:minmax(0,max-content) minmax(0,1fr) auto}.files.compact .ib{grid-column:3;grid-row:1}.files.compact .fmeta{font-size:.74rem}
+@media (max-width:640px){.files.compact li{grid-template-columns:minmax(0,1fr) auto}.files.compact .fsum{grid-column:1/-1}}
 .app-ver{font-size:.75rem;color:var(--muted);text-align:center;margin:4px 0 0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn.danger{color:var(--bad);border-color:var(--bad)}
@@ -1372,7 +1377,7 @@ function matchArf(arf){
 function applyArf(arf,stu){
   resetIfExample();
   if(!state.aluno.nome)state.aluno.nome=stu.nome.toUpperCase();
-  if(!state.aluno.matricula&&stu.mat)state.aluno.matricula=stu.mat;
+  if(stu.mat&&(!state.aluno.matricula||(state.ocrFields||{}).matricula||N(state.aluno.matricula)===N(stu.mat))){state.aluno.matricula=stu.mat;if(state.ocrFields)delete state.ocrFields.matricula}
   let p=inferPeriod(arf.info,{},state.mode);
   if(p==null){const i=state.periods.findIndex(x=>x.ano===String(arf.ano));p=i>=0?i:nextFreePeriod(arf.ano)}
   if(p==null||!state.periods[p])return;
@@ -1432,7 +1437,7 @@ function fillAluno(info){
   state.ocrFields=state.ocrFields||{};
   const A=state.aluno;const m={nome:'nome',matricula:'matricula',nascimento:'nascimento',naturalidade:'naturalidade',mae:'mae',pai:'pai',identidade:'identidade',orgao:'orgao',expedicao:'expedicao',nacionalidade:'nacionalidade'};
   if(state.example){state.aluno=blankState(state.mode).aluno}
-  for(const k in m){if(info[k]&&(!state.aluno[m[k]]||(!READING_OCR&&state.ocrFields[m[k]])||(k==='nacionalidade'&&state.aluno.nacionalidade==='Brasileira'))){if(!READING_OCR)delete state.ocrFields[m[k]];let v=String(info[k]).trim();{const bad=validField(m[k],normField(m[k],v));if(bad&&(READING_OCR||/data|outro campo/.test(bad)))continue}if(READING_OCR)state.ocrFields[m[k]]=1;if(k==='nome')v=v.toUpperCase();else if(k==='naturalidade')v=titleCase(v.replace(/\s*[-\/]\s*[A-Z]{2}$/,''));else if(k==='mae'||k==='pai'||k==='nacionalidade')v=titleCase(v);state.aluno[m[k]]=v}}
+  for(const k in m){if(info[k]&&!READING_OCR&&state.ocrFields[m[k]]&&N(info[k])===N(state.aluno[m[k]]))delete state.ocrFields[m[k]];if(info[k]&&(!state.aluno[m[k]]||(!READING_OCR&&state.ocrFields[m[k]])||(k==='nacionalidade'&&state.aluno.nacionalidade==='Brasileira'))){if(!READING_OCR)delete state.ocrFields[m[k]];let v=String(info[k]).trim();{const bad=validField(m[k],normField(m[k],v));if(bad&&(READING_OCR||/data|outro campo/.test(bad)))continue}if(READING_OCR)state.ocrFields[m[k]]=1;if(k==='nome')v=v.toUpperCase();else if(k==='naturalidade')v=titleCase(v.replace(/\s*[-\/]\s*[A-Z]{2}$/,''));else if(k==='mae'||k==='pai'||k==='nacionalidade')v=titleCase(v);state.aluno[m[k]]=v}}
 }
 function resetIfExample(){if(state.example){const keep=state.mode;state=blankState(keep);files=files.filter(f=>!f.example)}}
 function applyFicha(res,p){
@@ -2146,8 +2151,17 @@ function docChecklist(st,fl){
 function renderDocCheck(){let box=document.getElementById('doc-check');
   if(!box){box=document.createElement('div');box.id='doc-check';box.className='doc-check';const dr=$('#drop');dr.parentNode.insertBefore(box,dr.nextSibling)}
   if(isPristine()||state.example){box.hidden=true;return}box.hidden=false;
-  const it=docChecklist(state,files);const ic={o:'✓',w:'!',b:'✗'};
-  box.innerHTML=`<div class="subhead">Documentos deste aluno</div><ul>${it.map(x=>`<li class="dc-${x.k}"><span class="dc-ic" aria-hidden="true">${ic[x.k]}</span><span><b>${esc_(x.t)}</b> <small>${esc_(x.s)}</small></span></li>`).join('')}</ul>`}
+  const it=docChecklist(state,files);const ic={o:'✓',w:'!',b:'✗'};const L=LABELS[state.mode];
+  const chip=(x,txt)=>`<span class="dk-c dc-${x.k}" title="${esc_(x.t+' · '+x.s)}"><span class="dc-ic" aria-hidden="true">${ic[x.k]}</span>${esc_(txt)}</span>`;
+  const short=t=>t.replace(/^(FIA|Ata) · /,'').replace(/ módulo| série/,'').replace(' · ',' · ');
+  const grp=(re)=>it.filter(x=>re.test(x.t));
+  const lines=[];const m=grp(/^Ficha de matrícula/)[0];
+  lines.push(`<li><span class="dk-l">Ficha de matrícula</span>${chip(m,m.k==='o'?'anexada':'não anexada')}</li>`);
+  const fia=grp(/^FIA/);lines.push(`<li><span class="dk-l">Fichas individuais (FIA)</span>${fia.map(x=>chip(x,short(x.t))).join('')}</li>`);
+  const ata=grp(/^Ata/);if(ata.length)lines.push(`<li><span class="dk-l">Atas de resultados finais</span>${ata.map(x=>chip(x,short(x.t))).join('')}</li>`);
+  const dep=grp(/^Dependência/);if(dep.length)lines.push(`<li><span class="dk-l">Fichas de dependência</span>${dep.map(x=>{const d=state.deps.find(z=>'Dependência · '+(z.disc||'(disciplina?)')===x.t);return chip(x,x.t.replace('Dependência · ','')+(d&&d.ano?' · '+d.ano:'')+(x.k==='o'?'':' · '+(/falta a nota/.test(x.s)?'falta a nota':'gerada pelo site')))}).join('')}</li>`);
+  const hist=files.filter(f=>f.ok&&/histórico importado/.test(f.status||''));if(hist.length)lines.push(`<li><span class="dk-l">Histórico anterior</span>${hist.map(f=>chip({k:'o',t:f.name,s:'importado'},String(f.status).match(/\((EJA|Regular)[^)]*\)/)?String(f.status).match(/\(([^)]*)\)/)[1]:'importado')).join('')}</li>`);
+  box.innerHTML=`<div class="subhead">Documentos deste aluno</div><ul class="dck">${lines.join('')}</ul>`}
 /* ---------- validações ---------- */
 function cpfOk(v){const d=String(v).replace(/\D/g,'');if(d.length!==11||/^(\d)\1+$/.test(d))return false;const dv=n=>{let s=0;for(let i=0;i<n;i++)s+=+d[i]*(n+1-i);const r=s*10%11;return r===10?0:r};return dv(9)===+d[9]&&dv(10)===+d[10]}
 function dateOk(v){const m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return false;const d=new Date(+m[3],+m[2]-1,+m[1]);return d.getFullYear()===+m[3]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[1]}
@@ -2217,13 +2231,13 @@ function fileSummary(f){if(f.dup)return 'Arquivo repetido';if(f.err)return 'Não
   return ds.map(d=>d.role==='fia'?`FIA · ${d.p!=null?LABELS[state.mode][d.p]:''}${d.ano?' · '+d.ano:''}`:d.role==='arf'?`Ata · ${d.ano||''}`:d.role==='dep'?`Ficha de dependência${d.ano?' · '+d.ano:''}`:ROLE_LBL[d.role]).join(' | ')}
 function renderFiles(){
   $('#files').innerHTML=files.map((f,i)=>{const chips=[f.dup?'<span class="chip w">repetido</span>':'',f.err?'<span class="chip b">erro</span>':'',f.ocr&&f.ok?'<span class="chip w">digitalização</span>':'',f.ai?'<span class="chip w">lido com IA</span>':'',f.ok&&!f.err&&!f.dup&&!f.fund?'<span class="chip o">ok</span>':''].join('');
-    return `<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover ${esc_(f.name)} da lista">✕</button>
-    <span class="fsum">${chips}<span>${esc_(fileSummary(f))}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span></span>
+    return `<li title="${esc_(f.status||'')}"><span class="fname">${esc_(f.name)}</span>
+    <span class="fsum">${chips}<span>${esc_(fileSummary(f))}${f.arfDone?' · '+esc_(f.arfDone):''}</span></span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover ${esc_(f.name)} da lista">✕</button>
     ${f.err||f.dup?`<span class="fmeta ferr">${esc_(f.status)}</span>`:''}
-    ${f.ocr&&f.ok?'<span class="fmeta fwarn">Foto ou digitalização: os dados podem ter erros de leitura. Se puder, baixe o PDF original no Conexão.</span>':''}
+    ${f.ocr&&f.ok?'<span class="fmeta fwarn" style="grid-column:1/-1">Foto ou digitalização: pode ter erros de leitura. Se puder, use o PDF original do Conexão.</span>':''}
     ${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}
     ${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}
-    ${f.status&&!f.err&&!f.dup?`<details class="fdet"><summary>detalhes da leitura</summary><span class="fmeta">${esc_(f.status)}</span></details>`:''}</li>`}).join('');
+</li>`}).join('');$('#files').classList.add('compact');
   {const fb=document.getElementById('files-box');if(fb){const prob=files.filter(f=>f.err||f.dup||(f.diff||[]).length||(f.arf&&!f.arfDone)).length;const ocr=files.filter(f=>f.ocr&&f.ok).length;
     fb.hidden=!files.length;fb.querySelector('summary').innerHTML=`Arquivos lidos (${files.length})${prob?` · <span class="tm-b">${prob} precisa(m) de atenção</span>`:''}${ocr?` · <span class="tm-w">${ocr} digitalização(ões)</span>`:''}${!prob&&!ocr&&files.length?' · <span class="dc-oktxt">todos ok</span>':''}`;if(prob)fb.open=true}}
   renderDocCheck()}
