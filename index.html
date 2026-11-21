@@ -1218,6 +1218,8 @@ function ensureMode(k,name,entry){
   if(k==='eja'?state.regSeen&&state.ejaSeen:state.ejaSeen&&state.regSeen){state.modeAlert=`O arquivo “${name}” parece ser de ${k==='eja'?'EJA':'Ensino Médio Regular'}, mas já há documentos do ${outro} para este aluno. Confira se todos os arquivos são do mesmo aluno e do mesmo tipo de ensino.`;return}
   setMode(k);state.modeAlert=`O arquivo “${name}” é de ${k==='eja'?'EJA':'Ensino Médio Regular'}. A página estava em ${outro} e mudou sozinha para ${nome}. Se estiver errado, clique no tipo certo no topo e anexe de novo.`;
   const msg='documento de '+(k==='eja'?'EJA':'Ensino Médio Regular')+': a página mudou para '+nome;entry.modeNote=msg}
+function fileFp(buf){const u=new Uint8Array(buf);let h=0x811c9dc5;for(let i=0;i<u.length;i++){h^=u[i];h=Math.imul(h,0x01000193)}return u.length+':'+(h>>>0).toString(16)}
+function srcFp(f){if(!f||!f.src||!f.src.buf)return null;if(!f.src.fp)f.src.fp=fileFp(f.src.buf);return f.src.fp}
 async function handleFiles(list){
   if(!READY){setStatus('Aguarde o carregamento do modelo…');return}
   PENDING_DEPS=[];
@@ -1228,7 +1230,8 @@ async function handleFiles(list){
     try{
       const buf=await file.arrayBuffer();if(!alive())return;const isImg=/^image\//.test(file.type)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
       const isPdf=isImg||/\.pdf$/i.test(file.name)||file.type==='application/pdf';
-      entry.src={kind:isImg?'img':(isPdf?'pdf':'xlsx'),buf:buf.slice(0),docs:[]};const addDoc=d=>{if(entry.src.kind!=='xlsx'&&entry.src.docs.some(x=>x.role===d.role))return;entry.src.docs.push(d)};
+      {const fp=fileFp(buf);const twin=files.find(f=>f!==entry&&srcFp(f)===fp);if(twin){entry.status=`Arquivo repetido: já está na lista como “${twin.name}”. Não foi lido de novo.`;entry.dup=true;entry.ok=false;renderFiles();continue}}
+      entry.src={kind:isImg?'img':(isPdf?'pdf':'xlsx'),buf:buf.slice(0),docs:[]};entry.src.fp=fileFp(buf);const addDoc=d=>{if(entry.src.kind!=='xlsx'&&entry.src.docs.some(x=>x.role===d.role))return;entry.src.docs.push(d)};
       let groups=[],canvases=null;READING_OCR=false;
       if(isPdf){
         let pages=isImg?[]:await rowsFromPdf(buf);if(!alive())return;const chars=pages.flat().reduce((a,r)=>a+r.toks.reduce((b,t)=>b+t.t.length,0),0);
@@ -1842,9 +1845,10 @@ function periodOfDep(d){
 }
 async function buildPackPages(){
   await loadPackAssets();const pages=[];const own=isOwnSchool;
-  const fx=files.filter(f=>f.ok&&f.src);
+  // cada arquivo uma vez só, mesmo que tenha sido anexado repetido
+  const fx=[];{const seen=new Set();for(const f of files){if(!f.ok||!f.src||f.dup)continue;const k=srcFp(f);if(k&&seen.has(k))continue;seen.add(k);fx.push(f)}}
   // 1. ficha de matrícula
-  for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='mat'))pages.push(...await sourcePages(f,d));
+  {const m=fx.flatMap(f=>f.src.docs.filter(d=>d.role==='mat').map(d=>[f,d]));if(m.length)pages.push(...await sourcePages(m[0][0],m[0][1]))}
   if(!fx.some(f=>f.src.docs.some(d=>d.role==='mat'))&&matHasData())pages.push(matPage(null));
   // 2. por série/módulo: fichas e, logo depois, as dependências daquele período
   const depsDone=new Set();
