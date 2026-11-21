@@ -27,3 +27,18 @@ escaneados são enviados à Anthropic para leitura. Não coloque arquivos de alu
 - `pdf.worker.min.js` – leitor de PDF (pdf.js 3.11.174).
 - `ocr/` – OCR no navegador (Tesseract.js 6.0.1 e dados do idioma português).
 - `ferramentas/` – scripts Python que extraem o layout das planilhas-modelo originais.
+
+## Para mexer no site (desenvolvimento)
+- O site inteiro está em `index.html` (HTML, CSS e JavaScript num só arquivo, sem etapa de compilação). Edite direto nele.
+- `modelo_dep.txt` (ficha de dependência em branco) e `libsans-*.ttf` (fonte compatível com Arial) são usados na impressão para assinatura.
+- **Testes automáticos** em `tests/`: abrem o site num navegador sem tela, anexam documentos de exemplo e conferem o resultado com `tests/esperado.json`.
+  ```
+  cd tests
+  npm ci
+  npx playwright install chromium
+  node run.js
+  ```
+  Se uma mudança for intencional e alterar o resultado, rode `node run.js --atualizar` e confira o que mudou em `esperado.json` antes de enviar.
+- `tests/fixtures/` tem **somente documentos fictícios**: cópias de documentos do Conexão com nomes, matrículas e datas de nascimento trocados por `tests/anonimizar.py`. Nunca coloque documentos reais de alunos no repositório.
+- **Publicação:** a cada envio para `main`, o GitHub roda os testes (`.github/workflows/testar-e-publicar.yml`) e só publica o site se todos passarem.
+- A versão aparece no rodapé do site (`APP_VERSION`); a lista do que mudou fica em `tutorial.html#novidades`.

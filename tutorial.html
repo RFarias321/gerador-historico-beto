@@ -95,6 +95,9 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <li><a href="#escola">Escola emissora e assinaturas</a></li>
       <li><a href="#editar">Guia rápido: como editar cada informação</a></li>
       <li><a href="#fotos">Fotos e PDFs escaneados</a></li>
+      <li><a href="#turma">Turma inteira</a></li>
+      <li><a href="#salvar">Salvar o aluno em arquivo e assinar pelo gov.br</a></li>
+      <li><a href="#novidades">O que mudou</a></li>
       <li><a href="#duvidas">Dúvidas comuns</a></li>
     </ol>
   </nav>
@@ -179,7 +182,9 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="two">
       <figure><img src="tutorial/07-lateral.webp" alt="Coluna da direita com os botões Baixar Excel, Baixar PDF, Imprimir e Novo aluno, as pendências e a prévia do histórico" width="1040" height="2186" loading="lazy"><figcaption>Botões, pendências e prévia.</figcaption></figure>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <p><b>Pendências</b> lista o que falta conferir. Quando aparecer "Tudo preenchido. Pode baixar.", o histórico está completo.</p>
+        <p><b>O que precisa da sua atenção</b> junta tudo o que falta conferir: dados vazios, documentos que faltam, digitalizações, datas e CPF inválidos, dependências sem nota. Cada item tem o botão <span class="btnlike">ir</span>, que leva direto ao campo. Quando aparecer "Tudo preenchido. Pode baixar e imprimir.", o histórico está completo.</p>
+        <p><b>Seções recolhidas:</b> depois de anexar, as etapas que já estão conferidas se fecham com o selo <b>✓ conferido</b>; as que precisam de atenção ficam abertas com o número de itens. Clique no título para abrir ou fechar. O <b>?</b> ao lado de cada título explica a etapa.</p>
+        <p><b>Documentos deste aluno:</b> logo abaixo da lista de arquivos aparece o que foi anexado e o que falta baixar no Conexão (FIA de cada série ou módulo, atas, matrícula, fichas de dependência).</p>
         <p><b>Conferência automática:</b> a cada mudança, a página gera o Excel e o PDF, lê os dois de volta e compara com a tela: dados do aluno, anos, notas, C/H, frequência, situação, escolas e dependências. Também confere se cada texto cabe na sua célula. Quando tudo bate, aparece <b>ok</b>. Se algo não bater, ela mostra o quê e onde, e os botões de baixar e imprimir avisam antes.</p>
         <ul>
           <li><span class="btnlike">Baixar Excel</span>: a planilha no modelo da escola, com o brasão. Dá para fazer ajustes finais no próprio Excel.</li>
@@ -246,8 +251,45 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </ul>
   </section>
 
+  <section class="step" id="turma">
+    <h2><span class="n">12</span>Turma inteira</h2>
+    <p>No topo, clique em <span class="btnlike">Turma</span>. Depois anexe no passo 1 os documentos de todos os alunos, de uma vez ou aos poucos, em qualquer ordem: FIAs, atas, fichas de matrícula e de dependência.</p>
+    <ul>
+      <li><b>Cada arquivo vai sozinho para o aluno certo</b>, pelo nome e pela matrícula. As atas completam todos os alunos da turma que aparecem nelas.</li>
+      <li><b>Alunos que só aparecem nas atas:</b> o botão <span class="btnlike">Criar os alunos que só aparecem nas atas</span> cria todos de uma vez. Depois é só anexar as FIAs e a ficha de matrícula de cada um, quando tiver: elas se juntam ao aluno certo.</li>
+      <li><b>Corrigir um aluno:</b> clique em <span class="btnlike">Abrir</span>. A página mostra só aquele aluno, com todas as etapas, como no modo de um aluno. Corrija o que precisar, imprima, e clique em <span class="btnlike">Marcar como concluído</span> ou <span class="btnlike">Voltar à lista da turma</span>. Tudo o que você muda fica guardado no aluno.</li>
+      <li><b>Situação:</b> "pronto" quando tem todas as FIAs e nenhum ponto de atenção; "pendente" quando falta algo; "concluído" quando você marcou.</li>
+      <li><b>Baixar históricos prontos em PDF</b> gera um PDF com os históricos de todos os alunos prontos.</li>
+      <li><b>Arquivos sem aluno identificado</b> aparecem embaixo da lista, com uma caixa para escolher o aluno.</li>
+      <li><b>Fica guardado?</b> Sim: a turma fica guardada neste computador até você clicar em <span class="btnlike">Limpar turma</span>, mesmo fechando a página. Para continuar em outro computador ou guardar com segurança, use <span class="btnlike">Salvar turma em arquivo</span> e, depois, anexe esse arquivo no passo 1.</li>
+    </ul>
+  </section>
+
+  <section class="step" id="salvar">
+    <h2><span class="n">13</span>Salvar o aluno em arquivo e assinar pelo gov.br</h2>
+    <p><span class="btnlike">Salvar aluno em arquivo</span> gera um arquivo <b>.historico.json</b> com tudo do aluno (dados, notas, observações e documentos). Para continuar outro dia, anexe esse arquivo no passo 1. Guarde-o em local seguro: tem dados pessoais.</p>
+    <p><b>Prévia antes de imprimir:</b> o botão <span class="btnlike">Imprimir documentos para assinatura</span> mostra primeiro todas as páginas em miniatura. Dá para desmarcar páginas e mudar a ordem com as setas.</p>
+    <p class="tip"><b>Assinar sem imprimir:</b> baixe o PDF, abra <a href="https://assinador.iti.br" target="_blank" rel="noopener">assinador.iti.br</a>, entre com a conta gov.br, envie o arquivo e posicione a assinatura sobre o nome de cada um. É gratuito e tem validade legal.</p>
+    <p><b>Ao terminar:</b> depois de baixar ou imprimir, a página pergunta se você terminou o aluno e oferece apagar os dados deste computador.</p>
+  </section>
+
+  <section class="step" id="novidades">
+    <h2><span class="n">14</span>O que mudou (versão 2.0 · 21/11/2026)</h2>
+    <ul>
+      <li>Modo <b>Turma</b>: vários alunos de uma vez, cada arquivo vai para o aluno certo.</li>
+      <li>Lista <b>Documentos deste aluno</b> mostra o que falta baixar no Conexão.</li>
+      <li>Quadro único <b>O que precisa da sua atenção</b>, com botão "ir" para cada item; etapas conferidas se recolhem.</li>
+      <li>Dependências com duas informações: <b>ficou em</b> (série ou módulo) e <b>cumpriu em</b> (ano, em vermelho).</li>
+      <li>Conferência de CPF, datas, CEP, número de matrícula e carga horária total.</li>
+      <li>Aviso claro para fotos e digitalizações; leitura com IA sempre pede autorização.</li>
+      <li>Prévia da impressão para assinatura, com escolha e ordem das páginas; dica do gov.br.</li>
+      <li>Salvar e abrir aluno ou turma em arquivo.</li>
+      <li>Mensagens de erro em português claro; ajuda "?" em cada etapa.</li>
+    </ul>
+  </section>
+
   <section class="step" id="duvidas">
-    <h2><span class="n">12</span>Dúvidas comuns</h2>
+    <h2><span class="n">15</span>Dúvidas comuns</h2>
     <ul>
       <li><b>Os dados dos alunos vão para a internet?</b> Não. Os arquivos são lidos no seu navegador. A única exceção é a opção "Ler com IA", desligada por padrão.</li>
       <li><b>Apareceu "Não encontrei a tabela de disciplinas".</b> O arquivo não é uma ficha, ata ou histórico, ou é de outro formato. Para documentos de outras escolas, use "Ler com IA".</li>

@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gerador de Histórico do Beto</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,7 +88,35 @@ input.pad{border-style:dashed;border-color:var(--warn);color:var(--warn)}
 .dep-row input[data-da]{color:#b3261e;font-weight:700;border-color:#e39a94;background:#fdeeed}
 @media (prefers-color-scheme:dark){.dep-row input[data-da]{color:#ffb4ab;background:#3b1d1b;border-color:#8c3a33}}
 .depano-hint{color:#b3261e;font-weight:600}
-.dep-row{display:grid;grid-template-columns:90px minmax(0,1fr) 110px 30px;gap:8px;align-items:center}
+.dep-row{display:grid;grid-template-columns:minmax(120px,170px) 86px minmax(0,1fr) 96px 30px;gap:8px;align-items:center}
+.dep-head{font-size:.74rem;font-weight:600;color:var(--muted)}.dep-ano-h{color:#b3261e}
+.dep-row select{min-width:0}
+@media (max-width:640px){.dep-row{grid-template-columns:1fr 86px 30px}.dep-row>input[data-dd]{grid-column:1/2}.dep-row>input[data-dn]{grid-column:2/4}.dep-head{display:none}}
+.mdl-bg{position:fixed;inset:0;background:rgba(10,15,20,.45);display:grid;place-items:center;z-index:100;padding:16px}
+.mdl{background:var(--sheet,#fff);color:var(--ink);border-radius:12px;max-width:520px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.mdl.wide{max-width:980px}.mdl-body{padding:18px 20px;overflow:auto}.mdl-body h3{margin:0 0 8px}.mdl-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.pk-grid{display:flex;flex-wrap:wrap;gap:12px}.pk-it{margin:0;display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--paper)}
+.pk-it.off{opacity:.4}.pk-th canvas{display:block;border:1px solid var(--line);background:#fff}.pk-it figcaption{display:flex;justify-content:space-between;gap:6px;font-size:.78rem;max-width:150px}
+.govbr{font-size:.85rem;background:var(--accent-soft);padding:8px 12px;border-radius:8px;margin:12px 0 0}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90;background:var(--sheet,#fff);border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,.25);border-radius:12px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;max-width:min(720px,calc(100vw - 32px))}
+.doc-check{margin-top:12px}.doc-check ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 14px}
+.doc-check li{display:flex;gap:8px;align-items:baseline;font-size:.86rem}.doc-check small{color:var(--muted)}.dc-ic{flex:none;width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:.72rem;font-weight:700}
+.dc-o .dc-ic{background:var(--ok-bg);color:var(--ok)}.dc-w .dc-ic{background:var(--warn-bg);color:var(--warn)}.dc-b .dc-ic{background:var(--bad-bg);color:var(--bad)}
+.files .fsum{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.84rem}.files .fwarn{color:var(--warn)}.fdet{grid-column:1/-1}.fdet summary{cursor:pointer;font-size:.78rem;color:var(--muted)}
+.checks li{align-items:center}.checks .go{margin-left:auto;flex:none;padding:2px 10px}
+.sec-h{cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sec-badge{margin-left:auto;font-size:.74rem;font-weight:600;padding:2px 9px;border-radius:999px}.sec-badge.o{background:var(--ok-bg);color:var(--ok)}.sec-badge.w{background:var(--warn-bg);color:var(--warn)}
+.sec.collapsed>:not(h2){display:none}.sec.collapsed>h2{margin-bottom:0}.sec-h::after{content:'▾';font-size:.8rem;color:var(--muted)}.sec.collapsed .sec-h::after{content:'▸'}
+.help-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--sheet,#fff);color:var(--accent-2);font-weight:700;font-size:.78rem;cursor:pointer;flex:none;padding:0}
+.helpbox{background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:.86rem;margin:0 0 12px}
+#mat-form input.inval{border-color:var(--bad);background:var(--bad-bg)}
+.app-ver{font-size:.75rem;color:var(--muted);text-align:center;margin:4px 0 0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+#turma-card .tm-cur{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.tm-tab td{vertical-align:middle}.tm-tab td:first-child,.tm-tab th:first-child{text-align:left}.tm-list>summary{cursor:pointer;font-weight:600;margin:6px 0}.tm-tab tr.tm-sel td{background:var(--accent-soft)}.tm-btns{white-space:nowrap}.tm-b{color:var(--bad);font-weight:600}.tm-w{color:var(--warn)}.tm-acts{margin:8px 0 12px;flex-wrap:wrap}
+.tm-orf{margin-top:12px}.tm-orf .row{gap:8px;margin:4px 0;flex-wrap:wrap}.tm-priv{margin-top:10px}
+body.turma-nocur .grid section.sec,body.turma-nocur .grid section.card:has(#mat-cfg),body.turma-nocur aside .actions,body.turma-nocur aside .packrow,body.turma-nocur #btn-save,body.turma-nocur aside .preview,body.turma-on #btn-reset{display:none}
+.topright .seg+.seg{margin-left:8px}
 @media (max-width:520px){.dep-row{grid-template-columns:70px minmax(0,1fr) 80px 30px}}
 .obs-preview{margin-top:12px;padding:10px 12px;border-left:3px solid var(--accent);background:var(--paper);font-size:.82rem;font-style:italic;white-space:pre-line}
 .obs-preview .ph{background:var(--warn-bg);color:var(--warn);font-style:normal;font-weight:600;padding:0 3px;border-radius:3px}
@@ -308,7 +340,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       <div class="status" id="status" role="status"></div>
       <div class="gate" id="gate" hidden></div>
       <section class="card">
-        <h2>Pendências <span class="count" id="checks-count"></span></h2>
+        <h2>O que precisa da sua atenção <span class="count" id="checks-count"></span></h2>
         <ul class="checks" id="checks"></ul>
         <div class="conf" id="conf" aria-live="polite"></div>
       </section>
@@ -577,7 +609,7 @@ function obsLines(st){
     const nv=num(d.nota);const nota=d.nota?(nv!=null?nv.toFixed(2).replace('.',','):String(d.nota).trim()):'';
     auto.push({ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
   }
-  st.periods.forEach(p=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>d.ano&&(d.ano===p.ano||(+d.ano>+p.ano))))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
+  st.periods.forEach((p,pi)=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>(d.p!=null||d.auto!=null)?((d.p!=null?d.p:d.auto)===pi):(d.ano&&(d.ano===p.ano||(+d.ano>+p.ano)))))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
   const out=auto.map((x,i)=>[x,i]).sort((a,b)=>((a[0].ano||'9999').localeCompare(b[0].ano||'9999'))||a[1]-b[1]).map(x=>x[0]);
   for(const l of (st.obsExtra||'').split('\n'))if(l.trim())out.push({text:l.trim(),ph:false});
   return out;
@@ -926,7 +958,8 @@ async function ocrCanvas(c0){
 }
 /* ---------- leitura com IA (Claude) ---------- */
 const IN_CLAUDE=!!(window.claude&&window.claude.use);
-const readMode=()=>{try{return localStorage.getItem('hist.rm')||'ocr'}catch(e){return 'ocr'}};
+let RM_MEM='ocr';try{localStorage.removeItem('hist.rm')}catch(e){}
+const readMode=()=>RM_MEM;
 const apiKey=()=>{try{return localStorage.getItem('hist.apikey')||''}catch(e){return ''}};
 const AI_SCHEMA={type:'object',additionalProperties:false,required:['tipo','nivel','aluno','periodos','dependencias'],properties:{
   tipo:{type:'string',enum:['historico','ficha_individual','ata_resultados','ficha_matricula','dependencia','outro']},
@@ -1289,7 +1322,7 @@ async function handleFiles(list){
         done.push((oficial&&!entry.ocr?'ficha de matrícula (dados pessoais têm prioridade)':entry.ocr?'dados do aluno lidos de imagem (sem prioridade: confira cada campo)':'dados do aluno')+(filled.length?' · '+(oficial?'usado: ':'preenchido: ')+filled.join(', '):' · tudo já conferia'));
       }
       entry.status=(entry.modeNote?entry.modeNote+' | ':'')+done.join(' | ')+(entry.ocr?' · lido por OCR: confira os números':'')+((entry.skipped||[]).length?' · ilegível, não usado: '+entry.skipped.join(', '):'');READING_OCR=false;entry.ok=true;state.example=false;
-    }catch(e){console.error(e);entry.status=e.message||'Não foi possível ler o arquivo.';entry.err=true}
+    }catch(e){console.error(e);entry.status=friendlyErr(e);entry.err=true}
     renderFiles();renderAll();
   }
   if(!alive())return;
@@ -1449,7 +1482,7 @@ function applyHist(h){
 
 /* ============ interface ============ */
 function setStatus(t,bad){const s=$('#status');s.textContent=t;s.style.color=bad?'var(--bad)':''}
-function renderFiles(){
+function renderFilesOld(){
   $('#files').innerHTML=files.map((f,i)=>`<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover da lista">✕</button><span class="fmeta ${f.err?'ferr':''} ${f.fund?'ffund':''}">${esc_(f.status)}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span>${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}</li>`).join('');
 }
 function isPristine(){return !files.length&&!state.subjects.length&&!ALUNO_FIELDS.some(([k])=>k!=='nacionalidade'&&state.aluno[k])&&!state.deps.length}
@@ -1474,7 +1507,7 @@ function renderPlaces(){
   $('#places').innerHTML=`<thead><tr><th class="left">${eja?'Módulo':'Série'}</th><th class="left">Estabelecimento de ensino</th><th class="left">Município/Estado</th>${eja?'<th class="left">Semestre</th>':''}</tr></thead><tbody>`+
    state.periods.map((p,i)=>`<tr><td class="left">${L[i]}</td><td class="left"><input id="pe-${i}" data-pe="${i}" value="${esc_(p.escola)}"></td><td class="left"><input id="pm-${i}" data-pm="${i}" value="${esc_(p.municipio)}"></td>${eja?`<td class="left"><input id="ps-${i}" data-ps="${i}" value="${esc_(p.semestre)}" placeholder="${esc_(semestreAuto(i)||'ex.: 1º de 2024')}"></td>`:''}</tr>`).join('')+'</tbody>';
 }
-function renderDeps(){
+function renderDepsOld(){
   const subjOpts=state.subjects.map(s=>`<option value="${esc_(s.name)}">`).join('');
   $('#deps').innerHTML=(state.deps.length?`<div class="dep-row" style="font-size:.76rem;font-weight:600;color:var(--muted)"><span>Ano</span><span>Disciplina</span><span>Nota final</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
     state.deps.map((d,i)=>`<div class="dep-row"><input id="da-${i}" data-da="${i}" value="${esc_(d.ano)}" placeholder="ano" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc_(d.disc)}" list="subj-list" placeholder="disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc_(d.nota)}" placeholder="(preencher)" class="${d.nota?'':'empty'}" inputmode="decimal"><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
@@ -1489,7 +1522,7 @@ function renderSig(){
   $('#sig-sec').innerHTML=f('sec');$('#sig-dir').innerHTML=f('dir');
   $('#esc-form').innerHTML=ESC_FIELDS.map(([k,l,w])=>`<label class="f ${w||''}">${l}<input id="es-${k}" data-es="${k}" value="${esc_(esc[k]||'')}"></label>`).join('');
 }
-function renderChecks(){
+function renderChecksOld(){
   const vazio=isPristine();
   if(vazio){$('#checks-count').hidden=true;$('#checks').innerHTML='<li><span class="chip o" style="background:var(--accent-soft);color:var(--accent-2)">início</span><span>Anexe os documentos do aluno no passo 1. As pendências aparecem aqui.</span></li>';return}
   const out=[];const A=state.aluno;
@@ -1551,7 +1584,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target,d=t.dataset;
-  if(t.name==='rm'){try{localStorage.setItem('hist.rm',t.value)}catch(e){}syncReadMode();return}
+  if(t.name==='rm'){RM_MEM=t.value;syncReadMode();return}
   if(d.arf!=null&&t.value!==''){const f=files[+d.arf];const stu=f.arf.students[+t.value];applyArf(f.arf,stu);f.arfDone=stu.nome;renderFiles();renderAll();return}
   if(d.si!=null){const p=+d.si;state.periods[p].sit=t.value;const ano=state.periods[p].ano;
     if(t.value==='APROV. C/DEP'&&!state.deps.some(x=>x.ano&&x.ano===ano)){state.deps.push({ano,disc:'',nota:''});renderDeps()}
@@ -1836,6 +1869,7 @@ async function depModel(dep,p){
   applySignatures(m,ownDep);return m;
 }
 function periodOfDep(d){
+  if(d.p!=null&&state.periods[d.p])return d.p;if(d.auto!=null&&state.periods[d.auto])return d.auto;
   const k=canon(d.disc||'').key;const P=state.periods;const failed=i=>state.subjects.some(s=>canon(s.name).key===k&&isDep(s.g[i],null));
   let idx=P.map((p,i)=>i).filter(i=>String(P[i].ano)===String(d.ano));
   if(!idx.length){const prev=P.map((p,i)=>i).filter(i=>!(+P[i].ano>+d.ano));const cd=prev.filter(i=>P[i].sit==='APROV. C/DEP');const fl=cd.filter(failed);
@@ -1857,7 +1891,7 @@ async function buildPackPages(){
     for(const dep of state.deps){if(periodOfDep(dep)!==p)continue;const k=canon(dep.disc||'').key;
       let printed=false;
       for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='dep'&&(d.subjects||[]).some(s=>canon(s).key===k))){const key=f.name+'|'+d.sheet;if(depsDone.has(key)){printed=true;continue}depsDone.add(key);pages.push(...await sourcePages(f,d));printed=true}
-      if(!printed){const m=await depModel(dep,p);pages.push({orient:'l',model:m,title:'Dependência '+(dep.disc||'')})}}
+      if(!printed){const m=await depModel(dep,p);pages.push({orient:'l',model:m,title:'Dependência · '+(dep.disc||'')+' (gerada)'})}}
   }
   for(const dep of state.deps)if(periodOfDep(dep)==null){const m=await depModel(dep,null);pages.push({orient:'l',model:m,title:'Dependência '+(dep.disc||'')})}
   // dependências enviadas sem período identificado
@@ -1874,10 +1908,10 @@ async function sourcePages(f,d){
   if(d.role==='mat'&&(matHasData()||state.aluno.nome))return [matPage(await matExtras(f,d))];
   const own=isOwnSchool(d.escola);
   if(f.src.kind==='xlsx'){const m=await readXlsxModel(f.src.buf.slice(0),d.sheet);
-    if(d.role==='arf'){highlightStudent(m,state.aluno.nome,state.aluno.matricula);applySignatures(m,own);return [{orient:'l',model:m,title:'Ata '+(d.ano||'')}]}
+    if(d.role==='arf'){highlightStudent(m,state.aluno.nome,state.aluno.matricula);applySignatures(m,own);return [{orient:'l',model:m,title:'Ata · '+(d.serie?(state.mode==='eja'?d.serie+'º módulo':d.serie+'ª série')+' · ':'')+(d.ano||'')}]}
     if(d.role==='mat')return [{orient:'p',model:m,title:'Ficha de matrícula'}];
     if(d.role==='dep'){const dd=state.deps.find(x=>x.ano&&(d.subjects||[]).some(t=>canon(t).key===canon(x.disc||'').key));if(dd&&String(dd.ano)!==String(d.ano||''))mSetLabeled(m,'ANO:',String(dd.ano))}
-    applySignatures(m,own);return [{orient:'l',model:m,title:(d.role==='dep'?'Dependência ':'Ficha ')+(d.ano||'')}]}
+    applySignatures(m,own);return [{orient:'l',model:m,title:d.role==='dep'?'Dependência · '+((d.subjects||[]).join(', ')||d.ano||''):'FIA · '+(d.p!=null?LABELS[state.mode][d.p]+' · ':'')+(d.ano||'')}]}
   // PDF ou imagem: páginas como imagem, sem alterar o documento
   const out=[];const canv=f.src.kind==='pdf'?await pdfToCanvases(f.src.buf.slice(0),8):[await imageToCanvas(new Blob([f.src.buf]))];
   for(const c of canv){const k=Math.min(1,1800/Math.max(c.width,c.height));const d2=document.createElement('canvas');d2.width=Math.round(c.width*k);d2.height=Math.round(c.height*k);d2.getContext('2d').drawImage(c,0,0,d2.width,d2.height);
@@ -1914,7 +1948,8 @@ async function packImages(pages){
 async function printPack(mode){
   if(!READY)return;const btn=$('#btn-pack');btn.disabled=true;setStatus('Montando os documentos para assinatura…');
   try{
-    const pages=await buildPackPages();
+    let pages=await buildPackPages();
+    if(!window.PACK_NO_PREVIEW){const pick=await packPreview(pages,mode);if(!pick){setStatus('');return}pages=pick.pages;mode=pick.mode}
     if(mode==='pdf'||IN_CLAUDE){const blob=await packPdf(pages);const nome=(state.aluno.nome||'aluno').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');const filename=`Documentos_assinatura_${nome}.pdf`;
       if(DL===null&&window.claude&&claude.use)DL=await claude.use('downloads').catch(()=>null);
       if(DL)await DL.save({filename,data:blob});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove()}
@@ -2074,6 +2109,293 @@ async function sessRestore(){
 addEventListener('pagehide',()=>{sessSaveNow()});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sessSaveNow()});
 
+/* ===== v2: usabilidade, conferência e segurança ===== */
+const APP_VERSION='2.0',APP_DATA='21/11/2026';
+/* janela simples dentro da página (funciona também onde confirm() é bloqueado) */
+function askModal(html,buttons,opts){opts=opts||{};return new Promise(res=>{const bg=document.createElement('div');bg.className='mdl-bg';
+  bg.innerHTML=`<div class="mdl${opts.wide?' wide':''}" role="dialog" aria-modal="true"><div class="mdl-body">${html}</div><div class="mdl-foot">${buttons.map((b,i)=>`<button type="button" class="btn ${b.primary?'primary':''} small" data-mi="${i}">${esc_(b.label)}</button>`).join('')}</div></div>`;
+  document.body.appendChild(bg);const close=v=>{bg.remove();res(v)};
+  bg.addEventListener('click',e=>{const b=e.target.closest('[data-mi]');if(b)close(buttons[+b.dataset.mi].value);else if(e.target===bg&&!opts.sticky)close(null)});
+  bg.addEventListener('keydown',e=>{if(e.key==='Escape')close(null)});
+  if(opts.onOpen)opts.onOpen(bg);(bg.querySelector('.btn.primary')||bg.querySelector('button')).focus()})}
+/* ---------- mensagens de erro claras ---------- */
+function friendlyErr(e){const m=String((e&&e.message)||e||'');
+  if(e instanceof TypeError||/undefined|null|is not a function|Cannot (read|set)|NaN|of undefined/i.test(m))
+    return `Não consegui ler este arquivo. Confira se é um documento do Conexão (FIA, ata de resultados, ficha de matrícula ou de dependência) e se o tipo de ensino no topo (Regular ou EJA) está certo. Se continuar, avise o responsável pelo site com o nome do arquivo. (detalhe técnico: ${m})`;
+  return m||'Não foi possível ler o arquivo.'}
+/* ---------- lista de documentos do aluno ---------- */
+const ROLE_LBL={mat:'Ficha de matrícula',fia:'FIA',arf:'Ata de resultados',dep:'Ficha de dependência'};
+function docList(fl){return (fl||[]).filter(f=>f.ok&&f.src&&!f.dup).flatMap(f=>(f.src.docs||[]).map(d=>({f,d})))}
+function docChecklist(st,fl){
+  const docs=docList(fl),L=LABELS[st.mode],items=[];
+  const hasMat=docs.some(x=>x.d.role==='mat');
+  items.push({k:hasMat?'o':'w',t:'Ficha de matrícula',s:hasMat?'anexada':'não anexada',go:'#drop'});
+  const fromHist=(fl||[]).some(f=>/histórico importado/.test(f.status||''));
+  st.periods.forEach((p,i)=>{const has=st.subjects.some(s=>s.g[i]&&(s.g[i].nota!==''||s.g[i].ch!==''));const lab=`${L[i]}${p.ano?' · '+p.ano:''}`;
+    const fia=docs.some(x=>x.d.role==='fia'&&x.d.p===i);
+    items.push(fia?{k:'o',t:'FIA · '+lab,s:'anexada'}:has?{k:'w',t:'FIA · '+lab,s:fromHist?'dados vieram de histórico ou ata':'não anexada (dados vieram da ata)',go:'#drop'}:{k:'b',t:'FIA · '+L[i],s:'falta',go:'#drop'});
+    if(p.ano||has){const arf=docs.some(x=>x.d.role==='arf'&&String(x.d.ano)===String(p.ano)&&(!x.d.serie||+x.d.serie===i+1));
+      items.push({k:arf?'o':'w',t:'Ata · '+lab,s:arf?'anexada':'não anexada',go:'#drop'})}});
+  for(const d of st.deps){const up=docs.some(x=>x.d.role==='dep'&&(x.d.subjects||[]).some(s=>canon(s).key===canon(d.disc||'').key));
+    items.push({k:d.nota&&d.disc?'o':'w',t:'Dependência · '+(d.disc||'(disciplina?)'),s:(up?'ficha enviada':'ficha será gerada pelo site')+(d.nota?'':' · falta a nota final'),go:'#deps'})}
+  return items}
+function renderDocCheck(){let box=document.getElementById('doc-check');
+  if(!box){box=document.createElement('div');box.id='doc-check';box.className='doc-check';const ul=$('#files');ul.parentNode.insertBefore(box,ul.nextSibling)}
+  if(isPristine()||state.example){box.hidden=true;return}box.hidden=false;
+  const it=docChecklist(state,files);const ic={o:'✓',w:'!',b:'✗'};
+  box.innerHTML=`<div class="subhead">Documentos deste aluno</div><ul>${it.map(x=>`<li class="dc-${x.k}"><span class="dc-ic" aria-hidden="true">${ic[x.k]}</span><span><b>${esc_(x.t)}</b> <small>${esc_(x.s)}</small></span></li>`).join('')}</ul>`}
+/* ---------- validações ---------- */
+function cpfOk(v){const d=String(v).replace(/\D/g,'');if(d.length!==11||/^(\d)\1+$/.test(d))return false;const dv=n=>{let s=0;for(let i=0;i<n;i++)s+=+d[i]*(n+1-i);const r=s*10%11;return r===10?0:r};return dv(9)===+d[9]&&dv(10)===+d[10]}
+function dateOk(v){const m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return false;const d=new Date(+m[3],+m[2]-1,+m[1]);return d.getFullYear()===+m[3]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[1]}
+function matInvalid(){const bad={};const V=(state.mat||{}).vals||{};
+  for(const [k,v] of Object.entries(V)){if(!v)continue;const lab=k.split('|')[1];
+    if(lab==='CPF'&&!cpfOk(v))bad[k]='CPF inválido (dígito verificador não confere)';
+    else if(/^Data/.test(lab)&&!dateOk(v))bad[k]='data inválida (use dd/mm/aaaa)';
+    else if(/^(CEP)$/.test(lab)&&String(v).replace(/\D/g,'').length!==8)bad[k]='CEP deve ter 8 dígitos';}
+  return bad}
+function validationIssues(st){const out=[];const L=LABELS[st.mode];
+  const m=String(st.aluno.matricula||'').replace(/\D/g,'');if(m&&m.length!==15)out.push({l:'w',t:`Nº de matrícula com ${m.length} dígitos (no Conexão são 15): confira.`,go:'#al-matricula'});
+  st.periods.forEach((p,i)=>{let t=0,n=0;for(const s of st.subjects){const c=num((s.g[i]||{}).ch);if(c!=null){t+=c;n++}}if(n&&(t<200||t>1800))out.push({l:'w',t:`${L[i]}: carga horária total ${t}h fora do comum. Confira.`,go:'#grades'})});
+  if(st===state)for(const [k,why] of Object.entries(matInvalid()))out.push({l:'w',t:`Ficha de matrícula, ${k.split('|').slice(0,2).join(' · ')}: ${why}.`,go:'#mat-cfg'});
+  return out}
+function markMatInvalid(){const bad=matInvalid();document.querySelectorAll('#mat-form input[data-mt]').forEach(i=>{const w=bad[i.dataset.mt];i.classList.toggle('inval',!!w);i.title=w||''})}
+{const _rm=renderMat;renderMat=function(){_rm.apply(this,arguments);markMatInvalid()}}
+document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.mt!=null){markMatInvalid();renderChecks()}});
+/* ---------- painel único "O que precisa da sua atenção" ---------- */
+const SEC_OF=sel=>/^#(aluno|al-)/.test(sel)?2:/^#(grades|places|subj)/.test(sel)?3:/^#(deps|obs)/.test(sel)?4:/^#mat/.test(sel)?'m':0;
+function renderChecks(){
+  const box=$('#checks');if(isPristine()){$('#checks-count').hidden=true;box.innerHTML='<li><span class="chip o" style="background:var(--accent-soft);color:var(--accent-2)">início</span><span>Anexe os documentos do aluno no passo 1. O que precisar de atenção aparece aqui.</span></li>';secBadges({});return}
+  const out=[];const A=state.aluno;const L=LABELS[state.mode];const add=(l,t,go)=>out.push({l,t,go});
+  if(state.modeAlert)add('w',state.modeAlert,'#mode-alert');
+  for(const f of files){if(f.ocr&&f.ok)add('w',`“${f.name}” é foto ou digitalização: os dados lidos podem ter erros. Se puder, use o PDF original do Conexão.`,'#files');if(f.err)add('b',`“${f.name}”: ${f.status}`,'#files')}
+  for(const x of docChecklist(state,files))if(x.k!=='o'&&!/^Dependência/.test(x.t))add(x.k==='b'?'w':'w',`Falta: ${x.t}${x.s&&x.s!=='falta'?' ('+x.s+')':''}`,x.go);
+  const miss=ALUNO_FIELDS.filter(([k])=>!A[k]).map(([,l])=>l.replace('Filiação — ',''));if(miss.length)add('w','Dados do aluno vazios: '+miss.join(', '),'#aluno');
+  const ocrK=Object.keys(state.ocrFields||{}).filter(k=>A[k]);if(ocrK.length)add('w','Lidos de imagem, confira letra por letra: '+ocrK.map(k=>FIELD_LABEL[k]).join(', '),'#al-'+ocrK[0]);
+  state.periods.forEach((p,i)=>{if(!periodHasData(i))return;const lab=L[i];if(!p.ano)add('w',`${lab}: falta o ano`,'#places');if(!p.freq)add('w',`${lab}: falta a frequência`,'#places');if(!p.sit)add('w',`${lab}: falta a situação final`,'#places')});
+  const pad=state.subjects.reduce((a,s)=>a+s.g.filter(g=>g.pad).length,0);if(pad)add('w',`${pad} carga(s) horária(s) com valor padrão do modelo: confira`,'#grades');
+  const ph=obsLines(state).filter(l=>l.ph).length;if(ph)add('b',`${ph} linha(s) de dependência com (preencher)`,'#deps');
+  const depFlag=[];state.subjects.forEach(s=>s.g.forEach((g,p)=>{if(isDep(g,p)&&!state.deps.some(d=>N(d.disc)===N(s.name)))depFlag.push(`${s.name} (${L[p]})`)}));if(depFlag.length)add('b','Nota abaixo da média sem dependência registrada: '+depFlag.join(', '),'#deps');
+  if(state.deps.length)add('w',`Confira o ano em vermelho de ${state.deps.length===1?'a dependência':'cada uma das '+state.deps.length+' dependências'} (ano em que foi cumprida).`,'#deps');
+  const nd=files.reduce((a,f)=>a+((f.diff||[]).length),0);if(nd)add('w',`${nd} dado(s) do aluno diferentes entre os arquivos: escolha o certo na lista de arquivos`,'#files');
+  for(const v of validationIssues(state))add(v.l,v.t,v.go);
+  if(!state.subjects.length)add('b','Nenhuma disciplina na lista','#grades');
+  if(!out.length)add('o','Tudo preenchido. Pode baixar e imprimir.');
+  const nOpen=out.filter(o=>o.l!=='o').length;const cc=$('#checks-count');cc.textContent=nOpen?String(nOpen):'';cc.hidden=!nOpen;
+  box.innerHTML=out.map(o=>`<li><span class="chip ${o.l}">${o.l==='o'?'ok':o.l==='b'?'atenção':'conferir'}</span><span>${esc_(o.t)}</span>${o.go?`<button type="button" class="btn small go" data-go="${esc_(o.go)}" aria-label="Ir para: ${esc_(o.t)}">ir</button>`:''}</li>`).join('');
+  const per={};for(const o of out)if(o.l!=='o'&&o.go){const s=SEC_OF(o.go);if(s)per[s]=(per[s]||0)+1}secBadges(per);renderDocCheck()}
+function goTo(sel){const el=document.querySelector(sel);if(!el)return;const sec=el.closest('.sec');if(sec)sec.classList.remove('collapsed');const det=el.closest('details')||(el.tagName==='DETAILS'?el:null);if(det)det.open=true;
+  el.scrollIntoView({behavior:'smooth',block:'center'});const inp=el.matches('input,select,textarea')?el:el.querySelector('input:not([disabled]),select,textarea,button');if(inp)setTimeout(()=>inp.focus({preventScroll:true}),350)}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){e.preventDefault();goTo(g.dataset.go)}});
+/* ---------- seções que recolhem, com selo de conferência ---------- */
+const HELP={1:['Anexe tudo de uma vez, em qualquer ordem: FIAs, atas, ficha de matrícula e fichas de dependência, em Excel ou PDF. A lista "Documentos deste aluno" mostra o que falta baixar no Conexão.','anexar'],
+  2:['Dados pessoais do histórico. Vêm da ficha de matrícula (quando é PDF do Conexão) e das FIAs. Campos em amarelo estão vazios; tracejados foram lidos de imagem.','aluno'],
+  3:['Notas são o total de pontos do ano (soma dos bimestres ou trimestres). Vermelho = abaixo da média, gera dependência. "Onde cursou" traz escola, ano, frequência e situação de cada série ou módulo.','notas'],
+  4:['Cada dependência vira uma linha de observação e uma ficha de dependência na impressão para assinatura. "Ficou em" é a série/módulo em que o aluno ficou em dependência; o ano em vermelho é o ano em que ela foi cumprida.','obs'],
+  5:['Escola que emite e quem assina. Fica salvo neste navegador.','escola'],
+  m:['Dados da ficha de matrícula impressa para assinatura. Campos marcados "(item 2)" são os mesmos do item 2.','anexar']};
+function initSections(){document.querySelectorAll('.grid section.card').forEach(sec=>{const st=sec.querySelector('h2 .step,summary .step');const isMat=!!sec.querySelector('#mat-cfg');if(!st&&!isMat)return;
+  const n=isMat?'m':st.textContent.trim();sec.dataset.sec=n;const h=sec.querySelector('h2')||sec.querySelector('summary');if(!h||h.querySelector('.help-btn'))return;
+  const hb=document.createElement('button');hb.type='button';hb.className='help-btn';hb.textContent='?';hb.setAttribute('aria-label','Ajuda sobre esta etapa');hb.dataset.help=n;h.appendChild(hb);
+  if(sec.querySelector('h2')&&n!=='1'){sec.classList.add('sec');const bd=document.createElement('span');bd.className='sec-badge';h.appendChild(bd);h.classList.add('sec-h');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded','true')}})}
+function secBadges(per){document.querySelectorAll('.sec').forEach(sec=>{const n=sec.dataset.sec;const b=sec.querySelector('.sec-badge');if(!b)return;const k=per[n]||0;
+  b.className='sec-badge '+(isPristine()?'':k?'w':'o');b.textContent=isPristine()?'':k?`${k} para conferir`:'✓ conferido';b.hidden=isPristine();
+  sec.querySelector('.sec-h').setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))})}
+function autoCollapse(){if(isPristine())return;const per={};for(const li of document.querySelectorAll('#checks [data-go]')){const s=SEC_OF(li.dataset.go);if(s)per[s]=(per[s]||0)+1}
+  document.querySelectorAll('.sec').forEach(sec=>{const n=sec.dataset.sec;if(n==='5')return;sec.classList.toggle('collapsed',!per[n]);const h=sec.querySelector('.sec-h');if(h)h.setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))})}
+document.addEventListener('click',e=>{const hb=e.target.closest('.help-btn');if(hb){e.preventDefault();e.stopPropagation();const sec=hb.closest('section');let box=sec.querySelector('.helpbox');
+    if(box){box.remove();return}const [t,a]=HELP[hb.dataset.help]||['',''];box=document.createElement('div');box.className='helpbox';box.innerHTML=`${esc_(t)} <a href="tutorial.html#${a}" target="_blank">Ver no tutorial</a>`;(sec.querySelector('.sec-h')||hb.parentNode).after(box);return}
+  const h=e.target.closest('.sec-h');if(h&&!e.target.closest('button,a,input')){const sec=h.closest('.sec');sec.classList.toggle('collapsed');h.setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))}});
+document.addEventListener('keydown',e=>{const h=e.target.closest&&e.target.closest('.sec-h');if(h&&e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();h.click()}});
+/* ---------- lista de arquivos compacta ---------- */
+function fileSummary(f){if(f.dup)return 'Arquivo repetido';if(f.err)return 'Não foi lido';if(f.fund)return 'Ensino fundamental (ignorado)';
+  const ds=(f.src&&f.src.docs)||[];if(!ds.length)return f.ok?String(f.status||'').split(' | ')[0].split(' · ')[0]:'Lendo…';
+  return ds.map(d=>d.role==='fia'?`FIA · ${d.p!=null?LABELS[state.mode][d.p]:''}${d.ano?' · '+d.ano:''}`:d.role==='arf'?`Ata · ${d.ano||''}`:d.role==='dep'?`Ficha de dependência${d.ano?' · '+d.ano:''}`:ROLE_LBL[d.role]).join(' | ')}
+function renderFiles(){
+  $('#files').innerHTML=files.map((f,i)=>{const chips=[f.dup?'<span class="chip w">repetido</span>':'',f.err?'<span class="chip b">erro</span>':'',f.ocr&&f.ok?'<span class="chip w">digitalização</span>':'',f.ai?'<span class="chip w">lido com IA</span>':'',f.ok&&!f.err&&!f.dup&&!f.fund?'<span class="chip o">ok</span>':''].join('');
+    return `<li><span class="fname">${esc_(f.name)}</span><button type="button" class="ib" data-rmfile="${i}" aria-label="Remover ${esc_(f.name)} da lista">✕</button>
+    <span class="fsum">${chips}<span>${esc_(fileSummary(f))}${f.arfDone?' · aluno: '+esc_(f.arfDone):''}</span></span>
+    ${f.err||f.dup?`<span class="fmeta ferr">${esc_(f.status)}</span>`:''}
+    ${f.ocr&&f.ok?'<span class="fmeta fwarn">Foto ou digitalização: os dados podem ter erros de leitura. Se puder, baixe o PDF original no Conexão.</span>':''}
+    ${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}
+    ${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}
+    ${f.status&&!f.err&&!f.dup?`<details class="fdet"><summary>detalhes da leitura</summary><span class="fmeta">${esc_(f.status)}</span></details>`:''}</li>`}).join('');
+  renderDocCheck()}
+/* ---------- dependências: "ficou em" e "cumpriu em" ---------- */
+function depPeriod(d){if(d.p!=null&&state.periods[d.p])return d.p;if(d.auto!=null&&state.periods[d.auto])return d.auto;try{return periodOfDep(d)}catch(e){return null}}
+function renderDeps(){
+  const L=LABELS[state.mode];const subjOpts=state.subjects.map(s=>`<option value="${esc_(s.name)}">`).join('');
+  const perOpts=sel=>'<option value="">—</option>'+state.periods.map((p,i)=>`<option value="${i}"${sel===i?' selected':''}>${esc_(L[i])}${p.ano?' · '+esc_(p.ano):''}</option>`).join('');
+  $('#deps').innerHTML=(state.deps.length?`<div class="dep-row dep-head"><span>Ficou em dependência</span><span class="dep-ano-h">⚠ Cumpriu em (ano)</span><span>Disciplina</span><span>Nota final</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
+    state.deps.map((d,i)=>`<div class="dep-row"><select id="dp-${i}" data-dp="${i}" aria-label="Série ou módulo em que ficou em dependência">${perOpts(depPeriod(d))}</select><input id="da-${i}" data-da="${i}" value="${esc_(d.ano)}" placeholder="ano" inputmode="numeric" aria-label="Ano em que a dependência foi cumprida" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc_(d.disc)}" list="subj-list" placeholder="disciplina" aria-label="Disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc_(d.nota)}" placeholder="(preencher)" aria-label="Nota final" class="${d.nota?'':'empty'}" inputmode="decimal"><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
+    `<datalist id="subj-list">${subjOpts}</datalist>`}
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.dp!=null){const d=state.deps[+t.dataset.dp];d.p=t.value===''?null:+t.value;d.edited=1;schedulePreview();renderChecks()}});
+/* ---------- leitura com IA: sempre começa desligada e pede autorização ---------- */
+let AI_OK=false;
+{const _r=readWithAI;readWithAI=async function(c){if(!AI_OK){const ok=await askModal('<h3>Enviar este documento para a IA?</h3><p>Com "Ler com IA" ligado, a imagem do documento (com dados pessoais do aluno) é enviada à Anthropic para ser lida. Sem isso, a leitura é feita só neste computador.</p>',[{label:'Não enviar',value:false},{label:'Enviar e ler com IA',value:true,primary:true}],{sticky:true});
+    if(!ok)throw new Error('Leitura com IA cancelada. Para ler sem enviar, escolha "Ler no computador (OCR)".');AI_OK=true}return _r(c)}}
+/* ---------- ao terminar: oferecer limpar ---------- */
+function finishPrompt(what){if(typeof TURMA!=='undefined'&&TURMA&&TURMA.on){tmFinishPrompt(what);return}
+  let t=document.getElementById('finish-toast');if(t)t.remove();t=document.createElement('div');t.id='finish-toast';t.className='toast';t.setAttribute('role','status');
+  t.innerHTML=`<span><b>${esc_(what)}</b> Terminou este aluno? Os dados ficam guardados neste computador até você limpar.</span><span class="row"><button type="button" class="btn small primary" id="ft-clear">Limpar dados do aluno</button><button type="button" class="btn small" id="ft-keep">Ainda não</button></span>`;
+  document.body.appendChild(t);$('#ft-keep').onclick=()=>t.remove();$('#ft-clear').onclick=()=>{t.remove();const ok=resetAll();setStatus(ok?'Dados apagados. Pronto para o próximo aluno.':'Atenção: algo não foi limpo. Recarregue a página (F5).',!ok);window.scrollTo({top:0,behavior:'smooth'})};
+  clearTimeout(finishPrompt._t);finishPrompt._t=setTimeout(()=>{if(t.isConnected)t.remove()},30000)}
+{const _d=download;download=async function(kind){await _d(kind);if(!/não foi|cancelad/i.test($('#status').textContent))finishPrompt(kind==='pdf'?'PDF gerado.':'Excel gerado.')}}
+{const _p=printHistorico;printHistorico=async function(){await _p.apply(this,arguments);finishPrompt('Histórico enviado para impressão.')}}
+{const _pp=printPack;printPack=async function(mode){const r=await _pp(mode);if(/página\(s\)/.test($('#status').textContent))finishPrompt('Documentos para assinatura prontos.');return r}}
+/* ---------- depois de cada lote de arquivos: recolher o que está conferido ---------- */
+{const _hf=handleFiles;handleFiles=async function(list){AI_OK=false;const r=await _hf(list);try{renderChecks();autoCollapse()}catch(e){}return r}}
+window.addEventListener('error',e=>{try{setStatus('Algo deu errado na página. Se o problema continuar, recarregue (F5): o trabalho fica guardado. (detalhe: '+(e.message||'')+')',true)}catch(_){}});
+function initV2(){initSections();
+  const side=document.querySelector('aside.side');if(side&&!document.getElementById('app-ver')){const p=document.createElement('p');p.id='app-ver';p.className='app-ver';p.innerHTML=`Versão ${APP_VERSION} · ${APP_DATA} · <a href="tutorial.html#novidades" target="_blank">o que mudou</a>`;side.appendChild(p)}
+  renderChecks()}
+
+/* ===== v2: prévia da impressão para assinatura, salvar/abrir aluno, gov.br ===== */
+const GOVBR_TXT='Para assinar sem imprimir: baixe o PDF, abra <a href="https://assinador.iti.br" target="_blank" rel="noopener">assinador.iti.br</a> (conta gov.br, gratuito), envie o arquivo e posicione a assinatura sobre o nome de cada um. A assinatura gov.br tem validade legal.';
+function thumbPage(pg,w){const page=A4[pg.orient];const k=w/page.w;const cv=document.createElement('canvas');cv.width=Math.round(page.w*k*2);cv.height=Math.round(page.h*k*2);cv.style.width=Math.round(page.w*k)+'px';cv.style.height=Math.round(page.h*k)+'px';
+  const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.setTransform(k*2,0,0,k*2,0,0);
+  try{if(pg.raster){const im=new Image();im.onload=()=>{const s=Math.min(page.w/im.width,page.h/im.height);ctx.drawImage(im,(page.w-im.width*s)/2,(page.h-im.height*s)/2,im.width*s,im.height*s)};im.src=pg.raster}
+    else if(pg.hist)paintSheet(buildSheet(state),canvasPainter(ctx));else if(pg.draw)pg.draw(canvasPainterDoc(ctx),page);else paintModel(pg.model,canvasPainterDoc(ctx),page)}catch(e){console.warn(e)}
+  return cv}
+async function packPreview(pages,mode){
+  let order=pages.map((p,i)=>({p,i,on:true}));
+  const html=()=>`<h3>Conferir antes de ${mode==='pdf'?'baixar':'imprimir'} · ${order.filter(o=>o.on).length} de ${order.length} página(s)</h3><p class="hint">Desmarque o que não quer e use as setas para mudar a ordem.</p><div class="pk-grid">${order.map((o,k)=>`<figure class="pk-it${o.on?'':' off'}" data-k="${k}"><div class="pk-th"></div><figcaption><label><input type="checkbox" data-pkon="${k}"${o.on?' checked':''}> ${k+1}. ${esc_(o.p.title||'')}</label><span><button type="button" class="ib" data-pkup="${k}" aria-label="Subir">↑</button><button type="button" class="ib" data-pkdn="${k}" aria-label="Descer">↓</button></span></figcaption></figure>`).join('')}</div><p class="govbr">${GOVBR_TXT}</p>`;
+  return new Promise(res=>{const bg=document.createElement('div');bg.className='mdl-bg';bg.innerHTML=`<div class="mdl wide" role="dialog" aria-modal="true"><div class="mdl-body"></div><div class="mdl-foot"><button type="button" class="btn small" data-act="x">Cancelar</button><button type="button" class="btn small" data-act="pdf">Baixar PDF</button><button type="button" class="btn small primary" data-act="print">Imprimir</button></div></div>`;
+    document.body.appendChild(bg);const body=bg.querySelector('.mdl-body');const thumbs=new Map();
+    const draw=()=>{body.innerHTML=html();order.forEach((o,k)=>{let c=thumbs.get(o.i);if(!c){c=thumbPage(o.p,o.p.orient==='l'?150:106);thumbs.set(o.i,c)}body.querySelector(`[data-k="${k}"] .pk-th`).appendChild(c)})};
+    draw();const done=v=>{bg.remove();res(v)};
+    bg.addEventListener('click',e=>{const t=e.target;let k;
+      if((k=t.dataset.pkup)!=null&&+k>0){[order[k-1],order[k]]=[order[k],order[k-1]];draw()}
+      else if((k=t.dataset.pkdn)!=null&&+k<order.length-1){[order[+k+1],order[k]]=[order[k],order[+k+1]];draw()}
+      else if(t.dataset.act){if(t.dataset.act==='x')return done(null);const sel=order.filter(o=>o.on).map(o=>o.p);if(!sel.length){setStatus('Nenhuma página marcada.',true);return}done({pages:sel,mode:t.dataset.act})}
+      else if(t===bg)done(null)});
+    bg.addEventListener('change',e=>{const k=e.target.dataset.pkon;if(k!=null){order[k].on=e.target.checked;draw()}});
+    bg.addEventListener('keydown',e=>{if(e.key==='Escape')done(null)});bg.querySelector('[data-act="print"]').focus()})}
+/* ---------- salvar / abrir aluno em arquivo ---------- */
+function ab2b64(ab){const u=new Uint8Array(ab);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function b642ab(b){const s=atob(b);const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer}
+const SKIP_KEYS=new Set(['depDocs','entry','parsed','_img','img']);
+function serialize(obj){return JSON.stringify(obj,(k,v)=>{if(SKIP_KEYS.has(k))return undefined;if(v instanceof ArrayBuffer)return {__ab:ab2b64(v)};if(ArrayBuffer.isView(v))return {__ab:ab2b64(v.buffer)};return v})}
+function deserialize(txt){return JSON.parse(txt,(k,v)=>v&&typeof v==='object'&&typeof v.__ab==='string'?b642ab(v.__ab):v)}
+async function saveBlob(filename,blob){if(DL===null&&window.claude&&claude.use)DL=await claude.use('downloads').catch(()=>null);
+  if(DL){await DL.save({filename,data:blob});return}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove()}
+const slug=s=>String(s||'aluno').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+async function saveAluno(){if(isPristine()){setStatus('Não há aluno para salvar.',true);return}
+  const txt=serialize({app:'gerador-historico-beto',kind:'aluno',v:2,salvo:new Date().toISOString(),state,files:files.filter(f=>!f.example)});
+  const fn=`Aluno_${slug(state.aluno.nome)}.historico.json`;await saveBlob(fn,new Blob([txt],{type:'application/json'}));
+  setStatus(`Aluno salvo no arquivo ${fn}. Para continuar depois, anexe esse arquivo no passo 1. Guarde-o em local seguro: ele tem dados pessoais do aluno.`)}
+async function openSaved(file){let obj;try{obj=deserialize(await file.text())}catch(e){setStatus(`“${file.name}” não é um arquivo salvo por este site.`,true);return true}
+  if(!obj||obj.app!=='gerador-historico-beto')return false;
+  if(obj.kind==='turma'){await tmImport(obj);return true}
+  if(typeof TURMA!=='undefined'&&TURMA&&TURMA.on){tmAddWorkspace(obj.state,obj.files||[]);tmSave();tmRender();setStatus(`Aluno ${obj.state.aluno.nome||''} adicionado à turma.`);return true}
+  if(!isPristine()&&!state.example){const ok=await askModal(`<h3>Abrir aluno salvo?</h3><p>O aluno que está na tela (${esc_(state.aluno.nome||'sem nome')}) será substituído por ${esc_(obj.state.aluno.nome||'o aluno do arquivo')}.</p>`,[{label:'Cancelar',value:false},{label:'Abrir',value:true,primary:true}]);if(!ok)return true}
+  state=obj.state;files=obj.files||[];renderFiles();renderAll();setStatus(`Aluno ${state.aluno.nome||''} aberto do arquivo ${file.name}.`);return true}
+{const _hf=handleFiles;handleFiles=async function(list){list=[...list];const rest=[];for(const f of list){if(/\.json$/i.test(f.name)){if(!(await openSaved(f)))rest.push(f)}else rest.push(f)}if(rest.length)return _hf(rest)}}
+function initV2Files(){const side=document.querySelector('aside.side .packrow');if(side&&!document.getElementById('btn-save')){const b=document.createElement('button');b.type='button';b.className='btn';b.id='btn-save';b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 3h11l3 3v15H5V3Zm2 2v5h8V5H7Zm5 8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>Salvar aluno em arquivo';b.title='Gera um arquivo para continuar este aluno outro dia ou em outro computador';side.after(b)}
+  const inp=$('#file');if(inp&&!/json/.test(inp.accept||''))inp.accept=(inp.accept?inp.accept+',':'')+'.json,application/json'}
+document.addEventListener('click',e=>{if(e.target.closest('#btn-save'))saveAluno()});
+
+/* ===== v2: modo turma — vários alunos, cada arquivo vai para o aluno certo ===== */
+let TURMA=null,TM_BUSY=false;const HF_ONE=handleFiles;
+const tmNew=()=>({on:true,mode:state&&state.mode||'reg',alunos:[],arfs:[],orfaos:[],fps:[],cur:null,seq:1,criada:Date.now()});
+const tmW=id=>TURMA.alunos.find(a=>a.id===id);
+function tmSync(){if(!TURMA||TURMA.cur==null)return;const w=tmW(TURMA.cur);if(!w)return;w.state=state;w.files=files;w.nome=state.aluno.nome||w.nome;w.mat=state.aluno.matricula||w.mat}
+function tmAddWorkspace(st,fl){const w={id:TURMA.seq++,nome:st.aluno.nome||'',mat:st.aluno.matricula||'',state:st,files:fl||[],done:false};TURMA.alunos.push(w);return w}
+function tmFind(nome,mat){const m=String(mat||'').replace(/\D/g,'');
+  return TURMA.alunos.find(a=>m&&String(a.mat||'').replace(/\D/g,'')===m)||(nome?TURMA.alunos.find(a=>a.nome&&nomeParecido(a.nome,nome)):null)}
+const fileOf=r=>new File([r.buf],r.name,{type:r.type||''});
+/* roda a leitura normal dentro do espaço de um aluno */
+async function tmRunIn(w,recs){CONF_RUN++;const keepS=state,keepF=files;state=w.state;files=w.files;TM_BUSY=true;
+  try{await HF_ONE(recs.map(fileOf))}finally{TM_BUSY=false;w.state=state;w.files=files;w.nome=state.aluno.nome||w.nome;w.mat=state.aluno.matricula||w.mat;state=keepS;files=keepF}}
+function arfHas(rec,w){return (rec.alunos||[]).some(s=>(w.mat&&s.mat&&String(s.mat).replace(/\D/g,'')===String(w.mat).replace(/\D/g,''))||(w.nome&&nomeParecido(w.nome,s.nome)))}
+async function tmApplyArfs(w){for(const rec of TURMA.arfs){if(!arfHas(rec,w))continue;if((w.files||[]).some(f=>f.src&&srcFp(f)===rec.fp))continue;await tmRunIn(w,[rec])}}
+async function tmRoute(list){
+  if(TURMA.cur==null)TURMA.mode=state.mode;tmSync();const keepCur=TURMA.cur;const n=list.length;let k=0,novos=0,orf=0,rep=0;
+  for(const file of list){k++;setStatus(`Turma: lendo ${k} de ${n}: ${file.name}…`);
+    if(/\.json$/i.test(file.name)){await openSaved(file);continue}
+    const buf=await file.arrayBuffer();const fp=fileFp(buf);const rec={name:file.name,type:file.type,buf,fp};
+    if(TURMA.fps.includes(fp)){rep++;continue}
+    // leitura de sondagem num espaço vazio
+    const probe={state:Object.assign(blankState(TURMA.mode),{example:false}),files:[]};
+    CONF_RUN++;const keepS=state,keepF=files;state=probe.state;files=probe.files;TM_BUSY=true;
+    try{await HF_ONE([fileOf(rec)])}catch(e){console.error(e)}finally{TM_BUSY=false;probe.state=state;probe.files=files;state=keepS;files=keepF}
+    const ent=probe.files[0]||{};if(probe.state.mode)TURMA.mode=probe.state.mode;
+    if(ent.arf){rec.alunos=ent.arf.students.map(s=>({nome:s.nome,mat:s.mat}));rec.ano=ent.arf.ano;TURMA.arfs.push(rec);TURMA.fps.push(fp);
+      for(const w of TURMA.alunos)if(arfHas(rec,w))await tmRunIn(w,[rec]);continue}
+    const nome=probe.state.aluno.nome,mat=probe.state.aluno.matricula;
+    if(ent.err||ent.fund||(!nome&&!mat)){TURMA.orfaos.push({...rec,msg:ent.fund?FUND_MSG:ent.err?ent.status:'Não encontrei o nome do aluno neste arquivo.'});TURMA.fps.push(fp);orf++;continue}
+    let w=tmFind(nome,mat);
+    if(!w){probe.state.modeAlert='';w=tmAddWorkspace(probe.state,probe.files);novos++;await tmApplyArfs(w)}
+    else await tmRunIn(w,[rec]);
+    TURMA.fps.push(fp)}
+  TURMA.cur=keepCur;if(keepCur!=null){const w=tmW(keepCur);if(w){state=w.state;files=w.files}}else tmBlank();
+  renderFiles();renderAll();tmSave();tmRender();
+  setStatus(`Turma: ${n} arquivo(s) lido(s). ${TURMA.alunos.length} aluno(s) na lista${novos?` (${novos} novo(s))`:''}${rep?`, ${rep} repetido(s) ignorado(s)`:''}${orf?`, ${orf} sem aluno identificado`:''}.`)}
+function tmBlank(){state=Object.assign(blankState(TURMA.mode),{example:false});files=[]}
+/* ---------- situação de cada aluno ---------- */
+function tmStatus(w){const st=w.state;let b=0,wn=0;try{for(const x of dataChecks(st))x.l==='b'?b++:wn++;b+=obsLines(st).filter(l=>l.ph).length;for(const x of validationIssues(st))wn++}catch(e){}
+  const dc=docChecklist(st,w.files);const falta=dc.filter(x=>x.k==='b').length,inc=dc.filter(x=>x.k==='w').length;
+  const semFia=dc.filter(x=>x.k!=='o'&&/^FIA/.test(x.t)).length;
+  return {b,wn,falta:falta+(semFia&&!falta?semFia:0),inc,docs:dc.filter(x=>x.k==='o').length,tot:dc.length,ok:!b&&!falta&&!semFia&&st.subjects.length>0}}
+function tmRender(){let card=document.getElementById('turma-card');document.body.classList.toggle('turma-on',!!(TURMA&&TURMA.on));document.body.classList.toggle('turma-nocur',!!(TURMA&&TURMA.on&&TURMA.cur==null));
+  $('#tm-one')&&$('#tm-one').setAttribute('aria-pressed',String(!(TURMA&&TURMA.on)));$('#tm-all')&&$('#tm-all').setAttribute('aria-pressed',String(!!(TURMA&&TURMA.on)));
+  if(!TURMA||!TURMA.on){if(card)card.hidden=true;return}
+  if(!card){card=document.createElement('section');card.className='card';card.id='turma-card';const first=document.querySelector('.grid section.card');first.parentNode.insertBefore(card,first)}
+  card.hidden=false;const rows=TURMA.alunos.map(w=>({w,s:tmStatus(w)})).sort((a,b)=>String(a.w.nome).localeCompare(String(b.w.nome),'pt'));
+  const prontos=rows.filter(r=>r.s.ok).length,concl=rows.filter(r=>r.w.done).length;
+  const naAta=new Map();for(const rec of TURMA.arfs)for(const s of rec.alunos||[])if(!TURMA.alunos.some(w=>arfHas({alunos:[s]},w)))naAta.set(N(s.nome),s);
+  const cur=TURMA.cur!=null?tmW(TURMA.cur):null;
+  card.innerHTML=`<h2>Turma <span class="count">${TURMA.alunos.length}</span></h2>
+  ${cur?`<div class="tm-cur"><span>Aberto: <b>${esc_(cur.nome||'(sem nome)')}</b></span><span class="row"><button type="button" class="btn small primary" data-tm="done" ${cur.done?'disabled':''}>${cur.done?'✓ Concluído':'Marcar como concluído'}</button><button type="button" class="btn small" data-tm="close">← Voltar à lista da turma</button></span></div>`:''}
+  <p class="hint">Anexe no passo 1 os documentos de <b>todos</b> os alunos, em qualquer ordem e quando quiser: FIAs, atas, fichas de matrícula e de dependência. Cada arquivo vai sozinho para o aluno certo; as atas completam todos os alunos que aparecem nelas. Clique em <b>Abrir</b> para conferir e corrigir um aluno.</p>
+  <details class="tm-list"${cur?'':' open'}><summary>Lista da turma: ${TURMA.alunos.length} aluno(s) · ${prontos} pronto(s)${concl?' · '+concl+' concluído(s)':''}</summary>
+  <div class="row tm-acts"><button type="button" class="btn small" data-tm="pdfall" ${prontos?'':'disabled'}>Baixar históricos prontos (${prontos}) em PDF</button>${naAta.size?`<button type="button" class="btn small" data-tm="fromarf">Criar os ${naAta.size} aluno(s) que só aparecem nas atas</button>`:''}<button type="button" class="btn small" data-tm="save">Salvar turma em arquivo</button><button type="button" class="btn small danger" data-tm="clear">Limpar turma</button></div>
+  <div class="tablebox"><table class="g tm-tab"><thead><tr><th>Aluno</th><th>Documentos</th><th>Pendências</th><th>Situação</th><th></th></tr></thead><tbody>
+  ${rows.length?rows.map(({w,s})=>`<tr class="${cur&&cur.id===w.id?'tm-sel':''}"><td><b>${esc_(w.nome||'(sem nome)')}</b><br><small>${esc_(w.mat||'')}</small></td><td>${s.docs}/${s.tot}${s.falta?` · <span class="tm-b">${s.falta} faltando</span>`:''}</td><td>${s.b?`<span class="tm-b">${s.b} de atenção</span>`:''}${s.b&&s.wn?' · ':''}${s.wn?`<span class="tm-w">${s.wn} para conferir</span>`:''}${!s.b&&!s.wn?'—':''}</td><td>${w.done?'<span class="chip o">concluído</span>':s.ok?'<span class="chip o">pronto</span>':'<span class="chip w">pendente</span>'}</td><td class="tm-btns"><button type="button" class="btn small" data-tmopen="${w.id}">Abrir</button><button type="button" class="ib" data-tmdel="${w.id}" aria-label="Tirar ${esc_(w.nome)} da turma">✕</button></td></tr>`).join(''):'<tr><td colspan="5" class="hint">Nenhum aluno ainda. Anexe os documentos no passo 1.</td></tr>'}
+  </tbody></table></div>
+  ${TURMA.orfaos.length?`<div class="tm-orf"><div class="subhead">Arquivos sem aluno identificado</div>${TURMA.orfaos.map((o,i)=>`<div class="row"><span><b>${esc_(o.name)}</b> · <small>${esc_(o.msg||'')}</small></span><select data-tmorf="${i}" aria-label="Enviar para o aluno"><option value="">Enviar para o aluno…</option>${TURMA.alunos.map(w=>`<option value="${w.id}">${esc_(w.nome)}</option>`).join('')}</select><button type="button" class="ib" data-tmorfdel="${i}" aria-label="Descartar arquivo">✕</button></div>`).join('')}</div>`:''}
+  </details>
+  <p class="hint tm-priv">A turma fica guardada <b>só neste computador</b> até você clicar em Limpar turma${concl?` · ${concl} concluído(s)`:''}. Em computador compartilhado, salve em arquivo e limpe ao terminar.</p>`}
+async function tmOpen(id){CONF_RUN++;CONF={state:'idle',items:[],sig:''};tmSync();const w=tmW(id);if(!w)return;TURMA.cur=id;state=w.state;files=w.files;renderFiles();renderAll();tmRender();tmSave();
+  setTimeout(()=>{try{renderChecks();autoCollapse()}catch(e){}},50);document.getElementById('turma-card').scrollIntoView({behavior:'smooth',block:'start'})}
+function tmClose(){CONF_RUN++;CONF={state:'idle',items:[],sig:''};tmSync();TURMA.cur=null;tmBlank();renderFiles();renderAll();tmRender();tmSave()}
+async function tmPdfAll(){tmSync();const ready=TURMA.alunos.filter(w=>tmStatus(w).ok).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt'));if(!ready.length)return;
+  const doc=new jspdf.jsPDF({unit:'pt',format:'a4',orientation:'portrait'});for(const [k,f] of Object.entries(FONT_FILES)){doc.addFileToVFS(f,FONTB64[k]);doc.addFont(f,'Carlito',k)}
+  const keep=state;try{ready.forEach((w,i)=>{if(i)doc.addPage('a4','portrait');state=w.state;paintSheet(buildSheet(w.state),pdfPainter(doc))})}finally{state=keep}
+  doc.setProperties({title:'Históricos da turma'});await saveBlob(`Historicos_turma_${ready.length}_alunos.pdf`,doc.output('blob'));setStatus(`${ready.length} histórico(s) em um PDF. Os alunos com pendência não entraram: abra cada um para corrigir.`)}
+async function tmImport(obj){const t=obj.turma;if(!t)return;
+  if(TURMA&&TURMA.alunos.length){const ok=await askModal('<h3>Abrir turma salva?</h3><p>A turma que está neste computador será substituída pela do arquivo.</p>',[{label:'Cancelar',value:false},{label:'Substituir',value:true,primary:true}]);if(!ok)return}
+  TURMA=t;TURMA.on=true;TURMA.cur=null;tmBlank();renderFiles();renderAll();tmRender();tmSave();setStatus(`Turma aberta do arquivo: ${TURMA.alunos.length} aluno(s).`)}
+async function tmSaveFile(){tmSync();const txt=serialize({app:'gerador-historico-beto',kind:'turma',v:2,salvo:new Date().toISOString(),turma:TURMA});
+  await saveBlob(`Turma_${new Date().toISOString().slice(0,10)}.historico.json`,new Blob([txt],{type:'application/json'}));setStatus('Turma salva em arquivo. Guarde-o em local seguro: tem dados pessoais dos alunos.')}
+/* ---------- guardar no navegador ---------- */
+async function tmKv(v,get){const db=await sessDb();const r=await new Promise((res,rej)=>{const tx=db.transaction('kv',get?'readonly':'readwrite');const s=tx.objectStore('kv');let q;if(get)q=s.get('turma');else if(v==null)s.delete('turma');else s.put(v,'turma');tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error)});db.close();return r}
+let tmSaveT=null;function tmSave(){clearTimeout(tmSaveT);tmSaveT=setTimeout(()=>{if(TURMA&&!TM_BUSY){tmSync();tmKv(TURMA).catch(e=>console.warn('turma',e))}},400)}
+{const _s=sessSaveNow;sessSaveNow=async function(){if(TURMA&&TURMA.on){if(!TM_BUSY){tmSync();try{await tmKv(TURMA)}catch(e){console.warn(e)}}return}return _s()}}
+{const _r=sessRestore;sessRestore=async function(){try{const t=await tmKv(null,true);if(t&&t.on){TURMA=t;const c=TURMA.cur;TURMA.cur=null;tmBlank();if(c!=null&&tmW(c)){await tmOpen(c)}else{renderFiles();renderAll();tmRender()}setStatus(`Turma recuperada: ${TURMA.alunos.length} aluno(s).`);return true}if(t)TURMA=t}catch(e){console.warn(e)}return _r()}}
+{const _sc=scheduleConf;scheduleConf=function(){if(TM_BUSY)return;return _sc.apply(this,arguments)}}
+{const _h=handleFiles;handleFiles=async function(list){if(TURMA&&TURMA.on&&!TM_BUSY){return tmRoute([...list])}return _h(list)}}
+{const _rs=resetAll;resetAll=function(){if(TURMA&&TURMA.on&&TURMA.cur!=null&&!TM_BUSY){const w=tmW(TURMA.cur);const r=_rs.apply(this,arguments);if(w){w.state=state;w.files=files;w.done=false}tmRender();tmSave();return r}return _rs.apply(this,arguments)}}
+function tmFinishPrompt(what){const w=TURMA.cur!=null?tmW(TURMA.cur):null;if(!w)return;let t=document.getElementById('finish-toast');if(t)t.remove();t=document.createElement('div');t.id='finish-toast';t.className='toast';
+  t.innerHTML=`<span><b>${esc_(what)}</b> Terminou ${esc_(w.nome||'este aluno')}?</span><span class="row"><button type="button" class="btn small primary" id="ft-done">Marcar como concluído e voltar à turma</button><button type="button" class="btn small" id="ft-keep">Ainda não</button></span>`;
+  document.body.appendChild(t);$('#ft-keep').onclick=()=>t.remove();$('#ft-done').onclick=()=>{t.remove();w.done=true;tmClose()}}
+async function tmToggle(on){if(on){if(!TURMA){if(!isPristine()&&!state.example){const ok=await askModal('<h3>Começar uma turma?</h3><p>O aluno que está na tela entra como o primeiro aluno da turma.</p>',[{label:'Cancelar',value:false},{label:'Começar turma',value:true,primary:true}]);if(!ok)return;TURMA=tmNew();const w=tmAddWorkspace(state,files);for(const f of files){const fp=srcFp(f);if(fp)TURMA.fps.push(fp)}TURMA.cur=w.id}else{TURMA=tmNew();tmBlank()}}
+    else{TURMA.on=true;tmBlank();TURMA.cur=null}renderFiles();renderAll();tmRender();tmSave();setStatus('Modo turma: anexe os documentos de todos os alunos no passo 1.')}
+  else{if(!TURMA)return;tmSync();TURMA.on=false;TURMA.cur=null;await tmKv(TURMA).catch(()=>{});state=blankState(TURMA.mode);files=[];renderFiles();renderAll();tmRender();setStatus('Modo um aluno. A turma continua guardada: clique em Turma para voltar a ela.')}}
+document.addEventListener('click',async e=>{const t=e.target.closest('[data-tm],[data-tmopen],[data-tmdel],[data-tmorfdel],#tm-one,#tm-all');if(!t)return;
+  if(t.id==='tm-all')return tmToggle(true);if(t.id==='tm-one')return tmToggle(false);
+  if(t.dataset.tmopen)return tmOpen(+t.dataset.tmopen);
+  if(t.dataset.tmdel){const w=tmW(+t.dataset.tmdel);const ok=await askModal(`<h3>Tirar ${esc_(w.nome||'este aluno')} da turma?</h3><p>Os dados e arquivos dele somem deste computador.</p>`,[{label:'Cancelar',value:false},{label:'Tirar da turma',value:true,primary:true}]);if(!ok)return;
+    if(TURMA.cur===w.id){TURMA.cur=null;tmBlank();renderFiles();renderAll()}TURMA.alunos=TURMA.alunos.filter(a=>a!==w);for(const f of w.files||[]){const fp=srcFp(f);TURMA.fps=TURMA.fps.filter(x=>x!==fp||TURMA.arfs.some(r=>r.fp===x))}tmRender();tmSave();return}
+  if(t.dataset.tmorfdel!=null){const o=TURMA.orfaos.splice(+t.dataset.tmorfdel,1)[0];TURMA.fps=TURMA.fps.filter(x=>x!==o.fp);tmRender();tmSave();return}
+  const a=t.dataset.tm;if(a==='close')tmClose();else if(a==='done'){const w=tmW(TURMA.cur);if(w){w.done=true;tmClose();setStatus(`${w.nome} marcado como concluído.`)}}
+  else if(a==='pdfall')tmPdfAll();else if(a==='save')tmSaveFile();
+  else if(a==='fromarf'){tmSync();let n=0;const seen=new Set();for(const rec of TURMA.arfs)for(const s of rec.alunos||[]){if(seen.has(N(s.nome))||TURMA.alunos.some(w=>arfHas({alunos:[s]},w)))continue;seen.add(N(s.nome));const st=Object.assign(blankState(TURMA.mode),{example:false});st.aluno.nome=String(s.nome).toUpperCase();st.aluno.matricula=s.mat||'';const w=tmAddWorkspace(st,[]);setStatus(`Criando ${s.nome}…`);await tmApplyArfs(w);n++}
+    if(TURMA.cur==null)tmBlank();renderAll();tmRender();tmSave();setStatus(`${n} aluno(s) criado(s) a partir das atas. Faltam as FIAs e a ficha de matrícula de cada um.`)}
+  else if(a==='clear'){const ok=await askModal(`<h3>Limpar a turma?</h3><p>Os ${TURMA.alunos.length} aluno(s) e todos os arquivos somem deste computador. Se quiser guardar, use antes "Salvar turma em arquivo".</p>`,[{label:'Cancelar',value:false},{label:'Limpar turma',value:true,primary:true}]);if(!ok)return;
+    TURMA=null;await tmKv(null).catch(()=>{});state=blankState(state.mode);files=[];renderFiles();renderAll();tmRender();setStatus('Turma apagada deste computador.')}});
+document.addEventListener('change',async e=>{const s=e.target;if(s.dataset&&s.dataset.tmorf!=null&&s.value){const o=TURMA.orfaos.splice(+s.dataset.tmorf,1)[0];const w=tmW(+s.value);tmSync();await tmRunIn(w,[o]);if(TURMA.cur===w.id){state=w.state;files=w.files;renderFiles();renderAll()}tmRender();tmSave();setStatus(`“${o.name}” enviado para ${w.nome}.`)}});
+function initTurma(){const seg=document.querySelector('.topright .seg');if(seg&&!document.getElementById('tm-all')){const d=document.createElement('div');d.className='seg';d.setAttribute('role','group');d.setAttribute('aria-label','Um aluno ou turma');d.innerHTML='<button type="button" id="tm-one" aria-pressed="true">Um aluno</button><button type="button" id="tm-all" aria-pressed="false">Turma</button>';seg.parentNode.insertBefore(d,seg)}tmRender()}
+
 let DL=null;
 async function download(kind){
   if(!READY)return;
@@ -2095,7 +2417,7 @@ window.addEventListener('resize',schedulePreview);
 
 (async()=>{
   setStatus('Carregando o modelo…');
-  try{await loadAssets();state=blankState('reg');renderAll();syncReadMode();setStatus('');await sessRestore()}
+  try{await loadAssets();state=blankState('reg');renderAll();syncReadMode();setStatus('');initV2();initV2Files();initTurma();await sessRestore();renderChecks()}
   catch(e){console.error(e);setStatus('Não foi possível carregar o modelo. Recarregue a página.',true)}
   if(window.claude&&claude.use)claude.use('downloads').then(d=>{DL=d}).catch(()=>{DL=null});
 })();

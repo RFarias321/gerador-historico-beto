@@ -1,0 +1,128 @@
+{
+  "regular": {
+    "modo": "reg",
+    "anos": [
+      "2021",
+      "2022",
+      "2023"
+    ],
+    "situacao": [
+      "PROMOV",
+      "APROVADO",
+      "APROVADO"
+    ],
+    "disciplinas": 13,
+    "notas": [
+      "ARTE: /21/",
+      "BIOLOGIA: 21/24/20",
+      "EDUCAÇÃO FÍSICA: 25/21,4/22",
+      "FILOSOFIA: 21/24,5/30,5",
+      "FÍSICA: 21/22,5/20",
+      "GEOGRAFIA: 0,1/21,7/21,5"
+    ],
+    "dependencias": [],
+    "observacoes": [
+      "2021 – Amparado pela Resolução SEEDUC/SUGEN nº 6015/2021 publicada no D.O. de 14/12/2021."
+    ],
+    "arquivos": [
+      "fia",
+      "fia",
+      "fia+fia",
+      "ata:aluno encontrado"
+    ],
+    "paginas": [
+      "l FIA · 1ª série · 2021",
+      "l FIA · 2ª série · 2022",
+      "l FIA · 3ª série · 2023",
+      "l FIA · 3ª série · 2023",
+      "l Ata · 3ª série · 2023",
+      "p Histórico escolar"
+    ],
+    "pdfOk": true,
+    "excelOk": true
+  },
+  "eja": {
+    "modo": "eja",
+    "anos": [
+      "2023",
+      "2023",
+      "2024",
+      "2024"
+    ],
+    "situacao": [
+      "APROVADO",
+      "APROVADO",
+      "APROVADO",
+      "APROV. C/DEP"
+    ],
+    "disciplinas": 20,
+    "notas": [
+      "ARTE: /12//",
+      "BIOLOGIA: /16//11",
+      "EDUCAÇÃO FÍSICA: 11,1///",
+      "FILOSOFIA: 11///",
+      "FÍSICA: /10//10,1",
+      "GEOGRAFIA: 12//12,5/"
+    ],
+    "dependencias": [
+      "2024 MATEMÁTICA 5",
+      "2024 TECNOLOGIA E TRABALHO "
+    ],
+    "observacoes": [
+      "2024 – Aprovado em regime de dependência na disciplina MATEMÁTICA, com nota final 5,00.",
+      "2024 – Aprovado em regime de dependência na disciplina TECNOLOGIA E TRABALHO, com nota final (preencher)."
+    ],
+    "arquivos": [
+      "fia",
+      "fia",
+      "fia",
+      "dep+fia",
+      "ata:aluno encontrado",
+      "ata:aluno encontrado",
+      "ata:aluno encontrado",
+      "ata:aluno encontrado"
+    ],
+    "paginas": [
+      "l FIA · 1º módulo · 2023",
+      "l FIA · 2º módulo · 2023",
+      "l FIA · 3º módulo · 2024",
+      "l FIA · 4º módulo · 2024",
+      "l Dependência · Matemática",
+      "l Dependência · TECNOLOGIA E TRABALHO (gerada)",
+      "l Ata · 1º módulo · 2023",
+      "l Ata · 2º módulo · 2023",
+      "l Ata · 3º módulo · 2024",
+      "l Ata · 4º módulo · 2024",
+      "p Histórico escolar"
+    ],
+    "pdfOk": true,
+    "excelOk": true,
+    "alertaModelo": true
+  },
+  "repetido": true,
+  "anoDependencia": [
+    "2024",
+    "2025"
+  ],
+  "sessaoRecuperada": true,
+  "turma": {
+    "alunos": 1,
+    "atas": 4,
+    "depoisDasAtas": 19,
+    "comDependencia": [
+      2,
+      1,
+      2,
+      1
+    ]
+  },
+  "regras": {
+    "eja_9_5": true,
+    "eja_10": false,
+    "reg_tri_14_5": true,
+    "reg_tri_15": false,
+    "reg_bim_19_5": true,
+    "reg_bim_20": false
+  },
+  "errosNaPagina": []
+}
