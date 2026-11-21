@@ -110,6 +110,7 @@ input.pad{border-style:dashed;border-color:var(--warn);color:var(--warn)}
 .helpbox{background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:.86rem;margin:0 0 12px}
 #mat-form input.inval{border-color:var(--bad);background:var(--bad-bg)}
 .esc-q{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:8px 12px;font-size:.9rem;margin:0 0 10px}.big-pv{display:flex;justify-content:center;background:var(--paper);overflow:auto}.big-pv canvas{box-shadow:0 2px 12px rgba(0,0,0,.18);background:#fff}.tm-left{font-size:.85rem;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.files-box{margin-top:12px}.files-box>summary{cursor:pointer;font-weight:600;font-size:.9rem;margin-bottom:8px}.dc-oktxt{color:var(--ok)}
 .app-ver{font-size:.75rem;color:var(--muted);text-align:center;margin:4px 0 0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn.danger{color:var(--bad);border-color:var(--bad)}
@@ -273,15 +274,16 @@ table.g tbody tr:hover td{background:var(--paper)}
       </section>
 
       <section class="card">
-        <details class="cfg" id="mat-cfg">
-          <summary>Ficha de matrícula (sai na impressão para assinatura)</summary>
+        <h2><span class="step">3</span>Edite a ficha de matrícula</h2>
+        <div id="mat-cfg">
+          <p class="hint" style="margin-top:0">Sai na impressão para assinatura.</p>
           <p class="hint">Preenchida pela ficha de matrícula do Conexão. Nome, nascimento, naturalidade, nacionalidade, pai, mãe, matrícula e identidade são os mesmos campos do item 2. Corrija aqui o que tiver saído errado: a ficha impressa usa estes dados.</p>
           <div class="form" id="mat-form"></div>
-        </details>
+        </div>
       </section>
 
       <section class="card">
-        <h2><span class="step">3</span>Confira disciplinas, notas e carga horária</h2>
+        <h2><span class="step">4</span>Confira disciplinas, notas e carga horária</h2>
         <p class="hint">Só entram no histórico as disciplinas desta lista, na ordem mostrada. A carga horária total é somada automaticamente.</p>
         <p class="hint" style="margin:-6px 0 10px"><b>Nota</b> = total de pontos: Regular, soma dos 4 bimestres (mínimo 20) ou dos 3 trimestres (mínimo 15); EJA, soma dos 2 bimestres do módulo (mínimo 10). Se a ficha só traz a média, a nota é a média × 4, × 3 ou × 2.</p>
         <div class="tablebox"><table class="g" id="grades"></table></div>
@@ -297,7 +299,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       </section>
 
       <section class="card">
-        <h2><span class="step">4</span>Confira as observações</h2>
+        <h2><span class="step">5</span>Confira as observações e dependências</h2>
         <p class="hint"><span class="depano-hint">Confira o ano em vermelho: é o ano em que a dependência foi cumprida. Se mudar aqui, muda também no histórico e nas fichas de dependência da impressão para assinatura.</span> Aprovações em regime de dependência. Sem dependência em nenhum ano, as linhas somem do histórico. Campo vazio sai como <b>(preencher)</b>.</p>
         <div class="deps" id="deps"></div>
         <div class="row" style="margin-top:10px">
@@ -313,7 +315,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       </section>
 
       <section class="card">
-        <h2><span class="step">5</span>Escola que emite o histórico e assinaturas</h2>
+        <h2><span class="step">6</span>Escola que emite o histórico e assinaturas</h2>
         <div id="cfg">
           <p class="esc-q" id="esc-q"></p>
           <p class="hint">Cabeçalho e assinaturas do histórico. Ficam salvos neste navegador. Mude só se o histórico for emitido por outra escola.</p>
@@ -2142,7 +2144,7 @@ function docChecklist(st,fl){
     items.push({k:d.nota&&d.disc?'o':'w',t:'Dependência · '+(d.disc||'(disciplina?)'),s:(up?'ficha enviada':'ficha será gerada pelo site')+(d.nota?'':' · falta a nota final'),go:'#deps'})}
   return items}
 function renderDocCheck(){let box=document.getElementById('doc-check');
-  if(!box){box=document.createElement('div');box.id='doc-check';box.className='doc-check';const ul=$('#files');ul.parentNode.insertBefore(box,ul.nextSibling)}
+  if(!box){box=document.createElement('div');box.id='doc-check';box.className='doc-check';const dr=$('#drop');dr.parentNode.insertBefore(box,dr.nextSibling)}
   if(isPristine()||state.example){box.hidden=true;return}box.hidden=false;
   const it=docChecklist(state,files);const ic={o:'✓',w:'!',b:'✗'};
   box.innerHTML=`<div class="subhead">Documentos deste aluno</div><ul>${it.map(x=>`<li class="dc-${x.k}"><span class="dc-ic" aria-hidden="true">${ic[x.k]}</span><span><b>${esc_(x.t)}</b> <small>${esc_(x.s)}</small></span></li>`).join('')}</ul>`}
@@ -2164,7 +2166,7 @@ function markMatInvalid(){const bad=matInvalid();document.querySelectorAll('#mat
 {const _rm=renderMat;renderMat=function(){_rm.apply(this,arguments);markMatInvalid()}}
 document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.mt!=null){markMatInvalid();renderChecks()}});
 /* ---------- painel único "O que precisa da sua atenção" ---------- */
-const SEC_OF=sel=>/^#(aluno|al-)/.test(sel)?2:/^#(grades|places|subj)/.test(sel)?3:/^#(deps|obs)/.test(sel)?4:/^#mat/.test(sel)?'m':0;
+const SEC_OF=sel=>/^#(aluno|al-)/.test(sel)?'2':/^#mat/.test(sel)?'3':/^#(grades|places|subj)/.test(sel)?'4':/^#(deps|obs)/.test(sel)?'5':0;
 function renderChecks(){
   const box=$('#checks');if(isPristine()){$('#checks-count').hidden=true;box.innerHTML='<li><span class="chip o" style="background:var(--accent-soft);color:var(--accent-2)">início</span><span>Anexe os documentos do aluno no passo 1. O que precisar de atenção aparece aqui.</span></li>';secBadges({});return}
   const out=[];const A=state.aluno;const L=LABELS[state.mode];const add=(l,t,go)=>out.push({l,t,go});
@@ -2189,22 +2191,22 @@ function goTo(sel){const el=document.querySelector(sel);if(!el)return;const sec=
   el.scrollIntoView({behavior:'smooth',block:'center'});const inp=el.matches('input,select,textarea')?el:el.querySelector('input:not([disabled]),select,textarea,button');if(inp)setTimeout(()=>inp.focus({preventScroll:true}),350)}
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){e.preventDefault();goTo(g.dataset.go)}});
 /* ---------- seções que recolhem, com selo de conferência ---------- */
-const HELP={1:['Anexe tudo de uma vez, em qualquer ordem: FIAs, atas, ficha de matrícula e fichas de dependência, em Excel ou PDF. A lista "Documentos deste aluno" mostra o que falta baixar no Conexão.','anexar'],
-  2:['Dados pessoais do histórico. Vêm da ficha de matrícula (quando é PDF do Conexão) e das FIAs. Campos em amarelo estão vazios; tracejados foram lidos de imagem.','aluno'],
-  3:['Notas são o total de pontos do ano (soma dos bimestres ou trimestres). Vermelho = abaixo da média, gera dependência. "Onde cursou" traz escola, ano, frequência e situação de cada série ou módulo.','notas'],
-  4:['Cada dependência vira uma linha de observação e uma ficha de dependência na impressão para assinatura. "Ficou em" é a série/módulo em que o aluno ficou em dependência; o ano em vermelho é o ano em que ela foi cumprida.','obs'],
-  5:['Escola que emite e quem assina. Fica salvo neste navegador.','escola'],
-  m:['Dados da ficha de matrícula impressa para assinatura. Campos marcados "(item 2)" são os mesmos do item 2.','anexar']};
-function initSections(){document.querySelectorAll('.grid section.card').forEach(sec=>{const st=sec.querySelector('h2 .step,summary .step');const isMat=!!sec.querySelector('#mat-cfg');if(!st&&!isMat)return;
-  const n=isMat?'m':st.textContent.trim();sec.dataset.sec=n;const h=sec.querySelector('h2')||sec.querySelector('summary');if(!h||h.querySelector('.help-btn'))return;
+const HELP={'1':['Anexe tudo de uma vez, em qualquer ordem: FIAs, atas, ficha de matrícula e fichas de dependência, em Excel ou PDF. A lista "Documentos deste aluno" mostra o que falta baixar no Conexão.','anexar'],
+  '2':['Dados pessoais do histórico. Vêm da ficha de matrícula (quando é PDF do Conexão) e das FIAs. Campos em amarelo estão vazios; tracejados foram lidos de imagem.','aluno'],
+  '4':['Notas são o total de pontos do ano (soma dos bimestres ou trimestres). Vermelho = abaixo da média, gera dependência. "Onde cursou" traz escola, ano, frequência e situação de cada série ou módulo.','notas'],
+  '5':['Cada dependência vira uma linha de observação e uma ficha de dependência na impressão para assinatura. "Ficou em" é a série/módulo em que o aluno ficou em dependência; o ano em vermelho é o ano em que ela foi cumprida.','obs'],
+  '6':['Escola que emite e quem assina. Fica salvo neste navegador. Ao digitar o nome da escola em um campo (ex.: "IE Carmela Dutra"), os outros se completam sozinhos.','escola'],
+  '3':['Dados da ficha de matrícula impressa para assinatura. Campos marcados "(item 2)" são os mesmos do item 2.','anexar']};
+function initSections(){document.querySelectorAll('.grid section.card').forEach(sec=>{const st=sec.querySelector(':scope>h2 .step');if(!st)return;
+  const n=st.textContent.trim();sec.dataset.sec=n;const h=sec.querySelector('h2')||sec.querySelector('summary');if(!h||h.querySelector('.help-btn'))return;
   const hb=document.createElement('button');hb.type='button';hb.className='help-btn';hb.textContent='?';hb.setAttribute('aria-label','Ajuda sobre esta etapa');hb.dataset.help=n;h.appendChild(hb);
   if(sec.querySelector('h2')&&n!=='1'){sec.classList.add('sec');const bd=document.createElement('span');bd.className='sec-badge';h.appendChild(bd);h.classList.add('sec-h');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded','true')}})}
 function secBadges(per){document.querySelectorAll('.sec').forEach(sec=>{const n=sec.dataset.sec;const b=sec.querySelector('.sec-badge');if(!b)return;const k=per[n]||0;
-  if(n==='5'){b.className='sec-badge o';b.hidden=false;b.textContent='✓ '+(esc.curto||esc.nome||'escola');const q=document.getElementById('esc-q');if(q)q.innerHTML=`É para o <b>${esc_(esc.curto||esc.nome||'')}</b>? Se o histórico for emitido por outra escola, mude os dados abaixo.`;sec.querySelector('.sec-h').setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')));return}
+  if(n==='6'){b.className='sec-badge o';b.hidden=false;b.textContent='✓ '+(esc.curto||esc.nome||'escola');const q=document.getElementById('esc-q');if(q)q.innerHTML=`É para o <b>${esc_(esc.curto||esc.nome||'')}</b>? Se o histórico for emitido por outra escola, mude os dados abaixo.`;sec.querySelector('.sec-h').setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')));return}
   b.className='sec-badge '+(isPristine()?'':k?'w':'o');b.textContent=isPristine()?'':k?`${k} para conferir`:'✓ conferido';b.hidden=isPristine();
   sec.querySelector('.sec-h').setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))})}
 function autoCollapse(){if(isPristine())return;const per={};for(const li of document.querySelectorAll('#checks [data-go]')){const s=SEC_OF(li.dataset.go);if(s)per[s]=(per[s]||0)+1}
-  document.querySelectorAll('.sec').forEach(sec=>{const n=sec.dataset.sec;if(n==='5')return;sec.classList.toggle('collapsed',!per[n]);const h=sec.querySelector('.sec-h');if(h)h.setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))})}
+  document.querySelectorAll('.sec').forEach(sec=>{sec.classList.add('collapsed');const h=sec.querySelector('.sec-h');if(h)h.setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))})}
 document.addEventListener('click',e=>{const hb=e.target.closest('.help-btn');if(hb){e.preventDefault();e.stopPropagation();const sec=hb.closest('section');let box=sec.querySelector('.helpbox');
     if(box){box.remove();return}const [t,a]=HELP[hb.dataset.help]||['',''];box=document.createElement('div');box.className='helpbox';box.innerHTML=`${esc_(t)} <a href="tutorial.html#${a}" target="_blank">Ver no tutorial</a>`;(sec.querySelector('.sec-h')||hb.parentNode).after(box);return}
   const h=e.target.closest('.sec-h');if(h&&!e.target.closest('button,a,input')){const sec=h.closest('.sec');sec.classList.toggle('collapsed');h.setAttribute('aria-expanded',String(!sec.classList.contains('collapsed')))}});
@@ -2222,6 +2224,8 @@ function renderFiles(){
     ${(f.diff||[]).length?`<div class="fmeta" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">${f.diff.map((d,j)=>`<div class="row" style="gap:6px 10px"><span class="chip w">diferente</span><span><b>${esc_(FIELD_LABEL[d.k])}</b>: na tela “${esc_(d.cur)}”, neste arquivo “${esc_(d.v)}”</span><button type="button" class="btn small" data-usediff="${i},${j}">Usar deste arquivo</button></div>`).join('')}</div>`:''}
     ${f.arf&&!f.arfDone?`<span class="fmeta" style="grid-column:1/-1">${state.aluno.nome&&!state.example?'Não encontrei '+esc_(state.aluno.nome)+' nesta ata. Escolha o aluno:':'Anexe a FIA ou a ficha de matrícula para o aluno ser identificado sozinho, ou escolha:'}</span><label class="f" style="grid-column:1/-1">Aluno desta ata<select id="arf-${i}" data-arf="${i}"><option value="">Escolha o aluno…</option>${f.arf.students.map((s,j)=>`<option value="${j}">${esc_(s.nome)}</option>`).join('')}</select></label>`:''}
     ${f.status&&!f.err&&!f.dup?`<details class="fdet"><summary>detalhes da leitura</summary><span class="fmeta">${esc_(f.status)}</span></details>`:''}</li>`}).join('');
+  {const fb=document.getElementById('files-box');if(fb){const prob=files.filter(f=>f.err||f.dup||(f.diff||[]).length||(f.arf&&!f.arfDone)).length;const ocr=files.filter(f=>f.ocr&&f.ok).length;
+    fb.hidden=!files.length;fb.querySelector('summary').innerHTML=`Arquivos lidos (${files.length})${prob?` · <span class="tm-b">${prob} precisa(m) de atenção</span>`:''}${ocr?` · <span class="tm-w">${ocr} digitalização(ões)</span>`:''}${!prob&&!ocr&&files.length?' · <span class="dc-oktxt">todos ok</span>':''}`;if(prob)fb.open=true}}
   renderDocCheck()}
 /* ---------- dependências: "ficou em" e "cumpriu em" ---------- */
 function depPeriod(d){if(d.p!=null&&state.periods[d.p])return d.p;if(d.auto!=null&&state.periods[d.auto])return d.auto;try{return periodOfDep(d)}catch(e){return null}}
@@ -2248,7 +2252,8 @@ function finishPrompt(what){if(typeof TURMA!=='undefined'&&TURMA&&TURMA.on){tmFi
 /* ---------- depois de cada lote de arquivos: recolher o que está conferido ---------- */
 {const _hf=handleFiles;handleFiles=async function(list){AI_OK=false;const r=await _hf(list);try{renderChecks();autoCollapse()}catch(e){}return r}}
 window.addEventListener('error',e=>{try{setStatus('Algo deu errado na página. Se o problema continuar, recarregue (F5): o trabalho fica guardado. (detalhe: '+(e.message||'')+')',true)}catch(_){}});
-function initV2(){initSections();{const s5=document.querySelector('.sec[data-sec="5"]');if(s5)s5.classList.add('collapsed')}
+function initV2(){initSections();document.querySelectorAll('.sec').forEach(s=>s.classList.add('collapsed'));
+  {const fl=$('#files');if(fl&&!document.getElementById('files-box')){const d=document.createElement('details');d.id='files-box';d.className='files-box';d.innerHTML='<summary>Arquivos lidos</summary>';fl.parentNode.insertBefore(d,fl);d.appendChild(fl)}}
   {const cv=$('#cv');if(cv){cv.title='Clique para ampliar';cv.style.cursor='zoom-in';cv.tabIndex=0;cv.setAttribute('role','button');cv.setAttribute('aria-label','Ampliar a prévia do histórico');const pv=cv.closest('.preview');const h=pv&&pv.querySelector('.pvsub');if(h)h.textContent='folha A4 · clique para ampliar'}}
   const side=document.querySelector('aside.side');if(side&&!document.getElementById('app-ver')){const p=document.createElement('p');p.id='app-ver';p.className='app-ver';p.innerHTML=`Versão ${APP_VERSION} · ${APP_DATA} · <a href="tutorial.html#novidades" target="_blank">o que mudou</a>`;side.appendChild(p)}
   renderChecks()}
@@ -2263,6 +2268,24 @@ function bigPreview(){const page=A4.p;const vw=Math.min(window.innerWidth-80,900
   bg.addEventListener('keydown',e=>{if(e.key==='Escape')close()});bg.querySelector('[data-z="x"]').focus()}
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='cv')bigPreview()});
 document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='cv'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();bigPreview()}});
+
+/* ---------- nome da escola: um campo completa os outros ---------- */
+const ESC_TIPOS=[['CENTRO ESTADUAL DE EDUCAÇÃO DE JOVENS E ADULTOS','CEEJA'],['CENTRO INTEGRADO DE EDUCAÇÃO PÚBLICA','CIEP'],['COLÉGIO ESTADUAL INTEGRADO','CEI'],['INSTITUTO DE EDUCAÇÃO','IE'],['ESCOLA TÉCNICA ESTADUAL','ETE'],['COLÉGIO ESTADUAL','CE'],['COLÉGIO MUNICIPAL','CM'],['COLÉGIO FEDERAL','CF'],['ESCOLA ESTADUAL','EE'],['ESCOLA MUNICIPAL','EM'],['ESCOLA TÉCNICA','ET']];
+const _nk=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[.]/g,'').replace(/\s+/g,' ').trim();
+function escParse(v){const k=_nk(v);for(const [full,ab] of ESC_TIPOS){const f=_nk(full);if(k.startsWith(f+' ')){return {full,ab,nome:String(v).trim().split(/\s+/).slice(full.split(' ').length).join(' ')}}}
+  for(const [full,ab] of ESC_TIPOS){if(k.startsWith(ab+' ')){const raw=String(v).trim().replace(/^[A-Za-z.]+\s+/,'');return {full,ab,nome:raw}}}return null}
+const _tc=s=>titleCase(String(s||'').toUpperCase());
+document.addEventListener('input',e=>{const t=e.target,d=t.dataset||{};const src=d.es==='nome'||d.es==='curto'?'es-'+d.es:(d.sg&&/,escola$/.test(d.sg)?'sg-'+d.sg:null);if(!src)return;
+  const p=escParse(t.value);if(!p||!p.nome.trim())return;const nm=p.nome.trim();
+  const novo={nome:p.full+' '+nm.toUpperCase(),curto:p.ab+' '+nm.toUpperCase(),unid:_tc(p.full)+' '+_tc(nm)};
+  const old=Object.assign({},esc);
+  if(src!=='es-nome'){esc.nome=novo.nome;const i=$('#es-nome');if(i)i.value=novo.nome}
+  if(src!=='es-curto'){esc.curto=novo.curto;const i=$('#es-curto');if(i)i.value=novo.curto}
+  if(old.curto!==esc.curto)state.periods.forEach(P=>{if(P.escola===old.curto)P.escola=esc.curto});
+  store.set('hist.esc',esc);
+  for(const w of ['sec','dir']){if(src==='sg-'+w+',escola')continue;sig[w]=Object.assign({},sig[w],{escola:novo.unid});const i=document.querySelector(`[data-sg="${w},escola"]`);if(i)i.value=novo.unid}
+  store.set('hist.sig',sig);try{renderPlaces()}catch(_){}schedulePreview();renderChecks()});
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='esc-reset'){setTimeout(()=>{for(const w of ['sec','dir'])sig[w]=Object.assign({},sig[w],{escola:DEFAULT_SIG[w].escola});store.set('hist.sig',sig);renderSig();renderChecks();schedulePreview()},0)}});
 
 /* ===== v2: prévia da impressão para assinatura, salvar/abrir aluno, gov.br ===== */
 const GOVBR_TXT='Para assinar sem imprimir: baixe o PDF, abra <a href="https://assinador.iti.br" target="_blank" rel="noopener">assinador.iti.br</a> (conta gov.br, gratuito), envie o arquivo e posicione a assinatura sobre o nome de cada um. A assinatura gov.br tem validade legal.';

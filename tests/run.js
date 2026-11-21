@@ -46,7 +46,9 @@ async function main(){const browser=await chromium.launch();const res={};
     // 6. turma: desligada por enquanto (o botão não aparece)
     res.turmaDesligada=await pg.evaluate(()=>!document.getElementById('tm-all'));
     // 6b. item 5 recolhido com a escola em verde e prévia ampliada
-    res.item5=await pg.evaluate(()=>{const s=document.querySelector('.sec[data-sec="5"]');return s.classList.contains('collapsed')+' '+s.querySelector('.sec-badge').textContent});
+    res.item6=await pg.evaluate(()=>{const s=document.querySelector('.sec[data-sec="6"]');return s.classList.contains('collapsed')+' '+s.querySelector('.sec-badge').textContent});
+    res.nomeEscola=await pg.evaluate(()=>{const i=document.querySelector('#es-curto');i.value='IE Carmela Dutra';i.dispatchEvent(new Event('input',{bubbles:true}));const r=[esc.nome,sig.sec.escola,sig.dir.escola];document.getElementById('esc-reset').click();return r});
+    res.itensFechados=await pg.evaluate(()=>[...document.querySelectorAll('.sec')].map(s=>s.dataset.sec+(s.classList.contains('collapsed')?' fechado':' aberto')));
     res.previaAmpliada=await pg.evaluate(()=>{document.getElementById('cv').click();const ok=!!document.querySelector('.big-pv canvas');document.querySelector('[data-z="x"]').click();return ok});
     // 7. regra de aprovação (soma mínima)
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});

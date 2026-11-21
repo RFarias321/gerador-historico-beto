@@ -106,7 +106,19 @@
   ],
   "sessaoRecuperada": true,
   "turmaDesligada": true,
-  "item5": "true ✓ CE OSWALDO TEIXEIRA",
+  "item6": "true ✓ CE OSWALDO TEIXEIRA",
+  "nomeEscola": [
+    "INSTITUTO DE EDUCAÇÃO CARMELA DUTRA",
+    "Instituto de Educação Carmela Dutra",
+    "Instituto de Educação Carmela Dutra"
+  ],
+  "itensFechados": [
+    "2 fechado",
+    "3 fechado",
+    "4 fechado",
+    "5 fechado",
+    "6 fechado"
+  ],
   "previaAmpliada": true,
   "regras": {
     "eja_9_5": true,
