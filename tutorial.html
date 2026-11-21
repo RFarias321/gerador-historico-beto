@@ -9,15 +9,20 @@
 <style>
 /* Layout: manual de secretaria — coluna de leitura com passos numerados e capturas da tela real */
 :root{
-  --paper:#f3f5f7;--sheet:#fff;--ink:#1d2733;--muted:#5b6876;--line:#d6dde4;
-  --accent:#44546a;--accent-2:#2f3d50;--accent-soft:#e6ebf1;--band:#1f2c3b;--band-ink:#f2f5f8;--band-muted:#b9c6d4;--gold:#c9a227;
+  --paper:#eaf4f1;--sheet:#fff;--ink:#16302b;--muted:#4f6a64;--line:#c9ddd7;
+  --accent:#1f7a6b;--accent-2:#155e52;--accent-soft:#dcefe9;--band:#0f4c45;--band-ink:#f1faf7;--band-muted:#b5d6cd;--gold:#f2c94c;--tbar:#f2c94c;--tbar-ink:#2b2205;
   --warn:#9a5b00;--warn-bg:#fff4e0;--bad:#a3262a;--bad-bg:#fde9e9;--ok:#2c6e49;--ok-bg:#e5f3ea;
   --f-ui:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#12171d;--sheet:#1a2129;--ink:#e3e8ee;--muted:#9aa7b4;--line:#2e3944;--accent:#9fb3cc;--accent-2:#c4d3e5;--accent-soft:#243140;--band:#0d141c;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--warn:#f0b35a;--warn-bg:#33270f;--bad:#f08a8d;--bad-bg:#3a1c1e;--ok:#7fcf9f;--ok-bg:#16301f;color-scheme:dark}}
-:root[data-theme="dark"]{--paper:#12171d;--sheet:#1a2129;--ink:#e3e8ee;--muted:#9aa7b4;--line:#2e3944;--accent:#9fb3cc;--accent-2:#c4d3e5;--accent-soft:#243140;--band:#0d141c;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--warn:#f0b35a;--warn-bg:#33270f;--bad:#f08a8d;--bad-bg:#3a1c1e;--ok:#7fcf9f;--ok-bg:#16301f;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0f1c1a;--sheet:#152623;--ink:#dff0eb;--muted:#93b0a8;--line:#28423d;--accent:#6fc7b5;--accent-2:#a5e0d3;--accent-soft:#1c3631;--band:#0a2a26;--tbar:#e0b43a;--tbar-ink:#221b04;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--warn:#f0b35a;--warn-bg:#33270f;--bad:#f08a8d;--bad-bg:#3a1c1e;--ok:#7fcf9f;--ok-bg:#16301f;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0f1c1a;--sheet:#152623;--ink:#dff0eb;--muted:#93b0a8;--line:#28423d;--accent:#6fc7b5;--accent-2:#a5e0d3;--accent-soft:#1c3631;--band:#0a2a26;--tbar:#e0b43a;--tbar-ink:#221b04;--band-ink:#e8eef4;--band-muted:#9fb0c2;--gold:#d8b648;--warn:#f0b35a;--warn-bg:#33270f;--bad:#f08a8d;--bad-bg:#3a1c1e;--ok:#7fcf9f;--ok-bg:#16301f;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--f-ui)}
 img{max-width:100%;height:auto}
+.tbar{position:sticky;top:0;z-index:20;background:var(--tbar);color:var(--tbar-ink);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.tbar .in{max-width:980px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.tbar b{font-size:.95rem}.tbar span{font-size:.88rem}
+.tbar a{display:inline-flex;align-items:center;gap:6px;background:var(--tbar-ink);color:var(--tbar);padding:8px 16px;border-radius:999px;text-decoration:none;font-weight:700;font-size:.92rem;white-space:nowrap}
+.tbar a:hover{opacity:.9}
 .band{background:var(--band);color:var(--band-ink);border-bottom:3px solid var(--gold)}
 .band .in{max-width:980px;margin:0 auto;padding-block:28px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:6px}
 .eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.09em;color:var(--gold);font-weight:700}
@@ -64,8 +69,12 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
+<div class="tbar" role="note"><div class="in">
+  <div><b>📘 Você está no TUTORIAL.</b> <span>Esta página só ensina; o histórico é feito no gerador.</span></div>
+  <a href="./" id="voltar">← Voltar para o gerador</a>
+</div></div>
 <div class="band"><div class="in">
-  <div class="eyebrow">Tutorial · Secretaria escolar</div>
+  <div class="eyebrow">Página de tutorial · Secretaria escolar</div>
   <h1>Como usar o Gerador de Histórico do Beto</h1>
   <p>Do download no Conexão Educação até o histórico impresso, passo a passo. As imagens mostram um aluno fictício.</p>
   <a class="back" href="./">← Voltar para o gerador</a>
@@ -248,5 +257,8 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   <footer>Gerador de Histórico do Beto · <a href="./">voltar para o gerador</a></footer>
 </main>
+<script>
+for(const a of document.querySelectorAll('#voltar,.back'))a.addEventListener('click',e=>{try{if(window.opener&&!window.opener.closed){e.preventDefault();window.opener.focus();window.close()}}catch(_){}});
+</script>
 </body>
 </html>
