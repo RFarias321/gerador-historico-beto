@@ -229,14 +229,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       <section class="card">
         <h2><span class="step">3</span>Confira disciplinas, notas e carga horária</h2>
         <p class="hint">Só entram no histórico as disciplinas desta lista, na ordem mostrada. A carga horária total é somada automaticamente.</p>
-        <div class="row" style="margin-bottom:10px">
-          <label class="f" style="flex-direction:row;align-items:center;gap:8px">Nota no histórico:
-            <select id="notaFonte" style="width:auto">
-              <option value="total">Total de pontos (como no modelo)</option>
-              <option value="media">Média final</option>
-            </select>
-          </label>
-        </div>
+        <p class="hint" style="margin:-6px 0 10px"><b>Nota</b> = total de pontos do ano: soma dos 4 bimestres ou dos 3 trimestres. Se a ficha só traz a média, a nota é a média × 4 (bimestral) ou × 3 (trimestral).</p>
         <div class="tablebox"><table class="g" id="grades"></table></div>
         <div class="row" style="margin-top:10px">
           <button type="button" class="btn small" id="add-subj">+ Adicionar disciplina</button>
@@ -429,7 +422,7 @@ function isDep(g,p){
   const m=g.media!=null?g.media:null;
   if(m!=null)return m<5;
   const v=num(g.nota);if(v==null)return false;
-  return state.notaFonte==='media'?v<5:v<20;
+  return v<5*(g.per===3?3:4);
 }
 function semestreAuto(p){
   const a=state.periods[p].ano;if(!a)return '';
@@ -798,8 +791,8 @@ const AI_SCHEMA={type:'object',additionalProperties:false,required:['tipo','nive
   tipo:{type:'string',enum:['historico','ficha_individual','ata_resultados','ficha_matricula','dependencia','outro']},
   nivel:{type:'string',enum:['medio','fundamental','desconhecido']},
   aluno:{type:'object',additionalProperties:false,required:['nome','matricula','nascimento','nacionalidade','naturalidade','mae','pai','identidade','orgao','expedicao'],properties:Object.fromEntries(['nome','matricula','nascimento','nacionalidade','naturalidade','mae','pai','identidade','orgao','expedicao'].map(k=>[k,{type:'string'}]))},
-  periodos:{type:'array',items:{type:'object',additionalProperties:false,required:['etapa','ano','escola','municipio','frequencia','situacao','disciplinas'],properties:{
-    etapa:{type:'integer'},ano:{type:'string'},escola:{type:'string'},municipio:{type:'string'},frequencia:{type:'string'},situacao:{type:'string'},
+  periodos:{type:'array',items:{type:'object',additionalProperties:false,required:['etapa','divisoes','ano','escola','municipio','frequencia','situacao','disciplinas'],properties:{
+    etapa:{type:'integer'},divisoes:{type:'integer'},ano:{type:'string'},escola:{type:'string'},municipio:{type:'string'},frequencia:{type:'string'},situacao:{type:'string'},
     disciplinas:{type:'array',items:{type:'object',additionalProperties:false,required:['nome','nota','media','carga_horaria'],properties:{nome:{type:'string'},nota:{type:'string'},media:{type:'string'},carga_horaria:{type:'string'}}}}}}},
   dependencias:{type:'array',items:{type:'object',additionalProperties:false,required:['ano','disciplina','nota_final'],properties:{ano:{type:'string'},disciplina:{type:'string'},nota_final:{type:'string'}}}}}};
 function aiPrompt(){
@@ -810,7 +803,8 @@ Transcreva os dados exatamente como aparecem, sem inventar nada. Campo que não 
 - nivel: "fundamental" se o documento for do Ensino Fundamental (1º ao 9º ano), "medio" se for do Ensino Médio ou EJA de Ensino Médio, "desconhecido" se não der para saber.
 - aluno: dados pessoais. Datas no formato dd/mm/aaaa. Nomes como escritos.
 - periodos: um item por série/ano letivo (ou módulo, na EJA). etapa = número da série ou módulo (1 a 4); 0 se não souber. ano = ano letivo com 4 dígitos. escola e municipio daquele ano. frequencia = frequência anual em %, só o número (ex.: "94,24"). situacao = resultado final escrito no documento (ex.: "APROVADO", "PROMOVIDO", "APROVADO COM DEPENDÊNCIA", "REPROVADO").
-- disciplinas: nome da disciplina; nota = nota final ou total de pontos que o documento mostra para o ano; media = média final, se houver coluna própria; carga_horaria = horas do ano.
+- divisoes: 4 se o ano é dividido em bimestres, 3 se em trimestres; 0 se não souber.
+- disciplinas: nome da disciplina; nota = total de pontos do ano (soma dos bimestres ou trimestres), se o documento mostrar; media = média final, se houver coluna própria; carga_horaria = horas do ano.
 - dependencias: aprovações em regime de dependência citadas no documento (ano, disciplina, nota final).
 Números como escritos, com vírgula decimal.${alvo}`;
 }
@@ -860,8 +854,8 @@ function applyAI(r,entry){
   if(tipo==='dependencia'){const subs=per.flatMap(p=>p.disciplinas.map(d=>({name:d.nome,total:num(d.nota),media:num(d.media)})));const k=applyDepResults(subs,(per[0]||{}).ano);done.push(`dependência (IA): ${k} resultado(s)`)}
   else for(const p of per){
     const idx=(p.etapa>=1&&p.etapa<=nPer())?p.etapa-1:nextFreePeriod(p.ano);
-    const subs=(p.disciplinas||[]).filter(d=>d.nome).map(d=>{const nt=num(d.nota),md=num(d.media);return {name:d.nome,total:nt,media:md!=null?md:(nt!=null&&nt<=10?nt:null),ch:num(d.carga_horaria)}});
-    if(subs.length)applyFicha({subs,info:{},ano:p.ano,sit:mapSit(p.situacao),freqGlobal:num(p.frequencia),escola:cleanEscola(p.escola)},idx);
+    const subs=(p.disciplinas||[]).filter(d=>d.nome).map(d=>{let nt=num(d.nota),md=num(d.media);if(nt!=null&&nt<=10&&md==null){md=nt;nt=null}return {name:d.nome,total:nt,media:md,ch:num(d.carga_horaria)}});
+    if(subs.length)applyFicha({subs,info:{},ano:p.ano,sit:mapSit(p.situacao),freqGlobal:num(p.frequencia),escola:cleanEscola(p.escola),nPer:p.divisoes===3?3:4},idx);
     else if(p.ano)state.periods[idx].ano=String(p.ano);
     if(p.municipio)state.periods[idx].municipio=p.municipio.toUpperCase().replace(/\/R[IL1]$/,'/RJ');
     done.push(`${LABELS[state.mode][idx]}${p.ano?' · '+p.ano:''} · ${subs.length} disciplinas (IA)`)}
@@ -965,6 +959,12 @@ function parseTable(rows,isPdf){
     if(!name){if(subs.length&&vals.freq!=null&&Object.keys(vals).length<=3)subs.freqGlobal=vals.freq;continue}
     if(!Object.keys(vals).length){if(isPdf&&subs.length&&!/\d/.test(name)&&name===name.toUpperCase()&&name.length<40&&i-1>=start)subs[subs.length-1].name+=' '+name;continue}
     subs.push(Object.assign({name},vals));
+  }
+  if(subs.length){
+    const nk=new Set(anchors.filter(a=>/^n[1-4]$/.test(a.k)).map(a=>a.k)),fk=new Set(anchors.filter(a=>/^f[1-4]$/.test(a.k)).map(a=>a.k));
+    let np=nk.size||fk.size;
+    if(!np){const txt=rows.slice(0,Math.min(rows.length,start+2)).flatMap(r=>r.toks.map(t=>N(t.t))).join(' ');np=/TRIMESTR|TRIM\b|\b[1-3]T\b/.test(txt)?3:4}
+    subs.nPer=np===3?3:4;
   }
   return subs.length?subs:null;
 }
@@ -1106,7 +1106,7 @@ async function handleFiles(list){
         if(isDependencyFile(g.rows)){const k=applyDepResults(subs,ano);fillAluno(info);done.push(`dependência: ${k} resultado(s) nas observações`);continue}
         let p=inferPeriod(info,ctx,state.mode);
         if(p==null)p=nextFreePeriod(ano);
-        applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola)},p);entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
+        applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola),nPer:subs.nPer},p);entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
       }
       if(entry.arf){const st=matchArf(entry.arf);if(st){applyArf(entry.arf,st);entry.arfDone=st.nome}}
@@ -1219,15 +1219,17 @@ function applyFicha(res,p){
   for(const r of res.subs){
     const c=canon(r.name);let s=state.subjects.find(x=>canon(x.name).key===c.key);
     if(!s){s={name:c.name,g:Array.from({length:nPer()},blankG)};state.subjects.push(s)}
+    const nP=res.nPer===3?3:4;
     const bims=[r.n1,r.n2,r.n3,r.n4].filter(v=>typeof v==='number');
-    const total=r.total!=null?r.total:(bims.length?bims.reduce((a,b)=>a+b,0):null);
-    const media=r.media!=null?r.media:(bims.length?total/bims.length:null);
-    const nota=state.notaFonte==='media'?(media!=null?media:total):(total!=null?total:media);
-    const g=s.g[p];g.nota=nota!=null?fmtIn(+nota.toFixed(2)):'';g.media=media;
+    let total=r.total!=null?r.total:(bims.length?bims.reduce((a,b)=>a+b,0):null);
+    if(total==null&&r.media!=null)total=r.media*nP;
+    const media=r.media!=null?r.media:(total!=null?total/nP:null);
+    const nota=total;
+    const g=s.g[p];g.nota=nota!=null?fmtIn(+nota.toFixed(2)):'';g.media=media;g.per=nP;
     if(r.ch!=null&&r.ch>0){g.ch=fmtIn(r.ch);g.pad=false}else{const d=defCh(c.name,p);g.ch=d!=null?fmtIn(d):'';g.pad=d!=null}
     if(r.tf!=null&&r.ch!=null&&r.ch>0){tf+=r.tf;chs+=r.ch}
     if(r.freq!=null)fr.push(r.freq>1?r.freq/100:r.freq);
-    if(media!=null?media<5:(total!=null&&total<5*Math.max(1,bims.length||4)))deps.push({disc:c.name,nota:''});
+    if(media!=null?media<5:(total!=null&&total<5*nP))deps.push({disc:c.name,nota:''});
   }
   if(res.freqGlobal!=null){const f=res.freqGlobal>1?res.freqGlobal:res.freqGlobal*100;per.freq=fmtIn(+f.toFixed(2))}
   else if(!per.freq){if(chs>0)per.freq=fmtIn(+((1-tf/chs)*100).toFixed(2));else if(fr.length)per.freq=fmtIn(+(fr.reduce((a,b)=>a+b,0)/fr.length*100).toFixed(2))}
@@ -1242,7 +1244,7 @@ function applyDepResults(subs,ano){
   resetIfExample();let k=0;
   for(const r of subs){const c=canon(r.name);const bims=[r.n1,r.n2,r.n3,r.n4].filter(v=>typeof v==='number');
     const tot=r.total!=null?r.total:(bims.length?bims.reduce((a,b)=>a+b,0):null),med=r.media!=null?r.media:(bims.length?tot/bims.length:null);
-    const v=state.notaFonte==='media'?(med??tot):(tot??med);if(v==null)continue;
+    const v=tot!=null?tot:(med!=null?med*(subs.nPer===3?3:4):null);if(v==null)continue;
     let d=state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name)&&!x.nota)||state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name));
     if(!d){d=state.deps.find(x=>!x.disc);if(d)d.disc=c.name}
     if(!d){d={ano:ano?String(ano):'',disc:c.name,nota:''};state.deps.push(d)}
@@ -1319,7 +1321,7 @@ function renderChecks(){
 function syncReadMode(){const m=readMode();const lt=$('#lock-txt');if(lt)lt.textContent=m==='ia'?'Leitura com IA ligada: fotos e PDFs escaneados são enviados à Anthropic. O resto é lido só neste computador.':'Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.';$('#rm-ocr').checked=m==='ocr';$('#rm-ia').checked=m==='ia';$('#ia-key').hidden=!(m==='ia'&&!IN_CLAUDE);$('#ia-claude').hidden=!(m==='ia'&&IN_CLAUDE);if(!IN_CLAUDE)$('#apikey').value=apiKey()}
 function syncMode(){$('#mode-reg').setAttribute('aria-pressed',state.mode==='reg');$('#mode-eja').setAttribute('aria-pressed',state.mode==='eja')}
 function renderAll(){
-  syncMode();$('#example-banner').hidden=!state.example;$('#notaFonte').value=state.notaFonte;
+  syncMode();$('#example-banner').hidden=!state.example;
   renderAluno();renderGrades();renderPlaces();renderDeps();$('#obsExtra').value=state.obsExtra;$('#dataLocal').value=state.dataLocal;renderSig();schedulePreview();
 }
 function setMode(m){
@@ -1366,7 +1368,6 @@ document.addEventListener('change',e=>{
   if(d.si!=null){const p=+d.si;state.periods[p].sit=t.value;const ano=state.periods[p].ano;
     if(t.value==='APROV. C/DEP'&&!state.deps.some(x=>x.ano&&x.ano===ano)){state.deps.push({ano,disc:'',nota:''});renderDeps()}
     schedulePreview()}
-  else if(t.id==='notaFonte'){state.notaFonte=t.value;renderGrades();schedulePreview()}
   else if(d.ano!=null||d.sn!=null){renderPlaces();renderDeps();schedulePreview()}
 });
 document.addEventListener('click',e=>{
