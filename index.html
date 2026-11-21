@@ -235,7 +235,7 @@ table.g tbody tr:hover td{background:var(--paper)}
       <section class="card">
         <h2><span class="step">3</span>Confira disciplinas, notas e carga horária</h2>
         <p class="hint">Só entram no histórico as disciplinas desta lista, na ordem mostrada. A carga horária total é somada automaticamente.</p>
-        <p class="hint" style="margin:-6px 0 10px"><b>Nota</b> = total de pontos do ano: soma dos 4 bimestres ou dos 3 trimestres. Se a ficha só traz a média, a nota é a média × 4 (bimestral) ou × 3 (trimestral).</p>
+        <p class="hint" style="margin:-6px 0 10px"><b>Nota</b> = total de pontos: Regular, soma dos 4 bimestres (mínimo 20) ou dos 3 trimestres (mínimo 15); EJA, soma dos 2 bimestres do módulo (mínimo 10). Se a ficha só traz a média, a nota é a média × 4, × 3 ou × 2.</p>
         <div class="tablebox"><table class="g" id="grades"></table></div>
         <div class="row" style="margin-top:10px">
           <button type="button" class="btn small" id="add-subj">+ Adicionar disciplina</button>
@@ -425,12 +425,15 @@ function canon(name){
   return i>=0?{key:k,name:order[i],idx:i}:{key:k,name:String(name).trim().toUpperCase(),idx:999};
 }
 function sortSubjects(){state.subjects.sort((a,b)=>{const x=canon(a.name),y=canon(b.name);return x.idx-y.idx||x.name.localeCompare(y.name,'pt')})}
+// Regular: 4 bimestres (min. 20) ou 3 trimestres (min. 15). EJA: 2 bimestres por modulo (min. 10).
+function defaultPer(){return state&&state.mode==='eja'?2:4}
+function normPer(n){return [2,3,4].includes(n)?n:defaultPer()}
 function isDep(g,p){
   if(p!=null){const sit=(state.periods[p]||{}).sit;if(sit&&sit!=='APROV. C/DEP')return false}
   const m=g.media!=null?g.media:null;
   if(m!=null)return m<5;
   const v=num(g.nota);if(v==null)return false;
-  return v<5*(g.per===3?3:4);
+  return v<5*normPer(g.per);
 }
 function semestreAuto(p){
   const a=state.periods[p].ano;if(!a)return '';
@@ -705,13 +708,13 @@ function dataChecks(st){
     if(collapseRepeat(nm)!==nm.replace(/\s+/g,' '))push('b',`Disciplina "${nm}": o nome tem palavras repetidas.`);
     const k=canon(nm).key;if(keys[k])push('b',`Disciplina "${nm}" aparece duas vezes na lista.`);keys[k]=1;
     s.g.forEach((g,p)=>{
-      if(g.nota!==''){const v=num(g.nota);if(v==null)push('b',`${nm}, ${L[p]}: a nota "${g.nota}" não é um número.`);else if(v<0||v>40)push('w',`${nm}, ${L[p]}: nota ${g.nota} fora da faixa de total de pontos (0 a 40).`)}
+      if(g.nota!==''){const v=num(g.nota);if(v==null)push('b',`${nm}, ${L[p]}: a nota "${g.nota}" não é um número.`);else if(v<0||v>10*normPer(g.per))push('w',`${nm}, ${L[p]}: nota ${g.nota} fora da faixa de total de pontos (0 a ${10*normPer(g.per)}).`)}
       if(g.ch!==''){const c=num(g.ch);if(c==null)push('b',`${nm}, ${L[p]}: a C/H "${g.ch}" não é um número.`);else if(c<=0||c>400)push('w',`${nm}, ${L[p]}: C/H ${g.ch} fora do comum.`)}
       if(g.nota!==''&&g.ch==='')push('w',`${nm}, ${L[p]}: tem nota mas falta a C/H.`);
     })});
   for(let p=0;p<st.periods.length;p++){
     const vals=st.subjects.map(s=>num((s.g[p]||{}).nota)).filter(v=>v!=null);
-    if(vals.length>=4){const altos=vals.filter(v=>v>10).length;const baixos=st.subjects.filter(s=>{const v=num((s.g[p]||{}).nota);return v!=null&&v<=10&&v>=2});
+    if(vals.length>=4){const lim=state.mode==='eja'?5:10;const altos=vals.filter(v=>v>lim).length;const baixos=st.subjects.filter(s=>{const v=num((s.g[p]||{}).nota);return v!=null&&v<=lim&&v>=2});
       if(altos>=vals.length*0.6)baixos.forEach(s=>push('w',`${s.name}, ${L[p]}: nota ${s.g[p].nota} muito baixa para total de pontos. Confira se não é a média.`))}
     const has=st.subjects.some(s=>s.g[p]&&(s.g[p].nota!==''||s.g[p].ch!==''));const P=st.periods[p];
     if(has){
@@ -918,7 +921,7 @@ Transcreva os dados exatamente como aparecem, sem inventar nada. Campo que não 
 - nivel: "fundamental" se o documento for do Ensino Fundamental (1º ao 9º ano), "medio" se for do Ensino Médio ou EJA de Ensino Médio, "desconhecido" se não der para saber.
 - aluno: dados pessoais. Datas no formato dd/mm/aaaa. Nomes como escritos.
 - periodos: um item por série/ano letivo (ou módulo, na EJA). etapa = número da série ou módulo (1 a 4); 0 se não souber. ano = ano letivo com 4 dígitos. escola e municipio daquele ano. frequencia = frequência anual em %, só o número (ex.: "94,24"). situacao = resultado final escrito no documento (ex.: "APROVADO", "PROMOVIDO", "APROVADO COM DEPENDÊNCIA", "REPROVADO").
-- divisoes: 4 se o ano é dividido em bimestres, 3 se em trimestres; 0 se não souber.
+- divisoes: quantas avaliações compõem a nota do ano/módulo: 4 (bimestres do ensino regular), 3 (trimestres) ou 2 (bimestres de um módulo da EJA); 0 se não souber.
 - disciplinas: nome da disciplina; nota = total de pontos do ano (soma dos bimestres ou trimestres), se o documento mostrar; media = média final, se houver coluna própria; carga_horaria = horas do ano.
 - dependencias: aprovações em regime de dependência citadas no documento (ano, disciplina, nota final).
 Números como escritos, com vírgula decimal.${alvo}`;
@@ -970,7 +973,7 @@ function applyAI(r,entry){
   else for(const p of per){
     const idx=(p.etapa>=1&&p.etapa<=nPer())?p.etapa-1:nextFreePeriod(p.ano);
     const subs=(p.disciplinas||[]).filter(d=>d.nome).map(d=>{let nt=num(d.nota),md=num(d.media);if(nt!=null&&nt<=10&&md==null){md=nt;nt=null}return {name:d.nome,total:nt,media:md,ch:num(d.carga_horaria)}});
-    if(subs.length)applyFicha({subs,info:{},ano:p.ano,sit:mapSit(p.situacao),freqGlobal:num(p.frequencia),escola:cleanEscola(p.escola),nPer:p.divisoes===3?3:4},idx);
+    if(subs.length)applyFicha({subs,info:{},ano:p.ano,sit:mapSit(p.situacao),freqGlobal:num(p.frequencia),escola:cleanEscola(p.escola),nPer:normPer(p.divisoes)},idx);
     else if(p.ano)state.periods[idx].ano=String(p.ano);
     if(p.municipio)state.periods[idx].municipio=p.municipio.toUpperCase().replace(/\/R[IL1]$/,'/RJ');
     done.push(`${LABELS[state.mode][idx]}${p.ano?' · '+p.ano:''} · ${subs.length} disciplinas (IA)`)}
@@ -1078,8 +1081,9 @@ function parseTable(rows,isPdf){
   if(subs.length){
     const nk=new Set(anchors.filter(a=>/^n[1-4]$/.test(a.k)).map(a=>a.k)),fk=new Set(anchors.filter(a=>/^f[1-4]$/.test(a.k)).map(a=>a.k));
     let np=nk.size||fk.size;
+    if(!np&&state.mode==='eja')np=2;
     if(!np){const txt=rows.slice(0,Math.min(rows.length,start+2)).flatMap(r=>r.toks.map(t=>N(t.t))).join(' ');np=/TRIMESTR|TRIM\b|\b[1-3]T\b/.test(txt)?3:4}
-    subs.nPer=np===3?3:4;
+    subs.nPer=normPer(np);
   }
   return subs.length?subs:null;
 }
@@ -1334,7 +1338,7 @@ function applyFicha(res,p){
   for(const r of res.subs){
     const c=canon(r.name);let s=state.subjects.find(x=>canon(x.name).key===c.key);
     if(!s){s={name:c.name,g:Array.from({length:nPer()},blankG)};state.subjects.push(s)}
-    const nP=res.nPer===3?3:4;
+    const nP=normPer(res.nPer);
     const bims=[r.n1,r.n2,r.n3,r.n4].filter(v=>typeof v==='number');
     let total=r.total!=null?r.total:(bims.length?bims.reduce((a,b)=>a+b,0):null);
     if(total==null&&r.media!=null)total=r.media*nP;
