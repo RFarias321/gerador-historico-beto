@@ -419,7 +419,7 @@ function defCh(name,p){
   const cnt={};vals.forEach(v=>cnt[v]=(cnt[v]||0)+1);return +Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
 }
 function canon(name){
-  name=collapseRepeat(name);let k=N(name);k=ALIAS[k]||k;
+  name=collapseRepeat(String(name||'').replace(/(\s+[\d.,_\-–—]+)+\s*$/,''));let k=N(name);k=ALIAS[k]||k;
   const order=SPEC[state.mode].order;const i=order.findIndex(o=>N(o)===k);
   return i>=0?{key:k,name:order[i],idx:i}:{key:k,name:String(name).trim().toUpperCase(),idx:999};
 }
@@ -467,7 +467,11 @@ function buildSheet(st){
       ov[3+2*p]=nv!=null?nv:(g.nota||null);ov[4+2*p]=cv!=null?cv:(g.ch||null);
       if(cv!=null){sum+=cv;any=true}refs.push(colL(4+2*p)+r)}
     ov[tc]=any?{f:'SUM('+refs.join(',')+')',v:sum}:null;
-    add(i===subs.length-1?50:31,ov,true);
+    const srcRow=i===subs.length-1?50:31;let ro=null;
+    const nmCell=sp.rows[srcRow].cells.find(x=>x.c===2);
+    if(nmCell){const st0=sp.styles[nmCell.s];const avail=colWidthPt(sp,2)-3;const w=textWidthAt(ov[2],st0.font.sz,st0.font.b,st0.font.i);
+      if(w>avail){const sz=Math.max(5.5,Math.floor(st0.font.sz*avail/w*2)/2);ro={cs:{2:extraStyle(sp,'nm'+nmCell.s+'_'+sz,nmCell.s,{sz,h:st0.h||'left',v:st0.v||'bottom',wrap:false})}}}}
+    add(srcRow,ov,true,ro);
   });
   const last=seq.length;
   add(51);
@@ -527,6 +531,8 @@ function obsWidth(sp){
   return w-4;
 }
 let MEAS=null;
+function colWidthPt(sp,c){const k=sp.cols.find(q=>c>=q.min&&c<=q.max);return Math.round((k?k.width:8.43)*7)*0.75}
+function textWidthAt(t,sz,b,i){if(!MEAS)MEAS=document.createElement('canvas').getContext('2d');MEAS.font=`${i?'italic ':''}${b?'700':'400'} ${sz*10}px Carlito, Calibri, sans-serif`;return MEAS.measureText(String(t||'')).width/10}
 function textW(t,italic){if(!MEAS)MEAS=document.createElement('canvas').getContext('2d');MEAS.font=`${italic?'italic ':''}400 ${OBS_SZ*10}px Carlito, Calibri, sans-serif`;return MEAS.measureText(t).width/10}
 function wrapObs(text,maxW){
   const out=[];
@@ -912,7 +918,7 @@ function extractInfo(rows0){
 }
 function classify(lbl,grp){
   const L=N(lbl),G=N(grp||'');
-  let m=L.match(/^([1-4])(B|BIM|BIMESTRE|TRI|TRIM|UN|UNID)?$/)||L.match(/^B([1-4])$/);
+  let m=L.match(/^([1-4])(B|BI|BIM|BIMESTRE|T|TR|TRI|TRIM|TRIMESTRE|S|SEM|SEMESTRE|UN|UNID|UNIDADE|ETAPA|E|P|PER|PERIODO|CERT|CERTIFICACAO|C)?$/)||L.match(/^(?:B|T|S|BIM|TRI|TRIM|SEM)([1-4])$/);
   if(m)return (/FALT/.test(G)?'f':'n')+m[1];
   if(/^(TF|TOTALDEFALTAS|TOTALFALTAS|FALTAS|FALTASTOTAL)$/.test(L))return 'tf';
   if(/^(CH|CHA|CARGAHORARIA|CARGA|HORASAULA|AULASDADAS|AULASPREVISTAS|AULAS)$/.test(L))return 'ch';
@@ -928,7 +934,7 @@ function collapseRepeat(name){
   for(let k=2;k<=6;k++){const w=t.split(' ');if(w.length%k)continue;const n=w.length/k;const part=w.slice(0,n).join(' ');let ok=true;for(let i=1;i<k;i++)if(w.slice(i*n,(i+1)*n).join(' ')!==part){ok=false;break}if(ok)return part}
   return t;
 }
-function joinName(toks){const out=[];for(const t of toks){if(t.dup)continue;if(out.length&&out[out.length-1]===t.t)continue;out.push(t.t)}return collapseRepeat(out.join(' ').trim())}
+function joinName(toks){const out=[];for(const t of toks){if(t.dup)continue;if(/^[\d.,%_\-–—\/]+$/.test(String(t.t).trim()))continue;if(out.length&&out[out.length-1]===t.t)continue;out.push(t.t)}return collapseRepeat(out.join(' ').trim())}
 function parseTable(rows,isPdf){
   const h=rows.findIndex(r=>r.toks.some(t=>/^(DISCIPLINAS?|COMPONENTESCURRICULARES|COMPONENTECURRICULAR|COMPONENTES?)$/.test(N(t.t))));
   if(h<0)return null;
