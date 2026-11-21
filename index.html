@@ -81,6 +81,9 @@ input.pad{border-style:dashed;border-color:var(--warn);color:var(--warn)}
 .sw.dep{background:var(--bad-bg);border-color:var(--bad)}
 .sw.pad{border-style:dashed;border-color:var(--warn)}
 .deps{display:flex;flex-direction:column;gap:8px}
+.dep-row input[data-da]{color:#b3261e;font-weight:700;border-color:#e39a94;background:#fdeeed}
+@media (prefers-color-scheme:dark){.dep-row input[data-da]{color:#ffb4ab;background:#3b1d1b;border-color:#8c3a33}}
+.depano-hint{color:#b3261e;font-weight:600}
 .dep-row{display:grid;grid-template-columns:90px minmax(0,1fr) 110px 30px;gap:8px;align-items:center}
 @media (max-width:520px){.dep-row{grid-template-columns:70px minmax(0,1fr) 80px 30px}}
 .obs-preview{margin-top:12px;padding:10px 12px;border-left:3px solid var(--accent);background:var(--paper);font-size:.82rem;font-style:italic;white-space:pre-line}
@@ -262,7 +265,7 @@ table.g tbody tr:hover td{background:var(--paper)}
 
       <section class="card">
         <h2><span class="step">4</span>Confira as observações</h2>
-        <p class="hint">Aprovações em regime de dependência. Sem dependência em nenhum ano, as linhas somem do histórico. Campo vazio sai como <b>(preencher)</b>.</p>
+        <p class="hint"><span class="depano-hint">Confira o ano em vermelho: é o ano em que a dependência foi cumprida. Se mudar aqui, muda também no histórico e nas fichas de dependência da impressão para assinatura.</span> Aprovações em regime de dependência. Sem dependência em nenhum ano, as linhas somem do histórico. Campo vazio sai como <b>(preencher)</b>.</p>
         <div class="deps" id="deps"></div>
         <div class="row" style="margin-top:10px">
           <button type="button" class="btn small" id="add-dep">+ Adicionar dependência</button>
@@ -1869,6 +1872,7 @@ async function sourcePages(f,d){
   if(f.src.kind==='xlsx'){const m=await readXlsxModel(f.src.buf.slice(0),d.sheet);
     if(d.role==='arf'){highlightStudent(m,state.aluno.nome,state.aluno.matricula);applySignatures(m,own);return [{orient:'l',model:m,title:'Ata '+(d.ano||'')}]}
     if(d.role==='mat')return [{orient:'p',model:m,title:'Ficha de matrícula'}];
+    if(d.role==='dep'){const dd=state.deps.find(x=>x.ano&&(d.subjects||[]).some(t=>canon(t).key===canon(x.disc||'').key));if(dd&&String(dd.ano)!==String(d.ano||''))mSetLabeled(m,'ANO:',String(dd.ano))}
     applySignatures(m,own);return [{orient:'l',model:m,title:(d.role==='dep'?'Dependência ':'Ficha ')+(d.ano||'')}]}
   // PDF ou imagem: páginas como imagem, sem alterar o documento
   const out=[];const canv=f.src.kind==='pdf'?await pdfToCanvases(f.src.buf.slice(0),8):[await imageToCanvas(new Blob([f.src.buf]))];
@@ -2043,6 +2047,29 @@ function matPage(ex){
   return {orient:'p',draw,title:'Ficha de matrícula'};
 }
 
+/* sessão salva só neste navegador: ir ao tutorial (ou recarregar) não apaga o trabalho.
+   Fica no IndexedDB deste computador, some com "Novo aluno" e expira em 12 horas. */
+const SESS_TTL=12*3600*1000;let sessTimer=null,sessRestoring=false;
+function sessDb(){return new Promise((res,rej)=>{const r=indexedDB.open('gerador-historico-sessao',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function sessPut(v){const db=await sessDb();await new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');v==null?tx.objectStore('kv').delete('atual'):tx.objectStore('kv').put(v,'atual');tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}
+async function sessGet(){const db=await sessDb();const v=await new Promise((res,rej)=>{const tx=db.transaction('kv','readonly');const q=tx.objectStore('kv').get('atual');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});db.close();return v}
+async function sessSaveNow(){if(sessRestoring||!READY||!state)return;
+  try{if(state.example||isPristine()){await sessPut(null);return}
+    const keep=files.filter(f=>!f.example&&!/lendo|abrindo/.test(f.status||''));
+    try{await sessPut({t:Date.now(),state,files:keep})}
+    catch(e){await sessPut({t:Date.now(),state:JSON.parse(JSON.stringify(state)),files:[]})}}
+  catch(e){console.warn('sessão',e)}}
+function sessSave(){clearTimeout(sessTimer);sessTimer=setTimeout(sessSaveNow,600)}
+async function sessRestore(){
+  try{const v=await sessGet();if(!v||!v.state)return false;if(Date.now()-v.t>SESS_TTL){await sessPut(null);return false}
+    sessRestoring=true;state=v.state;files=v.files||[];renderFiles();renderAll();sessRestoring=false;
+    setStatus(`Recuperei o trabalho em andamento${state.aluno&&state.aluno.nome?' de '+state.aluno.nome:''}. Para começar outro aluno, clique em Novo aluno.`);return true}
+  catch(e){sessRestoring=false;console.warn('sessão',e);return false}}
+{const _sp=schedulePreview;schedulePreview=function(){_sp.apply(this,arguments);sessSave()}}
+{const _rf=renderFiles;renderFiles=function(){_rf.apply(this,arguments);sessSave()}}
+addEventListener('pagehide',()=>{sessSaveNow()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sessSaveNow()});
+
 let DL=null;
 async function download(kind){
   if(!READY)return;
@@ -2064,7 +2091,7 @@ window.addEventListener('resize',schedulePreview);
 
 (async()=>{
   setStatus('Carregando o modelo…');
-  try{await loadAssets();state=blankState('reg');renderAll();syncReadMode();setStatus('')}
+  try{await loadAssets();state=blankState('reg');renderAll();syncReadMode();setStatus('');await sessRestore()}
   catch(e){console.error(e);setStatus('Não foi possível carregar o modelo. Recarregue a página.',true)}
   if(window.claude&&claude.use)claude.use('downloads').then(d=>{DL=d}).catch(()=>{DL=null});
 })();
