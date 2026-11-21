@@ -1206,7 +1206,15 @@ function parseHist(rows){
 let PENDING_DEPS=[];
 const EJA_MSG='documento de EJA: a página mudou para EJA · 4 módulos';
 const isRegDoc=rows=>rows.some(r=>(r.toks||[]).some(t=>/^(MODALIDADE)?REGULAR$|ENSINOMEDIOREGULAR|MODALIDADEREGULAR/.test(N(t.t))));
+const docKind=rows=>{if(isEjaDoc(rows))return 'eja';if(isRegDoc(rows))return 'reg';const h=new Set(rows.flatMap(r=>(r.toks||[]).map(t=>N(t.t))));if(['1B','2B','3B','4B'].every(x=>h.has(x))||['1T','2T','3T'].every(x=>h.has(x)))return 'reg';return null};
 const isEjaDoc=rows=>rows.some(r=>(r.toks||[]).some(t=>{const k=N(t.t);return /EDUCACAODEJOVENSEADULTOS|EJANEM|^EJA[A-Z0-9_]|^TURMAEJA|^EJA$/.test(k)}));
+function ensureMode(k,name,entry){
+  if(k==='eja')state.ejaSeen=1;else state.regSeen=1;
+  if(state.mode===k)return;
+  const nome=k==='eja'?'EJA · 4 módulos':'Ensino Médio Regular · 3 séries',outro=k==='eja'?'Ensino Médio Regular':'EJA';
+  if(k==='eja'?state.regSeen&&state.ejaSeen:state.ejaSeen&&state.regSeen){state.modeAlert=`O arquivo “${name}” parece ser de ${k==='eja'?'EJA':'Ensino Médio Regular'}, mas já há documentos do ${outro} para este aluno. Confira se todos os arquivos são do mesmo aluno e do mesmo tipo de ensino.`;return}
+  setMode(k);state.modeAlert=`O arquivo “${name}” é de ${k==='eja'?'EJA':'Ensino Médio Regular'}. A página estava em ${outro} e mudou sozinha para ${nome}. Se estiver errado, clique no tipo certo no topo e anexe de novo.`;
+  const msg='documento de '+(k==='eja'?'EJA':'Ensino Médio Regular')+': a página mudou para '+nome;entry.modeNote=msg}
 async function handleFiles(list){
   if(!READY){setStatus('Aguarde o carregamento do modelo…');return}
   PENDING_DEPS=[];
@@ -1244,8 +1252,7 @@ async function handleFiles(list){
       for(const g of groups){
         if(isFundamental(g.rows)){if(!done.includes(FUND_MSG))done.push(FUND_MSG);continue}
         fundOnly=false;
-        if(state.mode!=='eja'&&isEjaDoc(g.rows)){setMode('eja');state.modeAlert=`O arquivo “${file.name}” é de EJA. A página estava em Ensino Médio Regular e mudou sozinha para EJA · 4 módulos. Se o aluno for do Regular, clique em “Ensino Médio Regular” no topo e anexe de novo.`;if(!done.includes(EJA_MSG))done.push(EJA_MSG)}
-        else if(state.mode==='eja'&&isRegDoc(g.rows)&&!isEjaDoc(g.rows)){state.modeAlert=`O arquivo “${file.name}” parece ser do Ensino Médio Regular, mas a página está em EJA · 4 módulos. Confira: se o aluno for do Regular, clique em “Ensino Médio Regular” no topo e anexe de novo.`}
+        {const k=docKind(g.rows);if(k)ensureMode(k,file.name,entry)}
         {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){if(outroAluno(hist.info.nome))throw new Error(OUTRO_MSG(String(hist.info.nome).toUpperCase()));applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
         if(arf){entry.arf=arf;addDoc({role:'arf',sheet:g.sheet,ano:arf.ano,escola:arf.escola,serie:(String((arf.info||{}).serie||'').match(/\d/)||[''])[0]});done.push(`ata de resultados ${arf.ano||''} · ${arf.students.length} alunos`);continue}
@@ -1275,7 +1282,7 @@ async function handleFiles(list){
         const filled=applyAlunoDoc(info,entry,oficial);
         done.push((oficial&&!entry.ocr?'ficha de matrícula (dados pessoais têm prioridade)':entry.ocr?'dados do aluno lidos de imagem (sem prioridade: confira cada campo)':'dados do aluno')+(filled.length?' · '+(oficial?'usado: ':'preenchido: ')+filled.join(', '):' · tudo já conferia'));
       }
-      entry.status=done.join(' | ')+(entry.ocr?' · lido por OCR: confira os números':'')+((entry.skipped||[]).length?' · ilegível, não usado: '+entry.skipped.join(', '):'');READING_OCR=false;entry.ok=true;state.example=false;
+      entry.status=(entry.modeNote?entry.modeNote+' | ':'')+done.join(' | ')+(entry.ocr?' · lido por OCR: confira os números':'')+((entry.skipped||[]).length?' · ilegível, não usado: '+entry.skipped.join(', '):'');READING_OCR=false;entry.ok=true;state.example=false;
     }catch(e){console.error(e);entry.status=e.message||'Não foi possível ler o arquivo.';entry.err=true}
     renderFiles();renderAll();
   }
