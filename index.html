@@ -191,6 +191,7 @@ table.g tbody tr:hover td{background:var(--paper)}
 
   <div class="grid">
     <div class="col">
+      <div class="banner" id="mode-alert" role="alert" hidden></div>
       <div class="banner" id="example-banner">
         <span>Exemplo carregado com os dados do modelo. Anexe as fichas do aluno ou comece em branco.</span>
         <button type="button" class="btn small" id="btn-new">Novo histórico em branco</button>
@@ -1203,6 +1204,9 @@ function parseHist(rows){
   return res;
 }
 let PENDING_DEPS=[];
+const EJA_MSG='documento de EJA: a página mudou para EJA · 4 módulos';
+const isRegDoc=rows=>rows.some(r=>(r.toks||[]).some(t=>/^(MODALIDADE)?REGULAR$|ENSINOMEDIOREGULAR|MODALIDADEREGULAR/.test(N(t.t))));
+const isEjaDoc=rows=>rows.some(r=>(r.toks||[]).some(t=>{const k=N(t.t);return /EDUCACAODEJOVENSEADULTOS|EJANEM|^EJA[A-Z0-9_]|^TURMAEJA|^EJA$/.test(k)}));
 async function handleFiles(list){
   if(!READY){setStatus('Aguarde o carregamento do modelo…');return}
   PENDING_DEPS=[];
@@ -1240,6 +1244,8 @@ async function handleFiles(list){
       for(const g of groups){
         if(isFundamental(g.rows)){if(!done.includes(FUND_MSG))done.push(FUND_MSG);continue}
         fundOnly=false;
+        if(state.mode!=='eja'&&isEjaDoc(g.rows)){setMode('eja');state.modeAlert=`O arquivo “${file.name}” é de EJA. A página estava em Ensino Médio Regular e mudou sozinha para EJA · 4 módulos. Se o aluno for do Regular, clique em “Ensino Médio Regular” no topo e anexe de novo.`;if(!done.includes(EJA_MSG))done.push(EJA_MSG)}
+        else if(state.mode==='eja'&&isRegDoc(g.rows)&&!isEjaDoc(g.rows)){state.modeAlert=`O arquivo “${file.name}” parece ser do Ensino Médio Regular, mas a página está em EJA · 4 módulos. Confira: se o aluno for do Regular, clique em “Ensino Médio Regular” no topo e anexe de novo.`}
         {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){if(outroAluno(hist.info.nome))throw new Error(OUTRO_MSG(String(hist.info.nome).toUpperCase()));applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
         if(arf){entry.arf=arf;addDoc({role:'arf',sheet:g.sheet,ano:arf.ano,escola:arf.escola,serie:(String((arf.info||{}).serie||'').match(/\d/)||[''])[0]});done.push(`ata de resultados ${arf.ano||''} · ${arf.students.length} alunos`);continue}
@@ -1250,6 +1256,7 @@ async function handleFiles(list){
         if(isDependencyFile(g.rows)||/DEPEND/.test(N(g.sheet||''))){fillAluno(info);const pd={subs,ano,entry,sheet:g.sheet,info,file:file.name};PENDING_DEPS.push(pd);addDoc({role:'dep',sheet:g.sheet,ano,escola:cleanEscola(info.escola),subjects:subs.map(x=>x.name)});entry.depDocs=entry.depDocs||[];entry.depDocs.push(pd);done.push('ficha de dependência');continue}
         let p=inferPeriod(info,ctx,state.mode);
         if(p==null)p=nextFreePeriod(ano);
+        if(p==null||p>=state.periods.length)throw new Error(state.mode==='reg'?'Esta ficha é de um 4º módulo (EJA). Clique em "EJA · 4 módulos" no topo e anexe de novo.':'Não encontrei uma coluna livre para esta ficha.');
         applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola),nPer:subs.nPer},p);addDoc({role:'fia',sheet:g.sheet,p,ano,escola:cleanEscola(info.escola)});entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
       }
@@ -1318,10 +1325,11 @@ function applyArf(arf,stu){
   if(!state.aluno.matricula&&stu.mat)state.aluno.matricula=stu.mat;
   let p=inferPeriod(arf.info,{},state.mode);
   if(p==null){const i=state.periods.findIndex(x=>x.ano===String(arf.ano));p=i>=0?i:nextFreePeriod(arf.ano)}
+  if(p==null||!state.periods[p])return;
   const per=state.periods[p];if(arf.ano&&!per.ano)per.ano=String(arf.ano);
   const sit=mapSit(stu.sit);
   if(periodHasData(p)){if(!per.sit&&sit)per.sit=sit;if(!per.freq&&stu.freq!=null)per.freq=fmtIn(stu.freq);return}
-  const subs=stu.notas.map(x=>({name:x.disc,total:x.nota,media:x.nota/4}));
+  const subs=stu.notas.map(x=>({name:x.disc,total:x.nota,media:x.nota!=null?x.nota/defaultPer():null}));
   applyFicha({subs,info:{},ano:arf.ano,sit,freqGlobal:stu.freq,escola:arf.escola},p);
 }
 function nextFreePeriod(ano){
@@ -1380,6 +1388,7 @@ function resetIfExample(){if(state.example){const keep=state.mode;state=blankSta
 function applyFicha(res,p){
   resetIfExample();fillAluno(res.info);
   const per=state.periods[p];if(res.ano)per.ano=String(res.ano);
+  state.deps=state.deps.filter(x=>!(x.auto===p&&!x.nota&&!x.edited));
   let tf=0,chs=0,fr=[],deps=[];
   for(const r of res.subs){
     const c=canon(r.name);let s=state.subjects.find(x=>canon(x.name).key===c.key);
@@ -1401,7 +1410,7 @@ function applyFicha(res,p){
   if(res.escola)per.escola=res.escola;
   if(res.sit)per.sit=res.sit;else if(!per.sit)per.sit=deps.length?'APROV. C/DEP':'APROVADO';
   if(per.sit!=='APROV. C/DEP')deps=[];
-  for(const d of deps)if(!state.deps.some(x=>x.ano===per.ano&&N(x.disc)===N(d.disc)))state.deps.push({ano:per.ano,disc:d.disc,nota:''});
+  for(const d of deps)if(!state.deps.some(x=>x.ano===per.ano&&N(x.disc)===N(d.disc)))state.deps.push({ano:per.ano,disc:d.disc,nota:'',auto:p});
   state.subjects=state.subjects.filter(s=>s.g.some(g=>g.nota!==''||g.ch!==''));
   sortSubjects();
 }
@@ -1487,11 +1496,11 @@ function renderChecks(){
 function syncReadMode(){const m=readMode();const lt=$('#lock-txt');if(lt)lt.textContent=m==='ia'?'Leitura com IA ligada: fotos e PDFs escaneados são enviados à Anthropic. O resto é lido só neste computador.':'Os arquivos são lidos só neste computador. Nenhum dado de aluno é enviado para a internet.';$('#rm-ocr').checked=m==='ocr';$('#rm-ia').checked=m==='ia';$('#ia-key').hidden=!(m==='ia'&&!IN_CLAUDE);$('#ia-claude').hidden=!(m==='ia'&&IN_CLAUDE);if(!IN_CLAUDE)$('#apikey').value=apiKey()}
 function syncMode(){$('#mode-reg').setAttribute('aria-pressed',state.mode==='reg');$('#mode-eja').setAttribute('aria-pressed',state.mode==='eja')}
 function renderAll(){
-  syncMode();$('#example-banner').hidden=!state.example;
+  syncMode();$('#example-banner').hidden=!state.example;{const a=$('#mode-alert');a.hidden=!state.modeAlert;a.innerHTML=state.modeAlert?'<span><b>Confira o modelo:</b> '+esc_(state.modeAlert)+'</span>':''}
   renderAluno();renderMat();renderGrades();renderPlaces();renderDeps();$('#obsExtra').value=state.obsExtra;$('#dataLocal').value=state.dataLocal;renderSig();schedulePreview();
 }
 function setMode(m){
-  if(m===state.mode)return;
+  if(m===state.mode)return;state.modeAlert='';
   if(state.example){state=exampleState(m);renderAll();return}
   const n=m==='eja'?4:3;state.mode=m;
   while(state.periods.length<n)state.periods.push(blankState(m).periods[0]);state.periods.length=n;
@@ -1512,8 +1521,8 @@ document.addEventListener('input',e=>{
   else if(d.pe!=null)state.periods[+d.pe].escola=t.value;
   else if(d.pm!=null)state.periods[+d.pm].municipio=t.value;
   else if(d.ps!=null)state.periods[+d.ps].semestre=t.value;
-  else if(d.da!=null){state.deps[+d.da].ano=t.value.trim();t.classList.toggle('empty',!t.value)}
-  else if(d.dd!=null){state.deps[+d.dd].disc=t.value;t.classList.toggle('empty',!t.value)}
+  else if(d.da!=null){state.deps[+d.da].ano=t.value.trim();state.deps[+d.da].edited=1;t.classList.toggle('empty',!t.value)}
+  else if(d.dd!=null){state.deps[+d.dd].disc=t.value;state.deps[+d.dd].edited=1;t.classList.toggle('empty',!t.value)}
   else if(d.dn!=null){state.deps[+d.dn].nota=t.value.trim();t.classList.toggle('empty',!t.value)}
   else if(t.id==='apikey'){try{localStorage.setItem('hist.apikey',t.value.trim())}catch(e){}return}
   else if(d.es){const old=Object.assign({},esc);esc=Object.assign({},esc,{[d.es]:t.value});store.set('hist.esc',esc);
