@@ -1617,7 +1617,7 @@ async function readXlsxModel(buf,sheetName){
     if(el.getAttribute('indexed')!=null)return IDX_COLORS[el.getAttribute('indexed')]||'000000';return null};
   // estilos
   const st=await xml('xl/styles.xml');const numFmts={};all(st,'numFmt').forEach(n=>numFmts[n.getAttribute('numFmtId')]=n.getAttribute('formatCode'));
-  const fonts=kids(all(st,'fonts')[0],'font').map(f=>({sz:+(kid(f,'sz')||{getAttribute:()=>11}).getAttribute('val')||11,b:!!kid(f,'b')&&kid(f,'b').getAttribute('val')!=='0',i:!!kid(f,'i')&&kid(f,'i').getAttribute('val')!=='0',u:!!kid(f,'u'),color:color(kid(f,'color'))||'000000',name:(kid(f,'name')||{getAttribute:()=>'Calibri'}).getAttribute('val')}));
+  const fonts=kids(all(st,'fonts')[0],'font').map(f=>({sz:+(kid(f,'sz')||{getAttribute:()=>11}).getAttribute('val')||11,b:!!kid(f,'b')&&kid(f,'b').getAttribute('val')!=='0',i:!!kid(f,'i')&&kid(f,'i').getAttribute('val')!=='0',u:!!kid(f,'u')&&!/none/i.test(kid(f,'u').getAttribute('val')||''),color:color(kid(f,'color'))||'000000',name:(kid(f,'name')||{getAttribute:()=>'Calibri'}).getAttribute('val')}));
   const fills=kids(all(st,'fills')[0],'fill').map(f=>{const p=kid(f,'patternFill');return p&&p.getAttribute('patternType')==='solid'?color(kid(p,'fgColor')):null});
   const borders=kids(all(st,'borders')[0],'border').map(b=>{const o={};for(const s2 of ['left','right','top','bottom']){const e=kid(b,s2);if(e&&e.getAttribute('style'))o[s2[0]]=[e.getAttribute('style'),color(kid(e,'color'))||'000000']}return o});
   const styles=kids(all(st,'cellXfs')[0],'xf').map(x=>{const a=kid(x,'alignment');const nid=x.getAttribute('numFmtId')||'0';
@@ -1635,7 +1635,7 @@ async function readXlsxModel(buf,sheetName){
   const sfp=all(sd,'sheetFormatPr')[0];const defH=sfp&&sfp.getAttribute('defaultRowHeight')?+sfp.getAttribute('defaultRowHeight'):15;const defW=sfp&&sfp.getAttribute('defaultColWidth')?+sfp.getAttribute('defaultColWidth'):8.43;
   const colsDef=all(sd,'col').map(c=>({min:+c.getAttribute('min'),max:+c.getAttribute('max'),width:+(c.getAttribute('width')||defW),hidden:c.getAttribute('hidden')==='1'}));
   const rows={};let maxR=1,maxC=1;
-  for(const rEl of all(sd,'row')){const rn=+rEl.getAttribute('r');const ro={ht:rEl.getAttribute('ht')?+rEl.getAttribute('ht'):null,hidden:rEl.getAttribute('hidden')==='1',cells:[]};
+  for(const rEl of all(sd,'row')){const rn=+rEl.getAttribute('r');const ro={ht:rEl.getAttribute('ht')?+rEl.getAttribute('ht'):null,custom:rEl.getAttribute('customHeight')==='1',hidden:rEl.getAttribute('hidden')==='1',cells:[]};
     for(const c of kids(rEl,'c')){const ref=c.getAttribute('r');const cn=colRef(ref.match(/[A-Z]+/)[0]);const s=+(c.getAttribute('s')||0);const t=c.getAttribute('t');const vEl=kid(c,'v');let val=null;
       if(t==='s'&&vEl)val=sst[+vEl.textContent];else if(t==='inlineStr'){const is=kid(c,'is');val=is?all(is,'t').map(x=>x.textContent).join(''):null}
       else if(t==='str'||t==='e'){val=vEl?vEl.textContent:null}else if(t==='b'){val=vEl?(vEl.textContent==='1'?'VERDADEIRO':'FALSO'):null}else if(vEl){const n=+vEl.textContent;val=isFinite(n)?n:vEl.textContent}
@@ -1657,7 +1657,7 @@ async function readXlsxModel(buf,sheetName){
       const from=pt(all(an,'from')[0]);let to=null,ext2=null;if(all(an,'to')[0])to=pt(all(an,'to')[0]);else{const e=all(an,'ext')[0];ext2={w:+e.getAttribute('cx')/EMU_PT,h:+e.getAttribute('cy')/EMU_PT}}
       const img=new Image();img.src=url;await img.decode().catch(()=>{});images.push({url,img,mime,from,to,ext:ext2})}}
   const out={styles,colsDef,defW,defH,rows:[],merges,images,margins,orientation,maxC};
-  for(let r=1;r<=maxR;r++){const ro=rows[r]||{ht:null,hidden:false,cells:[]};out.rows.push({ht:ro.hidden?0:(ro.ht!=null?ro.ht:defH),cells:ro.cells.filter(c=>c.c<=maxC)})}
+  for(let r=1;r<=maxR;r++){const ro=rows[r]||{ht:null,hidden:false,cells:[]};out.rows.push({ht:ro.hidden?0:(ro.ht!=null?ro.ht:defH),auto:!ro.hidden&&!ro.custom,cells:ro.cells.filter(c=>c.c<=maxC)})}
   return out;
 }
 /* ---- edição do modelo ---- */
@@ -1684,7 +1684,7 @@ function applySignatures(m,own){
   if(labs.length){
     const r=labs[0].r;
     if(own){
-      if(r>1)m.rows[r-2].ht=Math.max(m.rows[r-2].ht||0,80);
+      if(r>1)m.rows[r-2].ht=Math.max(m.rows[r-2].ht||0,42);
       const sN=mStyle(m,labs[0].cell.s,{font:{b:true,sz:8,color:'000000'},h:'center',v:'center',border:{}});const sM=mStyle(m,labs[0].cell.s,{font:{b:false,sz:7.5,color:'000000'},h:'center',v:'center',border:{}});
       const rowN={ht:12,cells:[]},rowM={ht:11,cells:[]},newMerges=[];
       for(const L of labs){const who=/SECRET/i.test(cellText(L.cell.val))?sig.sec:/DIRET/i.test(cellText(L.cell.val))?sig.dir:null;if(!who)continue;
@@ -1706,9 +1706,9 @@ function applySignatures(m,own){
   const base=null;
   if(!own){const red=mStyle(m,base,{font:{b:true,sz:10,color:'C00000'},h:'center',v:'center'});m.rows.push({ht:10,cells:[]});m.rows.push({ht:18,cells:[{c:c1,s:red,val:EXTRAIDA()}]});m.merges.push([c1,m.rows.length,c2,m.rows.length]);return}
   const w=colWidthsPt(m);const total=w.slice(c1,c2+1).reduce((a,b)=>a+b,0);const at=x=>{let acc=0;for(let c=c1;c<=c2;c++){acc+=w[c];if(acc>=x)return c}return c2};
-  const segs=[[0.06,0.44],[0.56,0.94]].map(([a,b])=>[at(total*a),at(total*b)]);
-  const sLine=mStyle(m,base,{font:{sz:8},h:'center',v:'top',border:{t:['thin','000000']}});const sN=mStyle(m,base,{font:{sz:8,b:true},h:'center',v:'center'});const sM=mStyle(m,base,{font:{sz:7.5},h:'center',v:'center'});
-  m.rows.push({ht:56,cells:[]});const rL=m.rows.length+1;const lab={ht:12,cells:[]},nm={ht:12,cells:[]},mt={ht:11,cells:[]};
+  const half=Math.min(80,total*0.14);const segs=[0.3,0.7].map(f=>[at(total*f-half),at(total*f+half)]);
+  const sLine=mStyle(m,base,{font:{sz:7},h:'center',v:'top',border:{t:['thin','000000']}});const sN=mStyle(m,base,{font:{sz:8,b:true},h:'center',v:'center'});const sM=mStyle(m,base,{font:{sz:7.5},h:'center',v:'center'});
+  m.rows.push({ht:50,cells:[]});const rL=m.rows.length+1;const lab={ht:12,cells:[]},nm={ht:12,cells:[]},mt={ht:11,cells:[]};
   const who=[sig.sec,sig.dir],title=['ASSINATURA DO SECRETÁRIO','ASSINATURA DO DIRETOR'];
   segs.forEach(([a,b],i)=>{for(let c=a;c<=b;c++)lab.cells.push({c,s:sLine,val:c===a?title[i]:null});nm.cells.push({c:a,s:sN,val:who[i].nome});mt.cells.push({c:a,s:sM,val:'Matrícula '+who[i].mat+(who[i].id?' · ID '+who[i].id:'')})});
   m.rows.push(lab,nm,mt);segs.forEach(([a,b])=>{if(b>a){m.merges.push([a,rL,b,rL]);m.merges.push([a,rL+1,b,rL+1]);m.merges.push([a,rL+2,b,rL+2])}});
@@ -1718,11 +1718,12 @@ function colWidthsPt(m){const w=[0];for(let c=1;c<=m.maxC;c++){const k=m.colsDef
 function highlightStudent(m,nome,mat){
   const k=N(nome),km=String(mat||'').replace(/\D/g,'');
   for(const ro of m.rows){const hit=ro.cells.some(c=>{const t=cellText(c.val);return (k&&N(t)===k)||(km&&km.length>=6&&t.replace(/\D/g,'')===km)});if(!hit)continue;
-    const map={};for(const c of ro.cells){if(map[c.s]==null){const b=m.styles[c.s];map[c.s]=mStyle(m,c.s,{font:{b:true,sz:(b.font.sz||11)+1}})}c.s=map[c.s]}
-    ro.ht=Math.max(ro.ht||15,((ro.ht||15)*1.12));return true}
+    const map={};for(const c of ro.cells){if(map[c.s]==null){const b=m.styles[c.s];map[c.s]=mStyle(m,c.s,{font:{b:true,sz:(b.font.sz||11)+1},wrap:false})}c.s=map[c.s]}
+    ro.ht=Math.max(ro.ht||15,((ro.ht||15)*1.12));ro.auto=false;return true}
   return false}
 /* desenho de um modelo numa página */
 function paintModel(m,P,page){
+  autoFitRows(m);
   const w=colWidthsPt(m);const cx=[0,0];for(let c=1;c<=m.maxC;c++)cx[c+1]=cx[c]+w[c];
   const ry=[0,0];m.rows.forEach((r,i)=>ry[i+2]=ry[i+1]+(r.ht||0));
   const tw=cx[m.maxC+1],th=ry[m.rows.length+1];const ml=14,mt=14;
@@ -1743,6 +1744,20 @@ function paintModel(m,P,page){
     const side=(k,a,bb,c,d)=>{const s=b[k];if(!s)return;P.line(a,bb,c,d,BW[s[0]]||.55,s[1],/dot/.test(s[0])?[.6,1]:/dash/i.test(s[0])?[2,1]:null)};
     if(!(g&&cell.c>g[0]))side('l',x1,y1,x1,y2);if(!(g&&cell.c<g[2]))side('r',x2,y1,x2,y2);if(!(g&&r>g[1]))side('t',x1,y1,x2,y1);if(!(g&&r<g[3]))side('b',x1,y2,x2,y2)}});
 }
+function wrapText(text,maxw,meas){const out=[];let cur='';
+  const pushWord=w=>{while(w&&meas(w)>maxw){let k=w.length-1;while(k>1&&meas(w.slice(0,k))>maxw)k--;out.push(w.slice(0,k));w=w.slice(k)}return w};
+  for(const w of String(text).split(' ')){const tryS=cur?cur+' '+w:w;if(meas(tryS)<=maxw){cur=tryS;continue}if(cur)out.push(cur);cur=pushWord(w)}
+  out.push(cur);return out}
+/* linhas sem altura fixa crescem como no Excel quando o texto quebra */
+let FIT_CTX=null;
+function autoFitRows(m){if(m._fit)return;m._fit=true;if(!FIT_CTX)FIT_CTX=document.createElement('canvas').getContext('2d');const ctx=FIT_CTX;
+  const w=colWidthsPt(m);const mg=new Map();for(const g of m.merges)mg.set(g[1]+':'+g[0],g);const inM=new Set();for(const g of m.merges)for(let r=g[1];r<=g[3];r++)for(let c=g[0];c<=g[2];c++)if(r!==g[1]||c!==g[0])inM.add(r+':'+c);
+  m.rows.forEach((row,i)=>{if(!row.auto)return;const r=i+1;let need=row.ht||0;
+    for(const cell of row.cells){const st=m.styles[cell.s];if(!st||!st.wrap||cell.val==null||inM.has(r+':'+cell.c))continue;const g=mg.get(r+':'+cell.c);if(g&&g[3]!==r)continue;
+      const t=cell.val&&cell.val.runs?cell.val.runs.map(x=>x.t).join(''):String(cell.val);if(!t.trim())continue;let cw=0;for(let c=cell.c;c<=(g?g[2]:cell.c);c++)cw+=w[c]||0;
+      const f=st.font;ctx.font=`${f.i?'italic ':''}${f.b?'700 ':'400 '}${f.sz}px ${/arial|helvet|liberation sans/i.test(f.name||'')?'LibSans, Arial':'Carlito, Calibri'}, sans-serif`;
+      const n=t.split('\n').reduce((a,ln)=>a+wrapText(ln,cw-1,x=>ctx.measureText(x).width).length,0);need=Math.max(need,n*f.sz*1.2+3)}
+    row.ht=need})}
 function drawTextDoc(P,st,val,rc,sc){
   const f=st.font;let runs;
   if(val&&val.runs){runs=val.runs.filter(x=>x.t).map(x=>({t:x.t,sz:x.f.sz??f.sz,b:x.f.b??f.b,i:x.f.i??f.i,color:x.f.color||f.color}))}
@@ -1750,7 +1765,7 @@ function drawTextDoc(P,st,val,rc,sc){
   const isNum=typeof val==='number';const h=st.h||(isNum?'right':'left');const sz=Math.max(...runs.map(x=>x.sz));
   const W=x=>{P.font(x.b,x.i,x.sz*sc);return P.width(x.t)};
   let lines;if(runs.length===1){lines=runs[0].t.replace(/\s+$/,'').split('\n').map(t=>[{...runs[0],t}]);
-    if(st.wrap){const maxw=rc.x2-rc.x1-3*sc;const out=[];for(const ln of lines){const words=ln[0].t.split(' ');let cur='';for(const w2 of words){const tryS=cur?cur+' '+w2:w2;if(cur&&W({...ln[0],t:tryS})>maxw){out.push([{...ln[0],t:cur}]);cur=w2}else cur=tryS}out.push([{...ln[0],t:cur}])}lines=out}}
+    if(st.wrap){const maxw=rc.x2-rc.x1-1*sc;const out=[];for(const ln of lines)for(const t of wrapText(ln[0].t,maxw,t=>W({...ln[0],t})))out.push([{...ln[0],t}]);lines=out}}
   else lines=[runs];
   const lh=sz*1.2*sc,n=lines.length;let y0;
   if(st.v==='center')y0=(rc.y1+rc.y2)/2-(n-1)*lh/2+sz*.3*sc;else if(st.v==='top')y0=rc.y1+(sz*.85+1)*sc;else y0=rc.y2-(sz*.22+1)*sc-(n-1)*lh;
@@ -1780,14 +1795,14 @@ async function depModel(dep,p){
   const m=await readXlsxModel(DEP_TPL.slice(0),'Dependencia');const A=state.aluno;
   mSetLabeled(m,'NOME DO ALUNO :',(A.nome||'').toUpperCase());mSetLabeled(m,'DATA DE NASCIMENTO :',A.nascimento||'');
   mSetLabeled(m,'NATURAL:',(A.naturalidade||'').toUpperCase());mSetLabeled(m,'PAI:',(A.pai||'').toUpperCase());mSetLabeled(m,'MÃE:',(A.mae||'').toUpperCase());
-  mSetLabeled(m,'SEXO','');mSetLabeled(m,'ESCOLA:',`${esc.censo} - ${esc.curto}`);mSetLabeled(m,'ANO:',String(dep.ano||''));mSetLabeled(m,'CURSO:','MÉDIO');mSetLabeled(m,'TURMA:','');mSetLabeled(m,'SÉRIE:','');mSetLabeled(m,'TURNO:','');mSetLabeled(m,'PERÍODO:','');
+  mSetLabeled(m,'SEXO','');const perEsc=p!=null&&state.periods[p]?state.periods[p].escola:'';const ownDep=!perEsc||isOwnSchool(perEsc);mSetLabeled(m,'ESCOLA:',ownDep?`${esc.censo} - ${esc.curto}`:String(perEsc).toUpperCase());mSetLabeled(m,'ANO:',String(dep.ano||''));mSetLabeled(m,'CURSO:','MÉDIO');mSetLabeled(m,'TURMA:','');mSetLabeled(m,'SÉRIE:','');mSetLabeled(m,'TURNO:','');mSetLabeled(m,'PERÍODO:','');
   const hd=mFind(m,t=>N(t)==='DISCIPLINA');
   if(hd){const r=hd.r+1;const row=m.rows[r-1];const cols={};for(const c of m.rows[hd.r-1].cells){const k=N(cellText(c.val));if(k==='CH')cols.ch=c.c;if(k==='FINAL')cols.fin=c.c;if(k==='PONTOS')cols.pts=c.c}
     for(const c of row.cells)c.val=null;const put=(c,v)=>{if(!c)return;let cell=row.cells.find(x=>x.c===c);if(!cell){cell={c,s:row.cells[0]?row.cells[0].s:0,val:null};row.cells.push(cell)}cell.val=v};
     const subj=state.subjects.find(s=>canon(s.name).key===canon(dep.disc||'').key);const ch=subj&&p!=null?num((subj.g[p]||{}).ch):null;
     put(hd.cell.c,dep.disc||'');if(ch!=null)put(cols.ch,String(ch));if(dep.nota)put(cols.fin,String(dep.nota));
     const tot=m.rows[r];if(tot)for(const c of tot.cells){if(c.c===cols.ch)c.val=ch!=null?String(ch):null;else if(c.val!=null&&/^\d/.test(cellText(c.val)))c.val=null}}
-  applySignatures(m,true);return m;
+  applySignatures(m,ownDep);return m;
 }
 function periodOfDep(d){
   const idx=state.periods.map((p,i)=>i).filter(i=>String(state.periods[i].ano)===String(d.ano));
