@@ -1,5 +1,8 @@
 # Gerador de Histórico do Beto
 
+[![Testes](https://github.com/RFarias321/gerador-historico-beto/actions/workflows/testar-e-publicar.yml/badge.svg)](https://github.com/RFarias321/gerador-historico-beto/actions/workflows/testar-e-publicar.yml)
+
+
 Gera o histórico escolar do Ensino Médio (Regular, 3 séries, e EJA, 4 módulos) no modelo oficial do
 Colégio Estadual Oswaldo Teixeira, em **Excel** e **PDF**, a partir dos documentos do Conexão Educação.
 
