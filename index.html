@@ -565,7 +565,7 @@ function obsLines(st){
     const nv=num(d.nota);const nota=d.nota?(nv!=null?nv.toFixed(2).replace('.',','):String(d.nota).trim()):'';
     auto.push({ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
   }
-  st.periods.forEach(p=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>d.ano&&d.ano===p.ano))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
+  st.periods.forEach(p=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>d.ano&&(d.ano===p.ano||(+d.ano>+p.ano))))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
   const out=auto.map((x,i)=>[x,i]).sort((a,b)=>((a[0].ano||'9999').localeCompare(b[0].ano||'9999'))||a[1]-b[1]).map(x=>x[0]);
   for(const l of (st.obsExtra||'').split('\n'))if(l.trim())out.push({text:l.trim(),ph:false});
   return out;
@@ -1256,7 +1256,7 @@ async function handleFiles(list){
             entry.status=entry.fund?FUND_MSG:(d.length?d.join(' | '):'IA não encontrou dados de aluno neste documento')+' · confira os campos';entry.ok=true;entry.ai=true;renderFiles();renderAll();continue}
           throw new Error(entry.ocr?'Não consegui ler esta imagem. Tente uma foto mais nítida, reta e com boa luz, ou ative "Ler com IA".':'Não encontrei notas nem dados do aluno neste arquivo. Se for de outra escola, ative "Ler com IA" no quadro abaixo da área de anexos.')}
         if(outroAluno(info.nome))throw new Error(OUTRO_MSG(String(info.nome).toUpperCase()));
-        const oficial=isFichaMatricula(groups.flatMap(g=>g.rows));if(oficial)addDoc({role:'mat',sheet:(groups[0]||{}).sheet||''});
+        const oficial=isFichaMatricula(groups.flatMap(g=>g.rows));if(oficial)addDoc({role:'mat',sheet:(groups[0]||{}).sheet||'',ocr:!!entry.ocr,rows:groups.flatMap(g=>g.rows),text:groups.flatMap(g=>g.rows).map(r=>(r.toks||[]).map(t=>t.t).join('  ')).join('\n')});
         const filled=applyAlunoDoc(info,entry,oficial);
         done.push((oficial&&!entry.ocr?'ficha de matrícula (dados pessoais têm prioridade)':entry.ocr?'dados do aluno lidos de imagem (sem prioridade: confira cada campo)':'dados do aluno')+(filled.length?' · '+(oficial?'usado: ':'preenchido: ')+filled.join(', '):' · tudo já conferia'));
       }
@@ -1731,7 +1731,8 @@ function paintModel(m,P,page){
   const X=c=>ox+cx[Math.min(c,m.maxC+1)]*sc,Y=r=>mt+ry[Math.min(r,m.rows.length+1)]*sc;
   const inM=new Map();for(const g of m.merges)for(let r=g[1];r<=g[3];r++)for(let c=g[0];c<=g[2];c++)inM.set(r+':'+c,g);
   const fam=st=>/arial|helvet|liberation sans|sans serif|tahoma|verdana/i.test(st.font.name||'')?'S':'C';
-  m.rows.forEach((row,i)=>{const r=i+1;for(const cell of row.cells){const st=m.styles[cell.s];if(!st||!st.fill)continue;P.rect(X(cell.c),Y(r),X(cell.c+1)-X(cell.c),Y(r+1)-Y(r),st.fill)}});
+  m.rows.forEach((row,i)=>{const r=i+1;for(const cell of row.cells){const g=inM.get(r+':'+cell.c);if(g&&(g[0]!==cell.c||g[1]!==r))continue;const st=m.styles[cell.s];if(!st||!st.fill)continue;
+    if(g)P.rect(X(g[0]),Y(g[1]),X(Math.min(g[2],m.maxC)+1)-X(g[0]),Y(g[3]+1)-Y(g[1]),st.fill);else P.rect(X(cell.c),Y(r),X(cell.c+1)-X(cell.c),Y(r+1)-Y(r),st.fill)}});
   for(const im of m.images){const x1=X(im.from.col)+im.from.colOff*sc,y1=Y(im.from.row)+im.from.rowOff*sc;let x2,y2;
     if(im.to){x2=X(im.to.col)+im.to.colOff*sc;y2=Y(im.to.row)+im.to.rowOff*sc}else{x2=x1+im.ext.w*sc;y2=y1+im.ext.h*sc}
     if(x2>x1&&y2>y1)P.imageUrl(im,x1,y1,x2-x1,y2-y1)}
@@ -1805,9 +1806,11 @@ async function depModel(dep,p){
   applySignatures(m,ownDep);return m;
 }
 function periodOfDep(d){
-  const idx=state.periods.map((p,i)=>i).filter(i=>String(state.periods[i].ano)===String(d.ano));
-  if(!idx.length)return null;const k=canon(d.disc||'').key;
-  const best=idx.filter(i=>state.periods[i].sit==='APROV. C/DEP'&&state.subjects.some(s=>canon(s.name).key===k&&isDep(s.g[i],null)));
+  const k=canon(d.disc||'').key;const P=state.periods;const failed=i=>state.subjects.some(s=>canon(s.name).key===k&&isDep(s.g[i],null));
+  let idx=P.map((p,i)=>i).filter(i=>String(P[i].ano)===String(d.ano));
+  if(!idx.length){const prev=P.map((p,i)=>i).filter(i=>!(+P[i].ano>+d.ano));const cd=prev.filter(i=>P[i].sit==='APROV. C/DEP');const fl=cd.filter(failed);
+    const pick=fl.length?fl:cd.length?cd:prev.length?prev:P.map((p,i)=>i);return pick.length?pick[pick.length-1]:null}
+  const best=idx.filter(i=>P[i].sit==='APROV. C/DEP'&&failed(i));
   return (best.length?best:idx)[(best.length?best:idx).length-1];
 }
 async function buildPackPages(){
@@ -1824,6 +1827,7 @@ async function buildPackPages(){
       for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='dep'&&(d.subjects||[]).some(s=>canon(s).key===k))){const key=f.name+'|'+d.sheet;if(depsDone.has(key)){printed=true;continue}depsDone.add(key);pages.push(...await sourcePages(f,d));printed=true}
       if(!printed){const m=await depModel(dep,p);pages.push({orient:'l',model:m,title:'Dependência '+(dep.disc||'')})}}
   }
+  for(const dep of state.deps)if(periodOfDep(dep)==null){const m=await depModel(dep,null);pages.push({orient:'l',model:m,title:'Dependência '+(dep.disc||'')})}
   // dependências enviadas sem período identificado
   for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='dep')){const key=f.name+'|'+d.sheet;if(!depsDone.has(key)){depsDone.add(key);pages.push(...await sourcePages(f,d))}}
   // 3. atas de resultados finais, por ano e série/módulo
@@ -1835,6 +1839,7 @@ async function buildPackPages(){
   return pages;
 }
 async function sourcePages(f,d){
+  if(d.role==='mat'&&d.text&&matFields(d.text).get(MAT_LAYOUT[1][0]))return [matPage(d.text,await matExtras(f,d))];
   const own=isOwnSchool(d.escola);
   if(f.src.kind==='xlsx'){const m=await readXlsxModel(f.src.buf.slice(0),d.sheet);
     if(d.role==='arf'){highlightStudent(m,state.aluno.nome,state.aluno.matricula);applySignatures(m,own);return [{orient:'l',model:m,title:'Ata '+(d.ano||'')}]}
@@ -1860,6 +1865,7 @@ async function packPdf(pages){
   for(const [k,f] of Object.entries({normal:'libsans-Regular.ttf',bold:'libsans-Bold.ttf',italic:'libsans-Italic.ttf',bolditalic:'libsans-BoldItalic.ttf'})){doc.addFileToVFS(f,LIBSANS[k]);doc.addFont(f,'LibSans',k)}
   pages.forEach((pg,i)=>{if(i>0)doc.addPage('a4',pg.orient==='l'?'landscape':'portrait');const page=A4[pg.orient];
     if(pg.hist){paintSheet(buildSheet(state),pdfPainter(doc))}
+    else if(pg.draw){const P=pdfPainterDoc(doc);pg.draw(P,page)}
     else if(pg.raster){const ip=doc.getImageProperties(pg.raster);const s=Math.min(page.w/ip.width,page.h/ip.height);doc.addImage(pg.raster,pg.rasterFmt||'JPEG',(page.w-ip.width*s)/2,(page.h-ip.height*s)/2,ip.width*s,ip.height*s)}
     else paintModel(pg.model,pdfPainterDoc(doc),page)});
   doc.setProperties({title:'Documentos para assinatura — '+(state.aluno.nome||'')});
@@ -1868,7 +1874,7 @@ async function packPdf(pages){
 async function packImages(pages){
   const out=[];for(const pg of pages){const page=A4[pg.orient];if(pg.rot&&!pg.raster){pg.raster=await rotatedPng(pg)}if(pg.raster){out.push({orient:pg.orient,url:pg.raster});continue}
     const k=3;const cv=document.createElement('canvas');cv.width=Math.round(page.w*k);cv.height=Math.round(page.h*k);const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.setTransform(k,0,0,k,0,0);ctx.lineCap='square';
-    if(pg.hist)paintSheet(buildSheet(state),canvasPainter(ctx));else paintModel(pg.model,canvasPainterDoc(ctx),page);
+    if(pg.hist)paintSheet(buildSheet(state),canvasPainter(ctx));else if(pg.draw)pg.draw(canvasPainterDoc(ctx),page);else paintModel(pg.model,canvasPainterDoc(ctx),page);
     out.push({orient:pg.orient,url:URL.createObjectURL(await new Promise(r=>cv.toBlob(r,'image/png')))})}
   return out;
 }
@@ -1880,14 +1886,115 @@ async function printPack(mode){
       if(DL===null&&window.claude&&claude.use)DL=await claude.use('downloads').catch(()=>null);
       if(DL)await DL.save({filename,data:blob});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove()}
       setStatus(`${pages.length} página(s) prontas: ${filename}.`+(IN_CLAUDE&&mode!=='pdf'?' Dentro do Claude a impressão direta é bloqueada; imprima o PDF.':''));return}
-    const imgs=await packImages(pages);
-    let fr=document.getElementById('printframe');if(fr)fr.remove();fr=document.createElement('iframe');fr.id='printframe';fr.setAttribute('aria-hidden','true');fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';document.body.appendChild(fr);
-    const d=fr.contentWindow.document;d.open();
-    d.write('<!doctype html><html><head><meta charset="utf-8"><title>Documentos para assinatura</title><style>@page port{size:A4 portrait;margin:0}@page land{size:A4 landscape;margin:0}html,body{margin:0;padding:0;background:#fff}img{display:block;break-after:page}img.p{page:port;width:210mm;height:297mm}img.l{page:land;width:297mm;height:210mm}img:last-child{break-after:auto}</style></head><body>'+imgs.map(i=>`<img class="${i.orient}" src="${i.url}">`).join('')+'</body></html>');d.close();
-    await Promise.all([...d.images].map(im=>im.decode().catch(()=>{})));
-    fr.contentWindow.focus();fr.contentWindow.print();setStatus(`${pages.length} página(s) enviadas para a impressão.`);
+    // impressão do PDF vetorial: texto e linhas nítidos, como impressão nova
+    const url=URL.createObjectURL(await packPdf(pages));
+    let fr=document.getElementById('printframe');if(fr)fr.remove();fr=document.createElement('iframe');fr.id='printframe';fr.setAttribute('aria-hidden','true');fr.style.cssText='position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';
+    await new Promise(res=>{fr.onload=res;fr.src=url;document.body.appendChild(fr);setTimeout(res,4000)});
+    try{await new Promise(r=>setTimeout(r,400));fr.contentWindow.focus();fr.contentWindow.print();setStatus(`${pages.length} página(s) enviadas para a impressão.`)}
+    catch(e){window.open(url,'_blank');setStatus(`${pages.length} página(s) abertas em nova aba: use Imprimir do leitor de PDF.`)}
   }catch(e){console.error(e);setStatus('Não foi possível montar os documentos: '+(e.message||e),true)}
   finally{btn.disabled=false}
+}
+
+/* ficha de matrícula redesenhada como página nova (sem cabeçalho/rodapé do navegador e sem assinaturas digitalizadas) */
+const MAT_LAYOUT=[
+  ['#DADOS PESSOAIS'],
+  [['Nome',0,'nome']],
+  [['Data de Nascimento',0,'nascimento'],['Sexo',.5]],
+  [['Quantidade de Filhos',0],['Tipo Sanguíneo',.5]],
+  [['Etnia',0],['Estado Civil',.5]],
+  [['País de Nascimento',0],['Nacionalidade',.5,'nacionalidade']],
+  [['UF Nascimento',0],['Naturalidade',.5,'naturalidade']],
+  [['Credo',0],['Necessidade Especial',.5]],
+  [['Matrícula',0,'matricula']],
+  [['Data da Situação',0],['Hora',.5]],
+  ['#FILIAÇÃO'],
+  [['Nome mãe',0,'mae'],['Falecida',.6],['CPF',.75]],
+  [['Nome Pai',0,'pai'],['Falecido',.6],['CPF',.75]],
+  [['Resp. Legal',0]],
+  [['Nome Outros',0],['CPF',.75]],
+  [['Tel Mãe',0],['Tel Pai',.6],['Tel Resp',.75]],
+  ['#ENDEREÇO'],
+  [['Endereço',0],['Número',.5]],
+  [['Complemento',0],['Bairro',.5]],
+  [['Município',0],['Estado',.5]],
+  [['CEP',0],['Localização/Zona de Residência',.5]],
+  ['#CONTATO'],
+  [['Telefone',0],['Celular',.3],['E-mail',.6]],
+  ['#RG DETRAN/RJ'],
+  [['Número do Documento',0],['Data de Exp. RG DETRAN/RJ',.5]],
+  ['#DOCUMENTO'],
+  [['CPF',0]],
+  [['Tipo',0],['Número',.16,'identidade'],['Complemento Identidade',.6]],
+  [['Estado',0],['Órgão Emissor',.16,'orgao'],['Data de Expedição',.6,'expedicao']],
+  ['#OUTRAS INFORMAÇÕES'],
+  [['Identificação no INEP',0],['Identificação Social(NIS)',.6]],
+  ['#CERTIDÃO CIVIL'],
+  [['Tipo Certidão',0],['Certidão Civil',.5]],
+  [['UF Cartório',0],['Município Cartório',.5]],
+  [['Nome do Cartório',0]],
+  [['Livro',0],['Folha',.16],['Termo',.3],['Data da Emissão',.5]],
+  [['Matrícula da Certidão',0]],
+  ['#TRANSPORTE'],
+  [['Utiliza Transporte?',0],['Poder Responsável',.5]],
+  [['Modal',0]]
+];
+const MAT_UPPER=new Set(['nome','mae','pai','nacionalidade','naturalidade']);
+/* lê os valores do texto do documento, rótulo a rótulo, na ordem em que aparecem na ficha */
+function matFields(text){
+  const src=String(text||'').replace(/CONFIRMA[ÇC][ÃA]O DE MATR[ÍI]CULA[\s\S]*$/i,'');
+  let ns='',map=[];for(let i=0;i<src.length;i++){const ch=src[i].normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();if(/\s/.test(ch))continue;for(const c of ch){ns+=c;map.push(i)}}
+  const key=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,'');
+  const seq=[];for(const ln of MAT_LAYOUT){if(typeof ln[0]==='string')seq.push({head:ln[0].slice(1)});else for(const f of ln)seq.push({f})}
+  for(const it of seq)if(it.f)it.f.val='';
+  let pos=0;for(const it of seq){const k=it.head?key(it.head):key(it.f[0])+(/\?$|^Modal$/.test(it.f[0])?'':':');const j=ns.indexOf(k,pos);if(j<0)continue;it.s=map[j];it.e=map[j+k.length-1]+1;pos=j+k.length}
+  const found=seq.filter(it=>it.s!=null);
+  found.forEach((it,i)=>{if(!it.f)return;const nx=found[i+1];let v=src.slice(it.e,nx?nx.s:src.length);
+    v=v.replace(/https?:\/\/\S+/g,' ').replace(/\S*conexao\.educacao\S*/gi,' ').replace(/\b\d{2}\/\d{2}\/\d{4},\s*\d{2}:\d{2}\b/g,' ').replace(/\s\d\/\d\s*$/,' ').replace(/\s+[A-Za-zÀ-ú][A-Za-zÀ-ú\/(). ]{2,40}\s?:.*$/,'').replace(/\s+/g,' ').trim();
+    it.f.val=v});
+  const out=new Map();for(const it of seq)if(it.f)out.set(it.f,it.f.val||'');
+  return out}
+/* foto e quadros do "Modal" vêm do documento original (só PDF digital) */
+async function matExtras(f,d){const ex={photo:null,checked:new Set()};if(d.ocr||f.src.kind!=='pdf')return ex;
+  try{const c=(await pdfToCanvases(f.src.buf.slice(0),1))[0];const W=c.width,H=c.height,ctx=c.getContext('2d');
+    // foto: área à direita dos dados pessoais, recortada sem a margem branca
+    const rx=Math.round(W*.64),ry=Math.round(H*.158),rw=Math.round(W*.30),rh=Math.round(H*.13);const px=ctx.getImageData(rx,ry,rw,rh).data;
+    let x0=rw,y0=rh,x1=-1,y1=-1;const isRule=y=>{let n=0;for(let x=0;x<rw;x++){const i=(y*rw+x)*4;if(px[i]+px[i+1]+px[i+2]<690)n++}return n>rw*.8};
+    for(let y=0;y<rh;y++){if(isRule(y))continue;for(let x=0;x<rw;x++){const i=(y*rw+x)*4;if(px[i]+px[i+1]+px[i+2]<690){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}}
+    if(x1-x0>W*.06&&y1-y0>H*.04){const o=document.createElement('canvas');o.width=x1-x0+1;o.height=y1-y0+1;o.getContext('2d').drawImage(c,rx+x0,ry+y0,o.width,o.height,0,0,o.width,o.height);
+      const url=o.toDataURL('image/jpeg',.92);const img=new Image();img.src=url;await img.decode().catch(()=>{});ex.photo={url,mime:'image/jpeg',img,fx:(rx+x0)/W,fy:(ry+y0)/H,fw:o.width/W,fh:o.height/H}}
+    {const lx=Math.round(W*.03),ly=Math.round(H*.045),lw=Math.round(W*.2),lh=Math.round(H*.085);const q=ctx.getImageData(lx,ly,lw,lh).data;let a0=lw,b0=lh,a1=-1,b1=-1;
+      for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const i=(y*lw+x)*4;if(q[i]+q[i+1]+q[i+2]<700){if(x<a0)a0=x;if(x>a1)a1=x;if(y<b0)b0=y;if(y>b1)b1=y}}
+      if(a1-a0>W*.04){const o=document.createElement('canvas');o.width=a1-a0+1;o.height=b1-b0+1;o.getContext('2d').drawImage(c,lx+a0,ly+b0,o.width,o.height,0,0,o.width,o.height);const url=o.toDataURL('image/png');const img=new Image();img.src=url;await img.decode().catch(()=>{});ex.logo={url,mime:'image/png',img,fx:(lx+a0)/W,fy:(ly+b0)/H,fw:o.width/W,fh:o.height/H}}}
+    // quadros marcados no "Modal": quadro escuro à esquerda de cada opção
+    const row=(d.rows||[]).find(r=>r.toks.some(t=>/BARCAS/.test(N(t.t)))&&r.toks.some(t=>/TREM/.test(N(t.t))));
+    if(row){const all=(d.rows||[]);const top=all.find(r=>r.toks.some(t=>N(t.t).startsWith('DADOSPESSOAIS')));const bottomUp=top&&top.y>row.y;
+      const pdf=await pdfjsLib.getDocument({data:f.src.buf.slice(0)}).promise;const pg=await pdf.getPage(1);const vp=pg.getViewport({scale:1});const sc=W/vp.width;
+      const dark=[];for(const t of row.toks){const yy=(bottomUp?vp.height-row.y:row.y)*sc;const bx=Math.round((t.x0-11)*sc),by=Math.round(yy-9*sc),bw=Math.round(8*sc),bh=Math.round(9*sc);
+        if(bx<0)continue;const q=ctx.getImageData(bx,by,bw,bh).data;let s=0;for(let i=0;i<q.length;i+=4)s+=765-(q[i]+q[i+1]+q[i+2]);dark.push([t.t,s/(q.length/4)])}
+      const mn=Math.min(...dark.map(x=>x[1]));for(const [t,v] of dark)if(v>40&&v>mn*2.2)ex.checked.add(N(t))}
+  }catch(e){console.warn('matExtras',e)}
+  return ex}
+function matPage(text,ex){
+  ex=ex||{photo:null,checked:new Set()};const vals=matFields(text);const A=state.aluno||{};
+  const draw=(P,page)=>{P.fam='S';const L=40,R=page.w-40,W=R-L;let y=58;
+    if(ex.logo){const g=ex.logo;P.imageUrl(g,g.fx*page.w,g.fy*page.h,g.fw*page.w,g.fh*page.h)}else P.image(L,30,70,38);
+    P.font(false,false,8.5);for(const [t,yy] of [['GOVERNO DO ESTADO DO RIO DE JANEIRO',76],['SECRETARIA DE EDUCAÇÃO',86],['FICHA DE MATRÍCULA',96]]){P.text(t,(L+R)/2-P.width(t)/2,yy,'000000')}
+    if(ex.photo){const ph=ex.photo;const w=ph.fw*page.w,h=ph.fh*page.h;P.imageUrl(ph,Math.max(ph.fx*page.w,R-w-8),Math.max(ph.fy*page.h,140),w,h)}
+    y=122;const lh=10.6;
+    for(const ln of MAT_LAYOUT){
+      if(typeof ln[0]==='string'){y+=7;P.font(true,false,8.2);P.text(ln[0].slice(1),L,y,'000000');P.line(L,y+3,R,y+3,.5,'BFBFBF');y+=lh+1;continue}
+      if(ln[0][0]==='Modal'){P.font(false,false,7.6);P.text('Modal',L,y,'000000');y+=lh+2;const ops=['BARCAS','CARRO COM ACESSIBILIDADE (CADEIRANTE)','METRÔ','ÔNIBUS','TRANSPORTE RURAL','TREM'];let x=L+12;P.font(false,false,7.2);for(const o of ops){const on=ex.checked.has(N(o));if(on)P.rect(x-10,y-6.6,7,7,'BFBFBF');P.line(x-10,y-6.6,x-3,y-6.6,.4,'808080');P.line(x-10,y+.4,x-3,y+.4,.4,'808080');P.line(x-10,y-6.6,x-10,y+.4,.4,'808080');P.line(x-3,y-6.6,x-3,y+.4,.4,'808080');P.text(o,x,y,'000000');x+=P.width(o)+24}y+=lh;continue}
+      for(const f of ln){let v=vals.get(f)||'';if(f[2]&&A[f[2]])v=MAT_UPPER.has(f[2])?String(A[f[2]]).toUpperCase():String(A[f[2]]);
+        const lab=f[0]+(/\?$/.test(f[0])?' ':': ');const x=L+W*f[1];P.font(false,false,7.6);P.text(lab,x,y,'000000');const lw=P.width(lab);P.font(true,false,7.6);
+        const nxt=ln[ln.indexOf(f)+1];const maxw=(nxt?L+W*nxt[1]:R)-x-lw-4;let t=v;while(t&&P.width(t)>maxw)t=t.slice(0,-1);P.text(t,x+lw,y,'000000')}
+      y+=lh}
+    // assinaturas: mesmo lugar da ficha original (canto inferior esquerdo), para assinar à mão
+    y+=58;const blocks=[[sig.dir,L+95],[sig.sec,L+300]];
+    for(const [s,cx] of blocks){P.line(cx-85,y,cx+85,y,.6,'000000',null);let yy=y+10;
+      for(const [t,b,sz] of [[s.nome,true,8],[s.cargo||'',false,7.2],['Matrícula '+s.mat+(s.id?' · ID '+s.id:''),false,7.2],[s.escola||'',false,7.2]]){if(!t)continue;P.font(b,false,sz);P.text(t,cx-P.width(t)/2,yy,'000000');yy+=9}}
+  };
+  return {orient:'p',draw,title:'Ficha de matrícula'};
 }
 
 let DL=null;
