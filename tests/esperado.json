@@ -169,6 +169,37 @@
     "nomeParecido": true,
     "nascimento": "15/03/2008"
   },
+  "dependenciaEmAbaCurta": {
+    "anos": [
+      "2017",
+      "2017",
+      "2021",
+      "2021"
+    ],
+    "dependencias": [
+      "2017 QUÍMICA I 5",
+      "2017 HISTORIA I "
+    ],
+    "obs": [
+      "2017 – Aprovado em regime de dependência na disciplina HISTORIA I, com nota final (preencher).",
+      "2017 – Aprovado em regime de dependência na disciplina QUÍMICA I, com nota final 5,00.",
+      "2021 – Amparado pela Resolução SEEDUC/SUGEN nº 6015/2021 publicada no D.O. de 14/12/2021."
+    ],
+    "paginasDeDependencia": [
+      "Dependência · HISTORIA I (gerada)",
+      "Dependência · QUÍMICA I"
+    ]
+  },
+  "dependenciaNaoCumprida": {
+    "obs": [
+      "2017 – Aprovado em regime de dependência na disciplina HISTORIA I, com nota final (preencher).",
+      "2017 – O(a) aluno(a) não cumpriu a dependência na disciplina QUÍMICA I (2º módulo), necessária para a certificação final do Ensino Médio.",
+      "2021 – Amparado pela Resolução SEEDUC/SUGEN nº 6015/2021 publicada no D.O. de 14/12/2021."
+    ],
+    "paginasDeDependencia": [
+      "Dependência · HISTORIA I (gerada)"
+    ]
+  },
   "regras": {
     "eja_9_5": true,
     "eja_10": false,

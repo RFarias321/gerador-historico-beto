@@ -239,14 +239,15 @@ async function buildPackPages(){
   const depsDone=new Set();
   for(let p=0;p<nPer();p++){
     for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='fia'&&d.p===p)){const pg=await sourcePages(f,d);pages.push(...pg)}
-    for(const dep of state.deps){if(periodOfDep(dep)!==p)continue;const k=canon(dep.disc||'').key;
+    for(const dep of state.deps){if(dep.pendente||periodOfDep(dep)!==p)continue;const k=canon(dep.disc||'').key;
       let printed=false;
       for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='dep'&&(d.subjects||[]).some(s=>canon(s).key===k))){const key=f.name+'|'+d.sheet;if(depsDone.has(key)){printed=true;continue}depsDone.add(key);pages.push(...await sourcePages(f,d));printed=true}
       if(!printed){const m=await depModel(dep,p);pages.push({orient:'l',model:m,title:'Dependência · '+(dep.disc||'')+' (gerada)'})}}
   }
-  for(const dep of state.deps)if(periodOfDep(dep)==null){const m=await depModel(dep,null);pages.push({orient:'l',model:m,title:'Dependência '+(dep.disc||'')})}
+  for(const dep of state.deps)if(!dep.pendente&&periodOfDep(dep)==null){const m=await depModel(dep,null);pages.push({orient:'l',model:m,title:'Dependência '+(dep.disc||'')})}
   // dependências enviadas sem período identificado
-  for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='dep')){const key=f.name+'|'+d.sheet;if(!depsDone.has(key)){depsDone.add(key);pages.push(...await sourcePages(f,d))}}
+  const pend=new Set(state.deps.filter(x=>x.pendente).map(x=>canon(x.disc||'').key));
+  for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='dep')){const key=f.name+'|'+d.sheet;if((d.subjects||[]).length&&(d.subjects||[]).every(n=>pend.has(canon(n).key)))continue;if(!depsDone.has(key)){depsDone.add(key);pages.push(...await sourcePages(f,d))}}
   // 3. atas de resultados finais, por ano e série/módulo
   const arfs=[];for(const f of fx)for(const d of f.src.docs.filter(d=>d.role==='arf'))arfs.push({f,d});
   arfs.sort((a,b)=>((+a.d.ano||0)*10+(+a.d.serie||0))-((+b.d.ano||0)*10+(+b.d.serie||0)));

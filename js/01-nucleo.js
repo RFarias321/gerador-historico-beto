@@ -252,11 +252,12 @@ function obsLines(st){
   const auto=[];
   st.periods.forEach(p=>{const a=String(p.ano||'').trim();if(p.sit==='PROMOV'&&RESOLUCAO_PROMOV[a]&&!auto.some(x=>x.res&&x.ano===a))auto.push({ano:a,res:true,ph:false,text:`${a} – ${RESOLUCAO_PROMOV[a]}`})});
   for(const d of st.deps){
+    if(d.pendente){const pi=d.p!=null?d.p:d.auto;const onde=pi!=null&&LABELS[st.mode][pi]?` (${LABELS[st.mode][pi]})`:'';auto.push({pi,ano:d.ano||'',text:`${d.ano||PH} – O(a) aluno(a) não cumpriu a dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}${onde}, necessária para a certificação final do Ensino Médio.`,ph:!d.ano||!d.disc,pendente:true});continue}
     const nv=num(d.nota);const nota=d.nota?(nv!=null?nv.toFixed(2).replace('.',','):String(d.nota).trim()):'';
-    auto.push({ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
+    auto.push({pi:d.p!=null?d.p:d.auto,ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
   }
   st.periods.forEach((p,pi)=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>(d.p!=null||d.auto!=null)?((d.p!=null?d.p:d.auto)===pi):(d.ano&&(d.ano===p.ano||(+d.ano>+p.ano)))))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
-  const out=auto.map((x,i)=>[x,i]).sort((a,b)=>((a[0].ano||'9999').localeCompare(b[0].ano||'9999'))||a[1]-b[1]).map(x=>x[0]);
+  const out=auto.map((x,i)=>[x,i]).sort((a,b)=>((a[0].ano||'9999').localeCompare(b[0].ano||'9999'))||((a[0].pi??99)-(b[0].pi??99))||a[1]-b[1]).map(x=>x[0]);
   for(const l of (st.obsExtra||'').split('\n'))if(l.trim())out.push({text:l.trim(),ph:false});
   return out;
 }
@@ -904,9 +905,22 @@ function ensureMode(k,name,entry){
   const msg='documento de '+(k==='eja'?'EJA':'Ensino Médio Regular')+': a página mudou para '+nome;entry.modeNote=msg}
 function fileFp(buf){const u=new Uint8Array(buf);let h=0x811c9dc5;for(let i=0;i<u.length;i++){h^=u[i];h=Math.imul(h,0x01000193)}return u.length+':'+(h>>>0).toString(16)}
 function srcFp(f){if(!f||!f.src||!f.src.buf)return null;if(!f.src.fp)f.src.fp=fileFp(f.src.buf);return f.src.fp}
+let TALVEZ_DEP=[];
+/* decide se uma aba curta (até 3 disciplinas, sem "considerado: ...") é o registro de uma dependência:
+   é dependência quando TODAS as disciplinas dela ficaram abaixo do mínimo num módulo/série anterior */
+function resolverTalvezDep(){const lista=TALVEZ_DEP;TALVEZ_DEP=[];
+  for(const pd of lista){const ano=+pd.ano||0;
+    const falhou=nome=>{const k=canon(nome).key;return state.subjects.some(s=>canon(s.name).key===k&&s.g.some((g,i)=>isDep(g,i)&&(!ano||!+state.periods[i].ano||+state.periods[i].ano<=ano)))};
+    const ehDep=pd.subs.length&&pd.subs.every(x=>falhou(x.name));const nomes=pd.subs.map(x=>canon(x.name).name).join(', ');
+    if(ehDep){PENDING_DEPS.push(pd);pd.entry.src&&pd.entry.src.docs.push({role:'dep',sheet:pd.sheet,ano:pd.ano,escola:pd.doc.escola,subjects:pd.subs.map(x=>x.name)});pd.entry.depDocs=pd.entry.depDocs||[];pd.entry.depDocs.push(pd);
+      pd.entry.status=pd.entry.status.replace('__talvez__',`ficha de dependência (${nomes}${pd.ano?', cumprida em '+pd.ano:''})`)}
+    else{let p=inferPeriod(pd.info,pd.ctx,state.mode);if(p==null||(periodHasData(p)&&String(state.periods[p].ano)!==String(pd.ano)))p=nextFreePeriod(pd.ano);
+      if(p==null||p>=state.periods.length){pd.entry.status=pd.entry.status.replace('__talvez__',`aba com ${nomes}: não sei onde colocar (confira se é ficha de dependência)`);continue}
+      applyFicha({subs:pd.subs,info:pd.info,ano:pd.ano,sit:'',freqGlobal:pd.subs.freqGlobal,escola:pd.doc.escola,nPer:pd.subs.nPer},p);pd.entry.src&&pd.entry.src.docs.push({role:'fia',sheet:pd.sheet,p,ano:pd.ano,escola:pd.doc.escola});
+      pd.entry.status=pd.entry.status.replace('__talvez__',`${LABELS[state.mode][p]}${pd.ano?' · '+pd.ano:''} · ${pd.subs.length} disciplina(s)`)}}}
 async function handleFiles(list){
   if(!READY){setStatus('Aguarde o carregamento do modelo…');return}
-  PENDING_DEPS=[];
+  PENDING_DEPS=[];TALVEZ_DEP=[];
   const my=SESSION;const alive=()=>my===SESSION;
   for(const file of list){
     if(!alive())return;
@@ -951,8 +965,13 @@ async function handleFiles(list){
         if(outroAluno(info.nome))throw new Error(OUTRO_MSG(String(info.nome).toUpperCase()));
         const ano=inferYear(info,ctx,g.rows);
         if(isDependencyFile(g.rows)||/DEPEND/.test(N(g.sheet||''))){fillAluno(info);const pd={subs,ano,entry,sheet:g.sheet,info,file:file.name};PENDING_DEPS.push(pd);addDoc({role:'dep',sheet:g.sheet,ano,escola:cleanEscola(info.escola),subjects:subs.map(x=>x.name)});entry.depDocs=entry.depDocs||[];entry.depDocs.push(pd);done.push('ficha de dependência');continue}
+        if(subs.length<=3&&!findSit(g.rows)){fillAluno(info);TALVEZ_DEP.push({subs,ano,entry,sheet:g.sheet,info,file:file.name,ctx,rows:g.rows,doc:{sheet:g.sheet,ano,escola:cleanEscola(info.escola)}});done.push('__talvez__');continue}
         let p=inferPeriod(info,ctx,state.mode);
         if(p==null)p=nextFreePeriod(ano);
+        /* proteção: uma ficha de outro ano nunca apaga um módulo/série já preenchido */
+        if(p!=null&&p<state.periods.length&&periodHasData(p)&&state.periods[p].ano&&ano&&String(state.periods[p].ano)!==String(ano)){const q=nextFreePeriod(ano);
+          if(q!=null&&q<state.periods.length&&!periodHasData(q)){done.push(`aviso: ia ocupar o ${LABELS[state.mode][p]} (${state.periods[p].ano}); colocada no ${LABELS[state.mode][q]}`);p=q}
+          else throw new Error(`Esta ficha de ${ano} apagaria o ${LABELS[state.mode][p]} de ${state.periods[p].ano}. Confira se ela é de outro aluno, repetida ou uma ficha de dependência.`)}
         if(p==null||p>=state.periods.length)throw new Error(state.mode==='reg'?'Esta ficha é de um 4º módulo (EJA). Clique em "EJA · 4 módulos" no topo e anexe de novo.':'Não encontrei uma coluna livre para esta ficha.');
         applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola),nPer:subs.nPer},p);addDoc({role:'fia',sheet:g.sheet,p,ano,escola:cleanEscola(info.escola)});entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
@@ -977,6 +996,7 @@ async function handleFiles(list){
     renderFiles();renderAll();
   }
   if(!alive())return;
+  resolverTalvezDep();renderFiles();
   for(const pd of PENDING_DEPS){const k=applyDepResults(pd.subs,pd.ano);pd.applied=k;pd.entry.status=pd.entry.status.replace('ficha de dependência',`ficha de dependência: ${k} nota(s) nas observações`)}
   PENDING_DEPS=[];
   renderAluno();

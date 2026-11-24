@@ -98,6 +98,12 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
     pg=await newPage(browser);await pg.setInputFiles('#file',[{name:'foto_matricula.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')}]);
     await esperar(pg,()=>files[0]&&!/lendo|Lendo|abrindo|lendo…/.test(files[0].status||'Lendo'),null,{timeout:240000}).catch(()=>{});
     res.matriculaFoto=await pg.evaluate(()=>({lidaPorOcr:!!files[0].ocr,nomeParecido:/FICT[IÍ]CIA/.test(state.aluno.nome||'')&&/TESTE/.test(state.aluno.nome||''),nascimento:state.aluno.nascimento}));
+    // 7b. dependência cumprida anos depois, numa aba curta (ex.: QUÍMICA I sozinha em 2021): não pode virar módulo nem apagar o de 2017
+    {const d=await newPage(browser);await d.click('#mode-eja');
+      await d.setInputFiles('#file',['dep_fia2021_a.xlsx','dep_fia2021_b.xlsx','dep_fia2017_2S.xlsx','dep_fia2017_1S.xlsx'].map(fx));await idle(d);await d.waitForTimeout(800);
+      res.dependenciaEmAbaCurta=await d.evaluate(async()=>{const pages=await buildPackPages();return {anos:state.periods.map(p=>p.ano),dependencias:state.deps.map(x=>x.ano+' '+x.disc+' '+x.nota),obs:obsLines(state).map(l=>l.text),paginasDeDependencia:pages.filter(p=>/Depend/.test(p.title)).map(p=>p.title)}});
+      await d.evaluate(()=>{const c=document.querySelector('[data-dpend="0"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))});await d.waitForTimeout(300);
+      res.dependenciaNaoCumprida=await d.evaluate(async()=>{const pages=await buildPackPages();return {obs:obsLines(state).map(l=>l.text),paginasDeDependencia:pages.filter(p=>/Depend/.test(p.title)).map(p=>p.title)}})}
     // 7. regra de aprovação (soma mínima)
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});
   }finally{await browser.close().catch(()=>{})}

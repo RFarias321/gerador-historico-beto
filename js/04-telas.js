@@ -27,7 +27,7 @@ function docChecklist(st,fl){
     if(p.ano||has){const arf=docs.some(x=>x.d.role==='arf'&&String(x.d.ano)===String(p.ano)&&(!x.d.serie||+x.d.serie===i+1));
       items.push({k:arf?'o':'w',t:'Ata · '+lab,s:arf?'anexada':'não anexada',go:'#drop'})}});
   for(const d of st.deps){const up=docs.some(x=>x.d.role==='dep'&&(x.d.subjects||[]).some(s=>canon(s).key===canon(d.disc||'').key));
-    items.push({k:d.nota&&d.disc?'o':'w',t:'Dependência · '+(d.disc||'(disciplina?)'),s:(up?'ficha enviada':'ficha será gerada pelo site')+(d.nota?'':' · falta a nota final'),go:'#deps'})}
+    items.push(d.pendente?{k:'w',t:'Dependência · '+(d.disc||'(disciplina?)'),s:'não cumprida (o histórico registra que o aluno deve)',go:'#deps'}:{k:d.nota&&d.disc?'o':'w',t:'Dependência · '+(d.disc||'(disciplina?)'),s:(up?'ficha enviada':'ficha será gerada pelo site')+(d.nota?'':' · falta a nota final'),go:'#deps'})}
   return items}
 function renderDocCheck(){let box=document.getElementById('doc-check');
   if(!box){box=document.createElement('div');box.id='doc-check';box.className='doc-check';const dr=$('#drop');dr.parentNode.insertBefore(box,dr.nextSibling)}
@@ -74,10 +74,13 @@ function renderChecks(){
   const pad=state.subjects.reduce((a,s)=>a+s.g.filter(g=>g.pad).length,0);if(pad)add('w',`${pad} carga(s) horária(s) com valor padrão do modelo: confira`,'#grades');
   const ph=obsLines(state).filter(l=>l.ph).length;if(ph)add('b',`${ph} linha(s) de dependência com (preencher)`,'#deps');
   const depFlag=[];state.subjects.forEach(s=>s.g.forEach((g,p)=>{if(isDep(g,p)&&!state.deps.some(d=>N(d.disc)===N(s.name)))depFlag.push(`${s.name} (${L[p]})`)}));if(depFlag.length)add('b','Nota abaixo da média sem dependência registrada: '+depFlag.join(', '),'#deps');
-  if(state.deps.length)add('w',`Confira o ano em vermelho de ${state.deps.length===1?'a dependência':'cada uma das '+state.deps.length+' dependências'} (ano em que foi cumprida).`,'#deps');
+  if(state.deps.length)add('w',`Confira o ano em vermelho de ${state.deps.length===1?'a dependência':'cada uma das '+state.deps.length+' dependências'} (ano que sai na observação).`,'#deps');
   const nd=files.reduce((a,f)=>a+((f.diff||[]).length),0);if(nd)add('w',`${nd} dado(s) do aluno diferentes entre os arquivos: escolha o certo na lista de arquivos`,'#files');
   for(const v of validationIssues(state))add(v.l,v.t,v.go);
   if(!sig.sec.nome||!sig.dir.nome||!sig.sec.mat||!sig.dir.mat)add('w','Preencha nome e matrícula do secretário e do diretor no item 6 (uma vez só: fica salvo neste navegador).','#sig-sec');
+  state.periods.forEach((P,i)=>{const sub=state.subjects.filter(s=>s.g[i]&&s.g[i].nota!=='');if(!sub.length||sub.length>3||P.sit&&P.sit!=='APROV. C/DEP'&&sub.length>1)return;
+    const ant=s=>{const k=canon(s.name).key;return state.subjects.some(x=>canon(x.name).key===k&&x.g.some((g,j)=>j!==i&&isDep(g,j)))};
+    if(sub.every(ant))add('b',`O ${L[i]}${P.ano?' ('+P.ano+')':''} tem só ${sub.map(s=>s.name).join(', ')}, que já aparece(m) como dependência em outro módulo/série: parece uma ficha de dependência lida como ${L[i]}. Tire o arquivo e anexe de novo junto com as demais fichas.`,'#places')});
   if(!state.subjects.length)add('b','Nenhuma disciplina na lista','#grades');
   if(!out.length)add('o','Tudo preenchido. Pode baixar e imprimir.');
   const nOpen=out.filter(o=>o.l!=='o').length;const cc=$('#checks-count');cc.textContent=nOpen?String(nOpen):'';cc.hidden=!nOpen;
@@ -90,7 +93,7 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 const HELP={'1':['Anexe tudo de uma vez, em qualquer ordem: FIAs, atas, ficha de matrícula e fichas de dependência, em Excel ou PDF. A lista "Documentos deste aluno" mostra o que falta baixar no Conexão.','anexar'],
   '2':['Dados pessoais do histórico. Vêm da ficha de matrícula (quando é PDF do Conexão) e das FIAs. Campos em amarelo estão vazios; tracejados foram lidos de imagem.','aluno'],
   '4':['Notas são o total de pontos do ano (soma dos bimestres ou trimestres). Vermelho = abaixo da média, gera dependência. "Onde cursou" traz escola, ano, frequência e situação de cada série ou módulo.','notas'],
-  '5':['Cada dependência vira uma linha de observação e uma ficha de dependência na impressão para assinatura. "Ficou em" é a série/módulo em que o aluno ficou em dependência; o ano em vermelho é o ano em que ela foi cumprida.','obs'],
+  '5':['Cada dependência vira uma linha de observação e uma ficha de dependência na impressão para assinatura. "Ficou em" é a série/módulo em que o aluno ficou em dependência; o ano em vermelho é o que sai na observação. Se o aluno não fez a dependência, marque "não cumpriu".','obs'],
   '6':['Escola que emite e quem assina. Fica salvo neste navegador. Ao digitar o nome da escola em um campo (ex.: "IE Carmela Dutra"), os outros se completam sozinhos.','escola'],
   '3':['Dados da ficha de matrícula impressa para assinatura. Campos marcados "(item 2)" são os mesmos do item 2.','anexar']};
 function initSections(){document.querySelectorAll('.grid section.card').forEach(sec=>{const st=sec.querySelector(':scope>h2 .step');if(!st)return;
@@ -127,10 +130,10 @@ function depPeriod(d){if(d.p!=null&&state.periods[d.p])return d.p;if(d.auto!=nul
 function renderDeps(){
   const L=LABELS[state.mode];const subjOpts=state.subjects.map(s=>`<option value="${esc_(s.name)}">`).join('');
   const perOpts=sel=>'<option value="">—</option>'+state.periods.map((p,i)=>`<option value="${i}"${sel===i?' selected':''}>${esc_(L[i])}${p.ano?' · '+esc_(p.ano):''}</option>`).join('');
-  $('#deps').innerHTML=(state.deps.length?`<div class="dep-row dep-head"><span>Ficou em dependência</span><span class="dep-ano-h">⚠ Cumpriu em (ano)</span><span>Disciplina</span><span>Nota final</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
-    state.deps.map((d,i)=>`<div class="dep-row"><select id="dp-${i}" data-dp="${i}" aria-label="Série ou módulo em que ficou em dependência">${perOpts(depPeriod(d))}</select><input id="da-${i}" data-da="${i}" value="${esc_(d.ano)}" placeholder="ano" inputmode="numeric" aria-label="Ano em que a dependência foi cumprida" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc_(d.disc)}" list="subj-list" placeholder="disciplina" aria-label="Disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc_(d.nota)}" placeholder="(preencher)" aria-label="Nota final" class="${d.nota?'':'empty'}" inputmode="decimal"><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
+  $('#deps').innerHTML=(state.deps.length?`<div class="dep-row dep-head"><span>Ficou em dependência</span><span class="dep-ano-h">⚠ Ano</span><span>Disciplina</span><span>Nota final</span><span>Não cumpriu</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
+    state.deps.map((d,i)=>`<div class="dep-row"><select id="dp-${i}" data-dp="${i}" aria-label="Série ou módulo em que ficou em dependência">${perOpts(depPeriod(d))}</select><input id="da-${i}" data-da="${i}" value="${esc_(d.ano)}" placeholder="ano" inputmode="numeric" aria-label="Ano em que a dependência foi cumprida" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc_(d.disc)}" list="subj-list" placeholder="disciplina" aria-label="Disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc_(d.pendente?'':d.nota)}" placeholder="${d.pendente?'—':'(preencher)'}" aria-label="Nota final" class="${d.nota||d.pendente?'':'empty'}" inputmode="decimal"${d.pendente?' disabled':''}><label class="dep-pend" title="Marque se o aluno não fez a dependência: a observação passa a dizer que ele deve a dependência"><input type="checkbox" data-dpend="${i}"${d.pendente?' checked':''}> não cumpriu</label><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
     `<datalist id="subj-list">${subjOpts}</datalist>`}
-document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.dp!=null){const d=state.deps[+t.dataset.dp];d.p=t.value===''?null:+t.value;d.edited=1;schedulePreview();renderChecks()}});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.dpend!=null){const d=state.deps[+t.dataset.dpend];d.pendente=t.checked;d.edited=1;renderDeps();schedulePreview();renderChecks();return}if(t.dataset&&t.dataset.dp!=null){const d=state.deps[+t.dataset.dp];d.p=t.value===''?null:+t.value;d.edited=1;schedulePreview();renderChecks()}});
 /* ---------- leitura com IA: sempre começa desligada e pede autorização ---------- */
 let AI_OK=false;
 {const _r=readWithAI;readWithAI=async function(c){if(!AI_OK){const ok=await askModal('<h3>Enviar este documento para a IA?</h3><p>Com "Ler com IA" ligado, a imagem do documento (com dados pessoais do aluno) é enviada à Anthropic para ser lida. Sem isso, a leitura é feita só neste computador.</p>',[{label:'Não enviar',value:false},{label:'Enviar e ler com IA',value:true,primary:true}],{sticky:true});
