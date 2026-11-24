@@ -6,7 +6,8 @@ const EMU_PT=12700;
 const IDX_COLORS={2:'FF0000',8:'000000',9:'FFFFFF',10:'FF0000',12:'0000FF',22:'C0C0C0',23:'808080',55:'969696',64:'000000'};
 async function readXlsxModel(buf,sheetName){
   const z=await JSZip.loadAsync(buf);const P=new DOMParser();
-  const xml=async p=>{const f=z.file(p);return f?P.parseFromString(await f.async('string'),'application/xml'):null};
+  /* as planilhas do Conexão trazem um BOM antes de <?xml; navegadores novos recusam: tira antes de ler */
+  const xml=async p=>{const f=z.file(p);return f?P.parseFromString((await f.async('string')).replace(/^\uFEFF+/,''),'application/xml'):null};
   const all=(d,tag)=>d?[...d.getElementsByTagNameNS('*',tag)]:[];
   const kids=(el,tag)=>el?[...el.children].filter(c=>c.localName===tag):[];
   const kid=(el,tag)=>kids(el,tag)[0]||null;
@@ -15,7 +16,7 @@ async function readXlsxModel(buf,sheetName){
   const resolve=(base,t)=>{if(t.startsWith('/'))return t.slice(1);const parts=base.split('/');parts.pop();for(const seg of t.split('/')){if(seg==='..')parts.pop();else if(seg!=='.')parts.push(seg)}return parts.join('/')};
   const wb=await xml('xl/workbook.xml');const wrel=await relsOf('xl/workbook.xml');
   const sheets=all(wb,'sheet').map(s=>({name:s.getAttribute('name'),rid:s.getAttributeNS(RNS,'id')||s.getAttribute('r:id')}));
-  const sh=sheets.find(s=>s.name===sheetName)||sheets[0];const sheetPath=resolve('xl/workbook.xml',wrel[sh.rid]);
+  const sh=sheets.find(s=>s.name===sheetName)||sheets[0];const sheetPath=resolve('xl/workbook.xml',wrel[sh.rid]||Object.values(wrel).find(t=>/worksheets\//.test(t))||'worksheets/sheet1.xml');
   // tema
   const th=await xml('xl/theme/theme1.xml');const tc={};
   const cs=all(th,'clrScheme')[0];if(cs)for(const el of cs.children){const c=el.firstElementChild;if(c)tc[el.localName]=c.getAttribute('lastClr')||c.getAttribute('val')}
