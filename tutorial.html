@@ -97,7 +97,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <li><a href="#editar">Guia rápido: como editar cada informação</a></li>
       <li><a href="#fotos">Fotos e PDFs escaneados</a></li>
       <li><a href="#turma">Turma inteira</a></li>
-      <li><a href="#salvar">Salvar o aluno em arquivo e assinar pelo gov.br</a></li>
+      <li><a href="#salvar">Salvar com senha, gov.br, arquivar e usar sem internet</a></li>
       <li><a href="#privacidade">Privacidade (LGPD)</a></li>
       <li><a href="#novidades">O que mudou</a></li>
       <li><a href="#duvidas">Dúvidas comuns</a></li>
@@ -254,23 +254,26 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   </section>
 
   <section class="step" id="turma">
-    <h2><span class="n">12</span>Turma inteira (desligado por enquanto)</h2>
-    <p class="tip">O modo turma está <b>desligado</b> enquanto melhoramos o funcionamento dele. Por enquanto, faça um aluno de cada vez. O texto abaixo descreve como ele vai funcionar.</p>
-    <p>No topo, clique em <span class="btnlike">Turma</span>. Depois anexe no passo 1 os documentos de todos os alunos, de uma vez ou aos poucos, em qualquer ordem: FIAs, atas, fichas de matrícula e de dependência.</p>
+    <h2><span class="n">12</span>Turma inteira</h2>
+    <p>No topo, clique em <span class="btnlike">Turma</span>. O site guia em 4 etapas:</p>
+    <ol>
+      <li><b>Atas da turma:</b> anexe no passo 1 as atas de resultados finais (uma de cada ano, ou de cada módulo na EJA). A lista de alunos sai delas.</li>
+      <li><b>Escolher alunos:</b> marque quem vai receber histórico e clique em <span class="btnlike">Começar</span>.</li>
+      <li><b>Um aluno de cada vez:</b> a página mostra "Aluno 1 de N". Anexe as FIAs e a ficha de matrícula <b>daquele aluno</b>; os dados das atas já estão lá. Confira os itens 2 a 6, baixe ou imprima, e clique em <span class="btnlike">Próximo aluno</span>.</li>
+      <li><b>Resumo:</b> mostra quem está pronto, pendente ou concluído. Daqui dá para abrir qualquer aluno, continuar do próximo pendente, escolher mais alunos e <span class="btnlike">Baixar históricos prontos em PDF</span> (um PDF com todos).</li>
+    </ol>
     <ul>
-      <li><b>Cada arquivo vai sozinho para o aluno certo</b>, pelo nome e pela matrícula. As atas completam todos os alunos da turma que aparecem nelas.</li>
-      <li><b>Alunos que só aparecem nas atas:</b> o botão <span class="btnlike">Criar os alunos que só aparecem nas atas</span> cria todos de uma vez. Depois é só anexar as FIAs e a ficha de matrícula de cada um, quando tiver: elas se juntam ao aluno certo.</li>
-      <li><b>Corrigir um aluno:</b> clique em <span class="btnlike">Abrir</span>. A página mostra só aquele aluno, com todas as etapas, como no modo de um aluno. Corrija o que precisar, imprima, e clique em <span class="btnlike">Marcar como concluído</span> ou <span class="btnlike">Voltar à lista da turma</span>. Tudo o que você muda fica guardado no aluno.</li>
-      <li><b>Situação:</b> "pronto" quando tem todas as FIAs e nenhum ponto de atenção; "pendente" quando falta algo; "concluído" quando você marcou.</li>
-      <li><b>Baixar históricos prontos em PDF</b> gera um PDF com os históricos de todos os alunos prontos.</li>
-      <li><b>Arquivos sem aluno identificado</b> aparecem embaixo da lista, com uma caixa para escolher o aluno.</li>
-      <li><b>Fica guardado?</b> Sim: a turma fica guardada neste computador até você clicar em <span class="btnlike">Limpar turma</span>, mesmo fechando a página. Para continuar em outro computador ou guardar com segurança, use <span class="btnlike">Salvar turma em arquivo</span> e, depois, anexe esse arquivo no passo 1.</li>
+      <li><b>Corrigir depois:</b> no resumo, clique em <span class="btnlike">Abrir</span> no aluno. Tudo o que você muda fica guardado nele.</li>
+      <li><b>Fica guardado?</b> Sim, neste computador, até clicar em <span class="btnlike">Limpar turma</span>. Para continuar em outro computador, use <span class="btnlike">Salvar turma em arquivo</span> (com senha) e anexe o arquivo depois.</li>
     </ul>
   </section>
 
   <section class="step" id="salvar">
-    <h2><span class="n">13</span>Salvar o aluno em arquivo e assinar pelo gov.br</h2>
-    <p><span class="btnlike">Salvar aluno em arquivo</span> gera um arquivo <b>.historico.json</b> com tudo do aluno (dados, notas, observações e documentos). Para continuar outro dia, anexe esse arquivo no passo 1. Guarde-o em local seguro: tem dados pessoais.</p>
+    <h2><span class="n">13</span>Salvar com senha, assinar pelo gov.br, arquivar e usar sem internet</h2>
+    <p><span class="btnlike">Salvar aluno em arquivo</span> gera um arquivo <b>.historico.json</b> com tudo do aluno (dados, notas, observações e documentos), <b>protegido por senha</b>. Para continuar outro dia, anexe esse arquivo no passo 1 e digite a senha. Sem a senha ninguém abre o arquivo, nem você: guarde-a bem.</p>
+    <p><b>Arquivamento (PDF/A):</b> para guardar o histórico por muitos anos no formato de arquivo oficial, abra o <b>Excel</b> gerado no LibreOffice e use <i>Arquivo → Exportar como PDF</i>, marcando <b>"Arquivamento (PDF/A)"</b>. O PDF do site é próprio para imprimir e assinar.</p>
+    <p><b>Registro de emissões (opcional):</b> no item 6, marque "Guardar registro" para o site anotar, só neste computador, cada histórico emitido (data, aluno, matrícula e tipo). Dá para baixar como planilha e apagar quando quiser.</p>
+    <p><b>Sem internet:</b> depois da primeira visita, o site funciona mesmo sem internet. No Chrome ou Edge dá para <b>instalar</b> como aplicativo (ícone de instalar na barra de endereço).</p>
     <p><b>Prévia antes de imprimir:</b> o botão <span class="btnlike">Imprimir documentos para assinatura</span> mostra primeiro todas as páginas em miniatura. Dá para desmarcar páginas e mudar a ordem com as setas.</p>
     <p class="tip"><b>Assinar sem imprimir:</b> baixe o PDF, abra <a href="https://assinador.iti.br" target="_blank" rel="noopener">assinador.iti.br</a>, entre com a conta gov.br, envie o arquivo e posicione a assinatura sobre o nome de cada um. É gratuito e tem validade legal.</p>
     <p><b>Ao terminar:</b> depois de baixar ou imprimir, a página pergunta se você terminou o aluno e oferece apagar os dados deste computador.</p>
@@ -292,21 +295,24 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   </section>
 
   <section class="step" id="novidades">
-    <h2><span class="n">14</span>O que mudou (versão 2.0 · 21/11/2026)</h2>
+    <h2><span class="n">14</span>O que mudou</h2>
+    <h3>Versão 2.1 · 24/11/2026 (avaliação profissional)</h3>
     <ul>
-      <li>Nova ordem dos itens: 2 dados do aluno, 3 ficha de matrícula, 4 disciplinas, 5 observações e dependências, 6 escola que emite (com a escola em verde). Todos começam fechados, com um selo mostrando se estão conferidos.</li>
-      <li>Nome da escola: digite em um campo (ex.: "IE Carmela Dutra", "CM Vovó", "Colégio Estadual Oswaldo Teixeira") e os outros se completam sozinhos.</li>
-      <li>"Documentos deste aluno" aparece logo depois da área de anexos; a lista de arquivos lidos fica no fim, recolhida.</li>
-      <li>Prévia do histórico ampliada: clique na prévia para ver em tamanho grande, com zoom.</li>
-      <li>Lista <b>Documentos deste aluno</b> mostra o que falta baixar no Conexão.</li>
-      <li>Quadro único <b>O que precisa da sua atenção</b>, com botão "ir" para cada item; etapas conferidas se recolhem.</li>
-      <li>Dependências com duas informações: <b>ficou em</b> (série ou módulo) e <b>cumpriu em</b> (ano, em vermelho).</li>
-      <li>Conferência de CPF, datas, CEP, número de matrícula e carga horária total.</li>
-      <li>Aviso claro para fotos e digitalizações; leitura com IA sempre pede autorização.</li>
-      <li>Prévia da impressão para assinatura, com escolha e ordem das páginas; dica do gov.br.</li>
-      <li>Salvar e abrir aluno ou turma em arquivo.</li>
-      <li>Mensagens de erro em português claro; ajuda "?" em cada etapa.</li>
+      <li><b>Segurança:</b> bibliotecas atualizadas (SheetJS 0.20.3, jsPDF 3.0.3), proteção contra PDFs maliciosos, tudo hospedado no próprio site e política de segurança que impede a página de enviar dados para fora.</li>
+      <li><b>Privacidade (LGPD):</b> aviso de privacidade; leitura com IA desligada; arquivos salvos com senha; nomes e matrículas de quem assina ficam só no navegador da escola (preencha uma vez no item 6).</li>
+      <li><b>Modo turma guiado:</b> atas → escolher alunos → um aluno de cada vez → resumo.</li>
+      <li>Funciona sem internet (pode instalar como aplicativo); registro opcional de emissões; PDFs com identificação para arquivo.</li>
+      <li>Testes automáticos ampliados: PDF, OCR, impressão, comparação visual, acessibilidade, celular, Firefox e Safari.</li>
+      <li>Licenças, guia de manutenção e canal para relatar problemas.</li>
     </ul>
+    <h3>Versão 2.0 · 21/11/2026</h3>
+    <ul>
+      <li>Lista <b>Documentos deste aluno</b>, quadro <b>O que precisa da sua atenção</b>, itens que recolhem e ajuda "?".</li>
+      <li>Dependências com <b>ficou em</b> e <b>cumpriu em</b>; conferência de CPF, datas, CEP, matrícula e carga horária.</li>
+      <li>Prévia da impressão para assinatura; prévia do histórico ampliada; salvar e abrir aluno em arquivo.</li>
+      <li>Nome da escola se completa nos outros campos; troca automática entre Regular e EJA.</li>
+    </ul>
+    <p class="tip">Se preferir a versão anterior (2.0), ela está guardada no GitHub (ramo <code>versao-2.0-backup</code>) e pode voltar a qualquer momento.</p>
   </section>
 
   <section class="step" id="duvidas">

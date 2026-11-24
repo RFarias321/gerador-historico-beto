@@ -1,4 +1,8 @@
 {
+  "arquivosDoSite": {
+    "listaSemArquivo": [],
+    "arquivoForaDaLista": []
+  },
   "regular": {
     "modo": "reg",
     "anos": [
@@ -112,7 +116,16 @@
     "2025"
   ],
   "sessaoRecuperada": true,
-  "turmaDesligada": true,
+  "turma": {
+    "alunosNasAtas": 19,
+    "alunosEscolhidos": 2,
+    "alunoComFias": {
+      "arquivos": 8,
+      "documentos": "9/11",
+      "dependencias": 2
+    },
+    "linhasNoResumo": 2
+  },
   "item6SemAssinante": "falta quem assina",
   "item6": "true ✓ CE OSWALDO TEIXEIRA",
   "nomeEscola": [

@@ -3,7 +3,8 @@
    e confere os resultados com tests/esperado.json.
    Uso: node tests/run.js            (confere)
         node tests/run.js --atualizar (grava o resultado atual como esperado) */
-const pw=require('playwright');const BROWSER=process.env.BROWSER||'chromium';const SMOKE=!!process.env.SMOKE;const fs=require('fs');const path=require('path');
+const pw=require('playwright');
+async function esperar(pg,fn,arg,opts){const lim=Date.now()+((opts&&opts.timeout)||120000);for(;;){let ok=false;try{ok=await pg.evaluate(fn,arg)}catch(e){}if(ok)return true;if(Date.now()>lim)throw new Error('tempo esgotado esperando a página');await new Promise(r=>setTimeout(r,250))}}const BROWSER=process.env.BROWSER||'chromium';const SMOKE=!!process.env.SMOKE;const fs=require('fs');const path=require('path');
 const ROOT=path.resolve(__dirname,'..'),FX=path.join(__dirname,'fixtures');
 const NM=process.env.NM||path.join(__dirname,'node_modules');
 const CDN={'jszip/3.10.1/jszip.min.js':'jszip/dist/jszip.min.js','jspdf/2.5.1/jspdf.umd.min.js':'jspdf/dist/jspdf.umd.min.js','xlsx/0.18.5/xlsx.full.min.js':'xlsx/dist/xlsx.full.min.js','pdf.js/3.11.174/pdf.min.js':'pdfjs-dist/build/pdf.min.js'};
@@ -20,20 +21,26 @@ async function newPage(browser,vp){const ctx=await browser.newContext({viewport:
     if(u.startsWith('https://local/')){const rel=decodeURIComponent(u.slice(14).split('?')[0])||'index.html';const f=path.join(ROOT,rel);if(!f.startsWith(ROOT)||!fs.existsSync(f))return r.fulfill({status:404,body:''});
       return r.fulfill({path:f,contentType:f.endsWith('.js')?'application/javascript':f.endsWith('.html')?'text/html; charset=utf-8':undefined})}
     if(process.env.DEBUG)console.log('bloqueado:',u);return r.abort()});
-  await pg.goto('https://local/');await pg.waitForFunction(()=>window.READY===true||typeof READY!=='undefined'&&READY,null,{timeout:30000});await pg.waitForTimeout(500);return pg}
-const idle=pg=>pg.waitForFunction(()=>![...document.querySelectorAll('#files li')].some(e=>/Lendo|lendo…|abrindo/.test(e.textContent))&&!/Turma: lendo/.test(document.querySelector('#status').textContent),null,{timeout:120000});
+  await pg.goto('https://local/');await esperar(pg,()=>window.READY===true||typeof READY!=='undefined'&&READY,null,{timeout:30000});await pg.waitForTimeout(500);return pg}
+const idle=pg=>esperar(pg,()=>![...document.querySelectorAll('#files li')].some(e=>/Lendo|lendo…|abrindo/.test(e.textContent))&&!/Turma: lendo/.test(document.querySelector('#status').textContent),null,{timeout:120000});
 const facts=pg=>pg.evaluate(async()=>{const pages=await buildPackPages();const blob=makePdf(buildSheet(state));const x=await makeXlsx(buildSheet(state));
   return {modo:state.mode,anos:state.periods.map(p=>p.ano),situacao:state.periods.map(p=>p.sit),disciplinas:state.subjects.length,
     notas:state.subjects.slice(0,6).map(s=>s.name+': '+s.g.map(g=>g.nota).join('/')),
     dependencias:state.deps.map(d=>d.ano+' '+d.disc+' '+d.nota),observacoes:obsLines(state).map(l=>l.text),
     arquivos:files.map(f=>f.dup?'repetido':f.err?'erro':f.arf?'ata:'+(f.arfDone?'aluno encontrado':'sem aluno'):(f.src&&f.src.docs||[]).map(d=>d.role).join('+')),
     paginas:pages.map(p=>p.orient+' '+p.title),pdfOk:blob.size>20000,excelOk:x.size>20000}});
-async function main(){const browser=await pw[BROWSER].launch();const res={};
+function checarArquivos(){/* modo sem internet: todo arquivo do site precisa estar na lista do sw.js, e todo item da lista precisa existir */
+  const sw=fs.readFileSync(path.join(ROOT,'sw.js'),'utf8');const lista=JSON.parse(sw.match(/const ARQUIVOS=(\[.*?\]);/s)[1]);
+  const faltam=lista.filter(f=>f!=='./'&&!fs.existsSync(path.join(ROOT,f)));
+  const site=['css','js','lib','fontes','ocr','icones','tutorial'].flatMap(d=>fs.readdirSync(path.join(ROOT,d)).map(f=>d+'/'+f)).filter(f=>!/tutorial\.js$/.test(f)||true);
+  const foraDaLista=site.filter(f=>!lista.includes(f));JSON.parse(fs.readFileSync(path.join(ROOT,'manifest.webmanifest'),'utf8'));
+  return {listaSemArquivo:faltam,arquivoForaDaLista:foraDaLista}}
+async function main(){const browser=await pw[BROWSER].launch();const res={arquivosDoSite:checarArquivos()};
   try{
     // 1. Ensino Regular, um aluno
     let pg=await newPage(browser);await pg.setInputFiles('#file',REG);await idle(pg);await pg.waitForTimeout(800);res.regular=await facts(pg);
     res.regularVisual=await thumb(pg);
-    if(SMOKE){await browser.close();return finish(res,['regular','errosNaPagina'])}
+    if(SMOKE){await browser.close();return finish(res,['regular','errosNaPagina','arquivosDoSite'])}
     // 1b. histórico e Excel gerados: resultado visual e células conferidos com a versão aprovada
     res.excelCelulas=await pg.evaluate(async()=>{const b=await makeXlsx(buildSheet(state));const wb=XLSX.read(await b.arrayBuffer(),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];return Object.keys(ws).filter(k=>k[0]!=='!'&&ws[k].v!==''&&ws[k].v!=null).length});
     // 1c. impressão (histórico e documentos para assinatura) sem erro
@@ -45,6 +52,7 @@ async function main(){const browser=await pw[BROWSER].launch();const res={};
     // 2. EJA com a página em Regular: troca sozinha para EJA
     pg=await newPage(browser);await pg.setInputFiles('#file',EJA);await idle(pg);await pg.waitForTimeout(800);res.eja=await facts(pg);
     res.eja.alertaModelo=await pg.evaluate(()=>!!state.modeAlert);
+    const ejaNome=await pg.evaluate(()=>state.aluno.nome);
     // 3. arquivo repetido é recusado
     const copia=path.join(require('os').tmpdir(),'copia_eja_1.xlsx');fs.copyFileSync(fx('eja_1.xlsx'),copia);await pg.setInputFiles('#file',[copia]);await idle(pg);
     res.repetido=await pg.evaluate(()=>files[files.length-1].dup===true);
@@ -55,8 +63,19 @@ async function main(){const browser=await pw[BROWSER].launch();const res={};
     await pg.waitForTimeout(2500);const antes=await pg.evaluate(()=>state.aluno.nome+'|'+files.length);
     await pg.goto('https://local/tutorial.html');await pg.goto('https://local/');await pg.waitForTimeout(3000);
     const depois=await pg.evaluate(()=>state.aluno.nome+'|'+files.length);res.sessaoRecuperada=depois===antes;if(!res.sessaoRecuperada)console.log('sessão: antes',antes.replace(/^[^|]+/,'(nome)'),'depois',depois.replace(/^[^|]+/,'(nome)'));
-    // 6. turma: desligada por enquanto (o botão não aparece)
-    res.turmaDesligada=await pg.evaluate(()=>!document.getElementById('tm-all'));
+    // 6. turma guiada: atas → escolher alunos → um de cada vez → resumo
+    {const t=await newPage(browser);await t.evaluate(()=>document.getElementById('tm-all').click());await t.waitForTimeout(300);
+      const ATAS=EJA.filter(f=>/EJA_\d/.test(f));await t.setInputFiles('#file',ATAS);await esperar(t,()=>/Turma: \d+ ata/.test(document.querySelector('#status').textContent),null,{timeout:180000});
+      const lista=await t.evaluate(()=>[...document.querySelectorAll('.tm-sel-cb')].length);
+      await t.evaluate(nome=>{const card=document.getElementById('turma-card');const cbs=[...document.querySelectorAll('.tm-sel-cb')];let outro=false;for(const c of cbs){const s=card._todos[+c.dataset.i];if(nomeParecido(s.nome,nome))c.checked=true;else if(!outro){c.checked=true;outro=true}}document.querySelector('[data-tm="comecar"]').click()},ejaNome);
+      await esperar(t,()=>/na turma/.test(document.querySelector('#status').textContent),null,{timeout:180000});
+      const etapa3=await t.evaluate(()=>!!document.querySelector('[data-tm="prox"]')&&TURMA.alunos.length);
+      await t.evaluate(nome=>{const w=TURMA.alunos.find(a=>nomeParecido(a.nome,nome));return tmOpen(w.id)},ejaNome);await t.waitForTimeout(500);
+      await t.setInputFiles('#file',EJA.filter(f=>/eja_\d/.test(f)));await idle(t);await t.waitForTimeout(800);
+      const aluno=await t.evaluate(nome=>{tmSync();const w=TURMA.alunos.find(a=>nomeParecido(a.nome,nome));const s=tmStatus(w);return {arquivos:w.files.length,documentos:s.docs+'/'+s.tot,dependencias:w.state.deps.length}},ejaNome);
+      await t.evaluate(()=>document.querySelector('[data-tm="resumo"]').click());await t.waitForTimeout(400);
+      const resumo=await t.evaluate(()=>document.querySelectorAll('[data-tmopen]').length);
+      res.turma={alunosNasAtas:lista,alunosEscolhidos:etapa3,alunoComFias:aluno,linhasNoResumo:resumo}}
     // 6b. item 5 recolhido com a escola em verde e prévia ampliada
     res.item6SemAssinante=await pg.evaluate(()=>document.querySelector('.sec[data-sec="6"] .sec-badge').textContent);
     await pg.evaluate(()=>{for(const [k,v] of [['sec,nome','Prof. Secretário Teste'],['sec,mat','0000000-1'],['dir,nome','Prof. Diretor Teste'],['dir,mat','0000000-2']]){const i=document.querySelector(`[data-sg="${k}"]`);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}});
@@ -77,7 +96,7 @@ async function main(){const browser=await pw[BROWSER].launch();const res={};
     res.matriculaPdf=await pg.evaluate(async()=>{const pages=await buildPackPages();return {nome:state.aluno.nome,nascimento:state.aluno.nascimento,mae:state.aluno.mae,identidade:state.aluno.identidade,papel:files[0].src.docs.map(d=>d.role),cpf:(state.mat&&state.mat.vals['DOCUMENTO|CPF'])||'',primeiraPagina:pages[0].title}});
     const png=await pg.evaluate(async(b64)=>{const pdf=await pdfjsLib.getDocument({isEvalSupported:false,data:Uint8Array.from(atob(b64),c=>c.charCodeAt(0))}).promise;const page=await pdf.getPage(1);const vp=page.getViewport({scale:2.2});const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await page.render({canvasContext:x,viewport:vp}).promise;return c.toDataURL('image/png').split(',')[1]},mat);
     pg=await newPage(browser);await pg.setInputFiles('#file',[{name:'foto_matricula.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')}]);
-    await pg.waitForFunction(()=>files[0]&&!/lendo|Lendo|abrindo|lendo…/.test(files[0].status||'Lendo'),null,{timeout:240000}).catch(()=>{});
+    await esperar(pg,()=>files[0]&&!/lendo|Lendo|abrindo|lendo…/.test(files[0].status||'Lendo'),null,{timeout:240000}).catch(()=>{});
     res.matriculaFoto=await pg.evaluate(()=>({lidaPorOcr:!!files[0].ocr,nomeParecido:/FICT[IÍ]CIA/.test(state.aluno.nome||'')&&/TESTE/.test(state.aluno.nome||''),nascimento:state.aluno.nascimento}));
     // 7. regra de aprovação (soma mínima)
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});

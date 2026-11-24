@@ -388,7 +388,7 @@ function pdfPainter(doc){return {
 function makePdf(sheet){
   const doc=new jspdf.jsPDF({unit:'pt',format:'a4',orientation:'portrait'});
   for(const [k,f] of Object.entries(FONT_FILES)){doc.addFileToVFS(f,FONTB64[k]);doc.addFont(f,'Carlito',k)}
-  doc.setProperties({title:'Histórico Escolar — '+(state.aluno.nome||'')});
+  doc.setProperties({title:'Histórico Escolar — '+(state.aluno.nome||''),subject:'Histórico escolar do Ensino Médio',author:esc.nome||'',creator:'Gerador de Histórico do Beto '+(typeof APP_VERSION!=='undefined'?APP_VERSION:''),keywords:'histórico escolar; '+(state.mode==='eja'?'EJA':'Ensino Médio Regular')});
   paintSheet(sheet,pdfPainter(doc));
   return doc.output('blob');
 }

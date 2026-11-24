@@ -204,3 +204,5 @@ table.g tbody tr:hover td{background:var(--paper)}
 @media (max-width:640px){header.top{border-radius:0 0 10px 10px;padding:18px 16px}header.top .crest{width:44px}}
 .lock-link{color:inherit;text-decoration:underline;margin-left:4px;font-weight:600}
 .pw-f{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:.86rem}.pw-f input{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit}.pw-err{color:var(--bad);font-size:.84rem;min-height:1.2em}
+.tm-passos{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;padding:0;font-size:.8rem}.tm-passos li{padding:3px 10px;border-radius:999px;background:var(--paper);color:var(--muted);border:1px solid var(--line)}.tm-passos li.on{background:var(--accent);color:var(--sheet);border-color:var(--accent);font-weight:700}.tm-passos li.ok{color:var(--ok)}
+.tm-guia{background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:.9rem;margin:0 0 10px}

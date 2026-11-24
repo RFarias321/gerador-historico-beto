@@ -4,6 +4,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; frame-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f2c3b">
+<link rel="icon" href="icones/icone-192.png">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
 <title>Gerador de Histórico do Beto</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="css/fontes.css">
@@ -128,6 +132,9 @@
           <div class="form" id="sig-sec"></div>
           <div class="subhead">Direção</div>
           <div class="form" id="sig-dir"></div>
+          <div class="subhead">Registro de emissões (opcional)</div>
+          <label class="rm-opt"><input type="checkbox" id="log-on"><span>Guardar neste computador um registro de cada histórico emitido (data, aluno, matrícula e tipo). Fica só neste navegador; registros com mais de 1 ano são apagados sozinhos.</span></label>
+          <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><span class="hint" id="log-info"></span><button type="button" class="btn small" id="log-csv">Baixar registro (planilha CSV)</button><button type="button" class="btn small" id="log-clear">Apagar registro</button></div>
         </div>
       </section>
     </div>

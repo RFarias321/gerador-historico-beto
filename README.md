@@ -18,21 +18,18 @@ Colégio Estadual Oswaldo Teixeira, em **Excel** e **PDF**, a partir dos documen
   ou, se o usuário ligar a opção, pela IA Claude (com uma chave da API Anthropic do próprio usuário, guardada só no navegador).
 
 ## Privacidade
-O site é estático. Os arquivos são lidos **no navegador** de quem usa; nenhum dado de aluno é enviado
-para servidor algum. A única exceção é a opção "Ler com IA", desligada por padrão: com ela ligada, fotos e PDFs
-escaneados são enviados à Anthropic para leitura. Não coloque arquivos de alunos neste repositório.
+O site é estático e **não envia dados de alunos para lugar nenhum**: os arquivos são lidos no navegador de quem usa,
+e a política de segurança da página bloqueia qualquer conexão fora do próprio site. A leitura com IA está desligada
+(exigiria autorização da SEEDUC, LGPD art. 33). Arquivos salvos são protegidos por senha. Detalhes em
+[tutorial.html#privacidade](tutorial.html#privacidade). Não coloque arquivos de alunos neste repositório.
 
-## Estrutura
-- `index.html` – o aplicativo inteiro (interface, leitura de PDF/Excel, geração do Excel e do PDF).
-- `modelo_reg.txt`, `modelo_eja.txt` – planilhas-modelo (base64), sem dados de alunos.
-- `spec_reg.json`, `spec_eja.json` – layout do modelo (larguras, alturas, estilos, mesclagens).
-- `carlito-*.ttf` – fonte métrica-compatível com Calibri, usada no PDF.
-- `pdf.worker.min.js` – leitor de PDF (pdf.js 3.11.174).
-- `ocr/` – OCR no navegador (Tesseract.js 6.0.1 e dados do idioma português).
-- `ferramentas/` – scripts Python que extraem o layout das planilhas-modelo originais.
+## Estrutura e manutenção
+Veja **[MANUTENCAO.md](MANUTENCAO.md)**: organização dos arquivos, como mudar com segurança, como voltar uma versão
+e como passar o projeto para uma organização da escola. Licenças em `LICENSE` e `TERCEIROS.md`.
+Problemas: use a aba *Issues* do GitHub (sem dados de alunos).
 
 ## Para mexer no site (desenvolvimento)
-- O site inteiro está em `index.html` (HTML, CSS e JavaScript num só arquivo, sem etapa de compilação). Edite direto nele.
+- O site é dividido em `index.html`, `css/` e `js/` (sem etapa de compilação): edite direto nos arquivos. Veja `MANUTENCAO.md`.
 - `modelo_dep.txt` (ficha de dependência em branco) e `libsans-*.ttf` (fonte compatível com Arial) são usados na impressão para assinatura.
 - **Testes automáticos** em `tests/`: abrem o site num navegador sem tela, anexam documentos de exemplo e conferem o resultado com `tests/esperado.json`.
   ```
@@ -41,6 +38,8 @@ escaneados são enviados à Anthropic para leitura. Não coloque arquivos de alu
   npx playwright install chromium
   node run.js
   ```
+  No GitHub os testes também rodam no Firefox e no Safari (WebKit), e incluem leitura de PDF, OCR, impressão,
+  comparação visual do histórico, acessibilidade (axe), celular, senha dos arquivos e modo turma.
   Se uma mudança for intencional e alterar o resultado, rode `node run.js --atualizar` e confira o que mudou em `esperado.json` antes de enviar.
 - `tests/fixtures/` tem **somente documentos fictícios**: cópias de documentos do Conexão com nomes, matrículas e datas de nascimento trocados por `tests/anonimizar.py`. Nunca coloque documentos reais de alunos no repositório.
 - **Publicação:** a cada envio para `main`, o GitHub roda os testes (`.github/workflows/testar-e-publicar.yml`) e só publica o site se todos passarem.

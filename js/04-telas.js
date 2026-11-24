@@ -1,6 +1,6 @@
 /* Gerador de Histórico do Beto — telas */
 /* ===== v2: usabilidade, conferência e segurança ===== */
-const APP_VERSION='2.0',APP_DATA='21/11/2026';
+const APP_VERSION='2.1',APP_DATA='24/11/2026';
 /* janela simples dentro da página (funciona também onde confirm() é bloqueado) */
 function askModal(html,buttons,opts){opts=opts||{};return new Promise(res=>{const bg=document.createElement('div');bg.className='mdl-bg';
   bg.innerHTML=`<div class="mdl${opts.wide?' wide':''}" role="dialog" aria-modal="true"><div class="mdl-body">${html}</div><div class="mdl-foot">${buttons.map((b,i)=>`<button type="button" class="btn ${b.primary?'primary':''} small" data-mi="${i}">${esc_(b.label)}</button>`).join('')}</div></div>`;
@@ -141,17 +141,21 @@ function finishPrompt(what){if(typeof TURMA!=='undefined'&&TURMA&&TURMA.on){tmFi
   t.innerHTML=`<span><b>${esc_(what)}</b> Terminou este aluno? Os dados ficam guardados neste computador até você limpar.</span><span class="row"><button type="button" class="btn small primary" id="ft-clear">Limpar dados do aluno</button><button type="button" class="btn small" id="ft-keep">Ainda não</button></span>`;
   document.body.appendChild(t);$('#ft-keep').onclick=()=>t.remove();$('#ft-clear').onclick=()=>{t.remove();const ok=resetAll();setStatus(ok?'Dados apagados. Pronto para o próximo aluno.':'Atenção: algo não foi limpo. Recarregue a página (F5).',!ok);window.scrollTo({top:0,behavior:'smooth'})};
   clearTimeout(finishPrompt._t);finishPrompt._t=setTimeout(()=>{if(t.isConnected)t.remove()},30000)}
-{const _d=download;download=async function(kind){await _d(kind);if(!/não foi|cancelad/i.test($('#status').textContent))finishPrompt(kind==='pdf'?'PDF gerado.':'Excel gerado.')}}
-{const _p=printHistorico;printHistorico=async function(){await _p.apply(this,arguments);finishPrompt('Histórico enviado para impressão.')}}
-{const _pp=printPack;printPack=async function(mode){const r=await _pp(mode);if(/página\(s\)/.test($('#status').textContent))finishPrompt('Documentos para assinatura prontos.');return r}}
+{const _d=download;download=async function(kind){await _d(kind);if(!/não foi|cancelad/i.test($('#status').textContent))logEmissao(kind==='pdf'?'Histórico (PDF)':'Histórico (Excel)');if(!/não foi|cancelad/i.test($('#status').textContent))finishPrompt(kind==='pdf'?'PDF gerado.':'Excel gerado.')}}
+{const _p=printHistorico;printHistorico=async function(){await _p.apply(this,arguments);logEmissao('Histórico (impressão)');finishPrompt('Histórico enviado para impressão.')}}
+{const _pp=printPack;printPack=async function(mode){const r=await _pp(mode);if(/página\(s\)/.test($('#status').textContent))logEmissao('Documentos para assinatura');if(/página\(s\)/.test($('#status').textContent))finishPrompt('Documentos para assinatura prontos.');return r}}
 /* ---------- depois de cada lote de arquivos: recolher o que está conferido ---------- */
 {const _hf=handleFiles;handleFiles=async function(list){AI_OK=false;const r=await _hf(list);try{renderChecks();autoCollapse()}catch(e){}return r}}
 window.addEventListener('error',e=>{try{setStatus('Algo deu errado na página. Se o problema continuar, recarregue (F5): o trabalho fica guardado. (detalhe: '+(e.message||'')+')',true)}catch(_){}});
-function initV2(){if(!IA_PERMITIDA){const r=$('#rm-ia');if(r)r.closest('label').hidden=true;for(const id of ['ia-key','ia-claude'])($('#'+id)||{}).hidden=true;const o=$('#ia-off');if(o)o.hidden=false}
+/* funciona sem internet (PWA): registra o service worker do site */
+function initPwa(){try{if(!('serviceWorker' in navigator)||location.protocol!=='https:'||IN_CLAUDE)return;
+  const tinha=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(tinha)setStatus('Nova versão do site instalada. Recarregue a página (F5) quando terminar o aluno atual.')})}catch(e){}}
+function initV2(){initPwa();setTimeout(logRender,0);if(!IA_PERMITIDA){const r=$('#rm-ia');if(r)r.closest('label').hidden=true;for(const id of ['ia-key','ia-claude'])($('#'+id)||{}).hidden=true;const o=$('#ia-off');if(o)o.hidden=false}
   initSections();document.querySelectorAll('.sec').forEach(s=>s.classList.add('collapsed'));
   {const fl=$('#files');if(fl&&!document.getElementById('files-box')){const d=document.createElement('details');d.id='files-box';d.className='files-box';d.innerHTML='<summary>Arquivos lidos</summary>';fl.parentNode.insertBefore(d,fl);d.appendChild(fl)}}
   {const cv=$('#cv');if(cv){cv.title='Clique para ampliar';cv.style.cursor='zoom-in';cv.tabIndex=0;cv.setAttribute('role','button');cv.setAttribute('aria-label','Ampliar a prévia do histórico');const pv=cv.closest('.preview');const h=pv&&pv.querySelector('.pvsub');if(h)h.textContent='folha A4 · clique para ampliar'}}
-  const side=document.querySelector('aside.side');if(side&&!document.getElementById('app-ver')){const p=document.createElement('p');p.id='app-ver';p.className='app-ver';p.innerHTML=`Versão ${APP_VERSION} · ${APP_DATA} · <a href="tutorial.html#novidades" target="_blank">o que mudou</a>`;side.appendChild(p)}
+  const side=document.querySelector('aside.side');if(side&&!document.getElementById('app-ver')){const p=document.createElement('p');p.id='app-ver';p.className='app-ver';p.innerHTML=`Versão ${APP_VERSION} · ${APP_DATA} · <a href="tutorial.html#novidades" target="_blank">o que mudou</a> · <a href="tutorial.html#privacidade" target="_blank">privacidade</a> · <a href="https://github.com/RFarias321/gerador-historico-beto/issues/new/choose" target="_blank" rel="noopener">relatar problema</a>`;side.appendChild(p)}
   renderChecks()}
 
 /* ---------- prévia do histórico ampliada ---------- */
@@ -183,3 +187,17 @@ document.addEventListener('input',e=>{const t=e.target,d=t.dataset||{};const src
   store.set('hist.sig',sig);try{renderPlaces()}catch(_){}schedulePreview();renderChecks()});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='esc-reset'){setTimeout(()=>{for(const w of ['sec','dir'])sig[w]=Object.assign({},sig[w],{escola:DEFAULT_SIG[w].escola});store.set('hist.sig',sig);renderSig();renderChecks();schedulePreview()},0)}});
 document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.sg!=null)renderChecks()});
+
+/* ---------- registro de emissões (opcional, só neste navegador) ---------- */
+const LOG_KEY='hist.registro',LOG_ON='hist.registro.on';
+function logLer(){try{const a=JSON.parse(localStorage.getItem(LOG_KEY)||'[]');const lim=Date.now()-365*864e5;return a.filter(x=>x.t>=lim)}catch(e){return []}}
+function logGravar(a){try{localStorage.setItem(LOG_KEY,JSON.stringify(a.slice(-2000)))}catch(e){}}
+function logAtivo(){try{return localStorage.getItem(LOG_ON)==='1'}catch(e){return false}}
+function logEmissao(tipo){if(!logAtivo()||isPristine())return;const a=logLer();a.push({t:Date.now(),aluno:state.aluno.nome||'',matricula:state.aluno.matricula||'',ensino:state.mode==='eja'?'EJA':'Regular',tipo,escola:esc.curto||''});logGravar(a);logRender()}
+function logRender(){const on=logAtivo(),a=logLer();const c=$('#log-on');if(c)c.checked=on;const i=$('#log-info');if(i)i.textContent=on?`${a.length} emissão(ões) registrada(s) neste computador.`:(a.length?`Registro desligado (${a.length} antiga(s) guardada(s)).`:'Registro desligado.');
+  for(const id of ['log-csv','log-clear']){const b=$('#'+id);if(b)b.disabled=!a.length}}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='log-on'){try{localStorage.setItem(LOG_ON,e.target.checked?'1':'0')}catch(_){}logRender()}});
+document.addEventListener('click',async e=>{const id=e.target&&e.target.id;
+  if(id==='log-csv'){const a=logLer();const q=v=>'"'+String(v).replace(/"/g,'""')+'"';const lin=[['Data','Hora','Aluno','Matrícula','Ensino','Documento','Escola'].map(q).join(';')].concat(a.map(x=>{const d=new Date(x.t);return [d.toLocaleDateString('pt-BR'),d.toLocaleTimeString('pt-BR'),x.aluno,x.matricula,x.ensino,x.tipo,x.escola].map(q).join(';')}));
+    await saveBlob(`Registro_emissoes_${new Date().toISOString().slice(0,10)}.csv`,new Blob(['\ufeff'+lin.join('\r\n')],{type:'text/csv'}));setStatus('Registro baixado. Ele tem dados pessoais: guarde em local seguro.')}
+  if(id==='log-clear'){const ok=await askModal('<h3>Apagar o registro de emissões?</h3><p>Todas as linhas guardadas neste computador serão apagadas.</p>',[{label:'Cancelar',value:false},{label:'Apagar',value:true,primary:true}]);if(ok){logGravar([]);logRender();setStatus('Registro apagado.')}}});

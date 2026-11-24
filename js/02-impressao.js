@@ -285,7 +285,7 @@ async function packPdf(pages){
     else if(pg.draw){const P=pdfPainterDoc(doc);pg.draw(P,page)}
     else if(pg.raster){const ip=doc.getImageProperties(pg.raster);const s=Math.min(page.w/ip.width,page.h/ip.height);doc.addImage(pg.raster,pg.rasterFmt||'JPEG',(page.w-ip.width*s)/2,(page.h-ip.height*s)/2,ip.width*s,ip.height*s)}
     else paintModel(pg.model,pdfPainterDoc(doc),page)});
-  doc.setProperties({title:'Documentos para assinatura — '+(state.aluno.nome||'')});
+  doc.setProperties({title:'Documentos para assinatura — '+(state.aluno.nome||''),subject:'Histórico escolar do Ensino Médio',author:esc.nome||'',creator:'Gerador de Histórico do Beto '+(typeof APP_VERSION!=='undefined'?APP_VERSION:''),keywords:'histórico escolar; '+(state.mode==='eja'?'EJA':'Ensino Médio Regular')});
   return doc.output('blob');
 }
 async function packImages(pages){
