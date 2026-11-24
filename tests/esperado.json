@@ -41,6 +41,13 @@
     "pdfOk": true,
     "excelOk": true
   },
+  "excelCelulas": 197,
+  "impressao": [
+    true,
+    true
+  ],
+  "acessibilidade": [],
+  "celularSemRolagemLateral": true,
   "eja": {
     "modo": "eja",
     "anos": [
@@ -106,6 +113,7 @@
   ],
   "sessaoRecuperada": true,
   "turmaDesligada": true,
+  "item6SemAssinante": "falta quem assina",
   "item6": "true ✓ CE OSWALDO TEIXEIRA",
   "nomeEscola": [
     "INSTITUTO DE EDUCAÇÃO CARMELA DUTRA",
@@ -120,6 +128,34 @@
     "6 fechado"
   ],
   "previaAmpliada": true,
+  "seguranca": {
+    "iaEscondida": true,
+    "leitura": "ocr",
+    "csp": true,
+    "cifraOk": true,
+    "senhaErradaRecusada": true,
+    "semTextoAberto": true
+  },
+  "arquivoQuebrado": {
+    "erro": true,
+    "mensagemClara": true
+  },
+  "matriculaPdf": {
+    "nome": "ALUNA FICTICIA DE TESTE",
+    "nascimento": "15/03/2008",
+    "mae": "Mae Ficticia de Teste",
+    "identidade": "123456789",
+    "papel": [
+      "mat"
+    ],
+    "cpf": "529.982.247-25",
+    "primeiraPagina": "Ficha de matrícula"
+  },
+  "matriculaFoto": {
+    "lidaPorOcr": true,
+    "nomeParecido": true,
+    "nascimento": "15/03/2008"
+  },
   "regras": {
     "eja_9_5": true,
     "eja_10": false,

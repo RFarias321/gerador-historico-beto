@@ -2,10 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Como usar o Gerador de Histórico</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/fontes.css">
 <style>
 /* Layout: manual de secretaria — coluna de leitura com passos numerados e capturas da tela real */
 :root{
@@ -97,6 +98,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <li><a href="#fotos">Fotos e PDFs escaneados</a></li>
       <li><a href="#turma">Turma inteira</a></li>
       <li><a href="#salvar">Salvar o aluno em arquivo e assinar pelo gov.br</a></li>
+      <li><a href="#privacidade">Privacidade (LGPD)</a></li>
       <li><a href="#novidades">O que mudou</a></li>
       <li><a href="#duvidas">Dúvidas comuns</a></li>
     </ol>
@@ -139,7 +141,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <h2><span class="n">4</span>Conferir os dados do aluno</h2>
     <p>Todos os campos são preenchidos pelos documentos, e todos podem ser editados: clique no campo e digite. A prévia do histórico, à direita, muda na hora.</p>
     <figure><img src="tutorial/03-aluno.webp" alt="Formulário de dados do aluno com o campo Identidade vazio destacado em amarelo" width="1568" height="900" loading="lazy"><figcaption>Campo em amarelo: nenhum documento trouxe esse dado. Aqui, a identidade.</figcaption></figure>
-    <p>Datas no formato <b>dd/mm/aaaa</b>, por exemplo 08/07/2005.</p>
+    <p>Datas no formato <b>dd/mm/aaaa</b>, por exemplo 15/03/2008.</p>
   </section>
 
   <section class="step" id="notas">
@@ -240,7 +242,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <p>Documento só em papel? Mande uma foto (JPG ou PNG) ou um PDF escaneado. No quadro <b>Fotos e PDFs escaneados</b>, embaixo da área de anexos, escolha como ler:</p>
     <div class="two">
       <div class="card2"><h3>Ler no computador (OCR)</h3><p>Grátis, e a imagem não sai do computador. Funciona bem com digitalização ou foto reta, nítida e com boa luz. Sempre confira os números.</p></div>
-      <div class="card2"><h3>Ler com IA (Claude)</h3><p>Mais precisa, lê fotos ruins e históricos de outras escolas. A imagem é enviada à Anthropic. No site, pede uma chave da API Anthropic, cobrada por uso.</p></div>
+      <div class="card2"><h3>Ler com IA (Claude)</h3><p><b>Desligada no site.</b> Ela enviaria a imagem do documento, com dados pessoais do aluno, a um serviço fora do país (Anthropic). Pela LGPD (art. 33), isso só pode ser feito com autorização da SEEDUC. Use o OCR ou peça o PDF original no Conexão.</p></div>
     </div>
     <p class="tip warn">Para o OCR ler bem: foto tirada de cima, papel inteiro e reto, sem sombra. Fotos de iPhone em HEIC precisam ser convertidas para JPG.</p>
     <ul>
@@ -274,6 +276,21 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <p><b>Ao terminar:</b> depois de baixar ou imprimir, a página pergunta se você terminou o aluno e oferece apagar os dados deste computador.</p>
   </section>
 
+  <section class="step" id="privacidade">
+    <h2><span class="n">🔒</span>Privacidade (LGPD)</h2>
+    <ul>
+      <li><b>Quem trata os dados:</b> a escola que emite o histórico, no cumprimento da sua obrigação legal de registrar a vida escolar (LGPD, art. 7º, III, e art. 23). Como muitos alunos são adolescentes, vale também o art. 14 (melhor interesse do adolescente).</li>
+      <li><b>Onde os dados ficam:</b> os documentos são lidos <b>no navegador deste computador</b>. Nada é enviado a servidor, não há cadastro, cookies de rastreamento nem estatísticas de uso. O site não acessa nenhum outro endereço da internet.</li>
+      <li><b>Por quanto tempo:</b> o trabalho em andamento fica guardado neste navegador por até 12 horas e é apagado em <b>Novo aluno</b>. Depois de baixar ou imprimir, a página oferece apagar.</li>
+      <li><b>Arquivos salvos</b> (<i>.historico.json</i>) são <b>protegidos por senha</b> (criptografia AES-256). Guarde-os em pasta de acesso restrito e apague quando não precisar mais.</li>
+      <li><b>Leitura com IA:</b> desligada no site, porque enviaria dados para fora do país (art. 33). Só pode ser usada com autorização formal da SEEDUC.</li>
+      <li><b>Nomes de quem assina</b> (secretário e diretor) ficam salvos só no navegador de cada escola, não no código do site.</li>
+      <li><b>Computador compartilhado:</b> clique em Novo aluno ao terminar cada aluno.</li>
+      <li><b>Direitos do titular</b> (art. 18): pedidos de acesso ou correção dos dados do aluno são feitos à secretaria da escola, que responde junto ao encarregado de dados (DPO) da SEEDUC.</li>
+      <li><b>Documentos de exemplo:</b> para mostrar um problema do site a alguém, não envie documentos reais de alunos. Use os exemplos fictícios do repositório ou tarje nomes e números.</li>
+    </ul>
+  </section>
+
   <section class="step" id="novidades">
     <h2><span class="n">14</span>O que mudou (versão 2.0 · 21/11/2026)</h2>
     <ul>
@@ -295,9 +312,9 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <section class="step" id="duvidas">
     <h2><span class="n">15</span>Dúvidas comuns</h2>
     <ul>
-      <li><b>Os dados dos alunos vão para a internet?</b> Não. Os arquivos são lidos no seu navegador. A única exceção é a opção "Ler com IA", desligada por padrão.</li>
-      <li><b>Apareceu "Não encontrei a tabela de disciplinas".</b> O arquivo não é uma ficha, ata ou histórico, ou é de outro formato. Para documentos de outras escolas, use "Ler com IA".</li>
-      <li><b>PDF que é só imagem:</b> a página percebe e usa o OCR, ou a IA se estiver ligada.</li>
+      <li><b>Os dados dos alunos vão para a internet?</b> Não. Os arquivos são lidos no seu navegador. No site, a leitura com IA fica desligada. Veja a seção <a href="#privacidade">Privacidade</a>.</li>
+      <li><b>Apareceu "Não encontrei a tabela de disciplinas".</b> O arquivo não é uma ficha, ata ou histórico, ou é de outro formato. Para documentos de outras escolas, digite os dados na tela.</li>
+      <li><b>PDF que é só imagem:</b> a página percebe e usa o OCR.</li>
       <li><b>A página mostra a versão antiga.</b> Aperte <kbd>Ctrl</kbd> + <kbd>F5</kbd>.</li>
       <li><b>Quero corrigir um histórico já gerado.</b> Anexe o Excel ou o PDF dele: a página lê de volta tudo o que estava preenchido.</li>
     </ul>
@@ -305,8 +322,6 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   <footer>Gerador de Histórico do Beto · <a href="./">voltar para o gerador</a></footer>
 </main>
-<script>
-for(const a of document.querySelectorAll('#voltar,.back'))a.addEventListener('click',e=>{try{if(window.opener&&!window.opener.closed){e.preventDefault();window.opener.focus();window.close()}}catch(_){}});
-</script>
+<script src="js/tutorial.js"></script>
 </body>
 </html>

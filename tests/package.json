@@ -4,10 +4,7 @@
   "description": "Testes automáticos do Gerador de Histórico do Beto",
   "scripts": { "test": "node run.js", "atualizar": "node run.js --atualizar" },
   "devDependencies": {
-    "jspdf": "2.5.1",
-    "jszip": "3.10.1",
-    "pdfjs-dist": "3.11.174",
-    "playwright": "1.49.1",
-    "xlsx": "0.18.5"
+    "axe-core": "4.10.3",
+    "playwright": "1.49.1"
   }
 }
