@@ -324,8 +324,11 @@ function paintSheet(sheet,P){
   const cx=[0,0];for(let c=1;c<=nc;c++)cx[c+1]=cx[c]+cw[c];
   const ry=[0,0];sheet.rows.forEach((r,i)=>ry[i+2]=ry[i+1]+(r.ht||15));
   const tw=cx[nc+1],th=ry[sheet.rows.length+1];
-  const ml=sp.margins[0]*72,mt=sp.margins[2]*72;
-  const sc=Math.min((PAGE.w-2*ml)/tw,(PAGE.h-2*mt)/th,1);
+  /* margens de 1,2 cm em todos os lados: o histórico ocupa a folha até as margens e fica centralizado */
+  /* enquadra só a área de impressão do modelo (B2 até a penúltima coluna/linha), sem a coluna e as linhas vazias da borda */
+  const bx0=cx[2],bx1=cx[nc],by0=ry[2],by1=ry[Math.max(2,sheet.rows.length)];const bw=bx1-bx0,bh=by1-by0;
+  const mg=sp.margins[0]*72;const sc=Math.min((PAGE.w-2*mg)/bw,(PAGE.h-2*mg)/bh,1.35);
+  const ml=(PAGE.w-bw*sc)/2-bx0*sc,mt=(PAGE.h-bh*sc)/2-by0*sc;
   const X=c=>ml+cx[c]*sc,Y=r=>mt+ry[r]*sc;
   const inM=new Map();for(const m of sheet.merges)for(let r=m[1];r<=m[3];r++)for(let c=m[0];c<=m[2];c++)inM.set(r+':'+c,m);
   const styles=sp.styles;
@@ -438,7 +441,7 @@ function layoutChecks(sheet){
       const txt=fmtVal(v,st);if(!txt)continue;const m=inM.get(r+':'+cell.c);let w=0;if(m){for(let c=m[0];c<=Math.min(m[2],nc);c++)w+=cw[c]}else w=cw[cell.c];
       const tw=textWidthAt(txt,st.font.sz,st.font.b,st.font.i);if(tw>w-2)out.push({l:'b',t:`O texto "${txt.length>40?txt.slice(0,40)+'…':txt}" não cabe na célula (linha ${r}).`})}});
   const th=sheet.rows.reduce((a,r)=>a+(r.ht||15),0),tw=sp.cols.reduce((a,k)=>a+(k.max-k.min+1)*Math.round(k.width*7)*0.75,0);
-  const sc=Math.min((PAGE.w-2*sp.margins[0]*72)/tw,(PAGE.h-2*sp.margins[2]*72)/th,1);
+  const sc=Math.min((PAGE.w-2*sp.margins[0]*72)/tw,(PAGE.h-2*sp.margins[2]*72)/th,1.35);
   if(sc<0.6)out.push({l:'w',t:`O histórico ficou muito longo; na folha A4 a letra fica pequena (${Math.round(sc*100)}%). Reduza observações ou disciplinas vazias.`});
   return out;
 }

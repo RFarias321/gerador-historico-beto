@@ -73,39 +73,54 @@ function matFields(text){
   let pos=0,curHead='';for(const it of seq){const k=it.head?key(it.head):key(it.f[0])+(/\?$|^Modal$/.test(it.f[0])?'':':');if(it.head)curHead=k;let j=fuzzy(k,pos);if(j>=0&&!it.head&&j>nextHead(pos,curHead))j=-1;if(j<0)continue;it.s=map[j];it.e=map[j+k.length-1]+1;pos=j+k.length}
   const found=seq.filter(it=>it.s!=null);
   found.forEach((it,i)=>{if(!it.f)return;const nx=found[i+1];let v=src.slice(it.e,nx?nx.s:src.length);
-    v=v.replace(/https?:\/\/\S+/g,' ').replace(/\S*conexao\.educacao\S*/gi,' ').replace(/\b\d{2}\/\d{2}\/\d{4},\s*\d{2}:\d{2}\b/g,' ').replace(/\s\d\/\d\s*$/,' ').replace(/\s+[A-Za-zÀ-ú][A-Za-zÀ-ú\/(). ]{2,40}\s?:.*$/,'').replace(/\s+/g,' ').trim();
+    v=v.replace(/https?:\/\/\S+/g,' ').replace(/\S*conexao\.educacao\S*/gi,' ').replace(/\b\d{2}\/\d{2}\/\d{2,4},\s*\d{2}:\d{2}\b/g,' ').replace(/(^|\s)\d{1,2}\/\d{1,2}(?=\s|$)/g,' ').replace(/\s+[A-Za-zÀ-ú][A-Za-zÀ-ú\/(). ]{2,40}\s?:.*$/,'').replace(/\s+/g,' ').trim();
     it.f.val=v});
   const out=new Map();for(const it of seq)if(it.f)out.set(it.f,it.f.val||'');
   return out}
 /* foto e quadros do "Modal" vêm do documento original (só PDF digital) */
 async function matExtras(f,d){const ex={photo:null,checked:new Set()};if(!f||!f.src)return ex;const digital=!d.ocr&&f.src.kind==='pdf';
   try{const c=f.src.kind==='pdf'?(await pdfToCanvases(f.src.buf.slice(0),1))[0]:await imageToCanvas(new Blob([f.src.buf]));const W=c.width,H=c.height,ctx=c.getContext('2d');
+    const crop=async(x,y,w,h,mime)=>{x=Math.max(0,Math.floor(x));y=Math.max(0,Math.floor(y));w=Math.min(W-x,Math.ceil(w));h=Math.min(H-y,Math.ceil(h));if(w<4||h<4)return null;
+      const o=document.createElement('canvas');o.width=w;o.height=h;o.getContext('2d').drawImage(c,x,y,w,h,0,0,w,h);const url=o.toDataURL(mime,.92);const img=new Image();img.src=url;await img.decode().catch(()=>{});return {url,mime,img,ar:w/h}};
     if(digital){
-    // foto: área à direita dos dados pessoais, recortada sem a margem branca
-    const rx=Math.round(W*.64),ry=Math.round(H*.158),rw=Math.round(W*.30),rh=Math.round(H*.13);const px=ctx.getImageData(rx,ry,rw,rh).data;
-    let x0=rw,y0=rh,x1=-1,y1=-1;const isRule=y=>{let n=0;for(let x=0;x<rw;x++){const i=(y*rw+x)*4;if(px[i]+px[i+1]+px[i+2]<690)n++}return n>rw*.8};
-    for(let y=0;y<rh;y++){if(isRule(y))continue;for(let x=0;x<rw;x++){const i=(y*rw+x)*4;if(px[i]+px[i+1]+px[i+2]<690){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}}
-    if(x1-x0>W*.06&&y1-y0>H*.04){const o=document.createElement('canvas');o.width=x1-x0+1;o.height=y1-y0+1;o.getContext('2d').drawImage(c,rx+x0,ry+y0,o.width,o.height,0,0,o.width,o.height);
-      const url=o.toDataURL('image/jpeg',.92);const img=new Image();img.src=url;await img.decode().catch(()=>{});ex.photo={url,mime:'image/jpeg',img,fx:(rx+x0)/W,fy:(ry+y0)/H,fw:o.width/W,fh:o.height/H}}
-    }
-    {const lx=Math.round(W*.03),ly=Math.round(H*.045),lw=Math.round(W*.19),lh=Math.round(H*.085);const q=ctx.getImageData(lx,ly,lw,lh).data;let a0=lw,b0=lh,a1=-1,b1=-1;
+      /* PDF digital: o próprio PDF diz onde está cada imagem (vale para folha em pé ou deitada) */
+      const pdf=await pdfjsLib.getDocument({isEvalSupported:false,data:f.src.buf.slice(0)}).promise;const pg=await pdf.getPage(1);const vp=pg.getViewport({scale:W/pg.getViewport({scale:1}).width});
+      const ops=await pg.getOperatorList();const O=pdfjsLib.OPS,U=pdfjsLib.Util;let ctm=[1,0,0,1,0,0];const pilha=[],imgs=[];
+      const pintar=new Set([O.paintImageXObject,O.paintInlineImageXObject,O.paintJpegXObject,O.paintImageXObjectRepeat].filter(x=>x!=null));
+      for(let k=0;k<ops.fnArray.length;k++){const fn=ops.fnArray[k];
+        if(fn===O.save)pilha.push(ctm.slice());else if(fn===O.restore)ctm=pilha.pop()||ctm;else if(fn===O.transform)ctm=U.transform(ctm,ops.argsArray[k]);
+        else if(pintar.has(fn)){const M=U.transform(vp.transform,ctm);const pts=[[0,0],[1,0],[0,1],[1,1]].map(p=>U.applyTransform(p,M));
+          const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);imgs.push({x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)})}}
+      const vis=imgs.filter(m=>m.w>W*.02&&m.h>H*.02&&m.w<W*.6);
+      const logo=vis.filter(m=>m.w/m.h>1.4&&m.y<H*.3).sort((a,b)=>a.y-b.y||a.x-b.x)[0];
+      const foto=vis.filter(m=>m!==logo&&m.w/m.h>.55&&m.w/m.h<1.6).sort((a,b)=>b.w*b.h-a.w*a.h)[0];
+      if(logo)ex.logo=await crop(logo.x,logo.y,logo.w,logo.h,'image/png');
+      if(foto)ex.photo=await crop(foto.x,foto.y,foto.w,foto.h,'image/jpeg');
+    }else if(H>W){
+      /* foto ou digitalização em pé: logo no canto de cima, à esquerda */
+      const lx=Math.round(W*.03),ly=Math.round(H*.045),lw=Math.round(W*.19),lh=Math.round(H*.085);const q=ctx.getImageData(lx,ly,lw,lh).data;let a0=lw,b0=lh,a1=-1,b1=-1;
       for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const i=(y*lw+x)*4;if(q[i]+q[i+1]+q[i+2]<700){if(x<a0)a0=x;if(x>a1)a1=x;if(y<b0)b0=y;if(y>b1)b1=y}}
-      if(a1-a0>W*.04){const o=document.createElement('canvas');o.width=a1-a0+1;o.height=b1-b0+1;o.getContext('2d').drawImage(c,lx+a0,ly+b0,o.width,o.height,0,0,o.width,o.height);const url=o.toDataURL('image/png');const img=new Image();img.src=url;await img.decode().catch(()=>{});ex.logo={url,mime:'image/png',img,fx:(lx+a0)/W,fy:(ly+b0)/H,fw:o.width/W,fh:o.height/H}}}
-    // quadros marcados no "Modal": quadro escuro à esquerda de cada opção
-    const row=digital&&(d.rows||[]).find(r=>r.toks.some(t=>/BARCAS/.test(N(t.t)))&&r.toks.some(t=>/TREM/.test(N(t.t))));
-    if(row){const all=(d.rows||[]);const top=all.find(r=>r.toks.some(t=>N(t.t).startsWith('DADOSPESSOAIS')));const bottomUp=top&&top.y>row.y;
-      const pdf=await pdfjsLib.getDocument({isEvalSupported:false,data:f.src.buf.slice(0)}).promise;const pg=await pdf.getPage(1);const vp=pg.getViewport({scale:1});const sc=W/vp.width;
-      const dark=[];for(const t of row.toks){const yy=(bottomUp?vp.height-row.y:row.y)*sc;const bx=Math.round((t.x0-11)*sc),by=Math.round(yy-9*sc),bw=Math.round(8*sc),bh=Math.round(9*sc);
-        if(bx<0)continue;const q=ctx.getImageData(bx,by,bw,bh).data;let s=0;for(let i=0;i<q.length;i+=4)s+=765-(q[i]+q[i+1]+q[i+2]);dark.push([t.t,s/(q.length/4)])}
-      const mn=Math.min(...dark.map(x=>x[1]));for(const [t,v] of dark)if(v>40&&v>mn*2.2)ex.checked.add(N(t))}
+      if(a1-a0>W*.04&&(a1-a0)/(b1-b0+1)>1.2)ex.logo=await crop(lx+a0,ly+b0,a1-a0+1,b1-b0+1,'image/png')}
+    // quadros marcados no "Modal": acha a página e a linha das opções pelo texto do PDF e olha o quadro à esquerda de cada uma
+    if(digital){const pdf=await pdfjsLib.getDocument({isEvalSupported:false,data:f.src.buf.slice(0)}).promise;
+      for(let pn=1;pn<=Math.min(pdf.numPages,4);pn++){const pg=await pdf.getPage(pn);const tc=await pg.getTextContent();
+        const barcas=tc.items.find(it=>/BARCAS/.test(N(it.str)));if(!barcas)continue;
+        const yb=barcas.transform[5];const linha=tc.items.filter(it=>Math.abs(it.transform[5]-yb)<3&&it.str.trim());
+        const cv=pn===1?c:(await pdfToCanvasPage(f.src.buf,pn));const cx=cv.getContext('2d',{willReadFrequently:true});
+        const vp=pg.getViewport({scale:cv.width/pg.getViewport({scale:1}).width});const dark=[];
+        for(const it of linha){const [x,y]=vp.convertToViewportPoint(it.transform[4],it.transform[5]);const k=vp.scale;
+          const bx=Math.round(x-11*k),by=Math.round(y-9*k),bw=Math.round(8*k),bh=Math.round(9*k);if(bx<0||by<0)continue;
+          const q=cx.getImageData(bx,by,bw,bh).data;let sm=0;for(let t=0;t<q.length;t+=4)sm+=765-(q[t]+q[t+1]+q[t+2]);dark.push([it.str.trim(),sm/(q.length/4)])}
+        if(dark.length){const mn=Math.min(...dark.map(x=>x[1]));for(const [t,v] of dark)if(v>40&&v>mn*2.2)ex.checked.add(N(t))}
+        break}}
   }catch(e){console.warn('matExtras',e)}
   return ex}
 function matPage(ex){
   ex=ex||{photo:null,checked:new Set()};
   const draw=(P,page)=>{P.fam='S';const L=40,R=page.w-40,W=R-L;let y=58;
-    if(ex.logo){const g=ex.logo;P.imageUrl(g,g.fx*page.w,g.fy*page.h,g.fw*page.w,g.fh*page.h)}else P.image(L,30,70,38);
+    if(ex.logo){const g=ex.logo;const h=36,w=Math.min(110,h*g.ar);P.imageUrl(g,L,52,w,w/g.ar)}else P.image(L,30,70,38);
     P.font(false,false,8.5);for(const [t,yy] of [['GOVERNO DO ESTADO DO RIO DE JANEIRO',76],['SECRETARIA DE EDUCAÇÃO',86],['FICHA DE MATRÍCULA',96]]){P.text(t,(L+R)/2-P.width(t)/2,yy,'000000')}
-    if(ex.photo){const ph=ex.photo;const w=ph.fw*page.w,h=ph.fh*page.h;P.imageUrl(ph,Math.max(ph.fx*page.w,R-w-8),Math.max(ph.fy*page.h,140),w,h)}
+    if(ex.photo){const ph=ex.photo;let h=96,w=h*ph.ar;if(w>110){w=110;h=w/ph.ar}P.imageUrl(ph,R-w-10,138,w,h)}
     y=122;const lh=10.6;
     for(const ln of MAT_LAYOUT){
       if(typeof ln[0]==='string'){y+=7;P.font(true,false,8.2);P.text(ln[0].slice(1),L,y,'000000');P.line(L,y+3,R,y+3,.5,'BFBFBF');y+=lh+1;continue}
@@ -121,3 +136,7 @@ function matPage(ex){
   };
   return {orient:'p',draw,title:'Ficha de matrícula'};
 }
+
+/* desenha uma página específica de um PDF (para achar o quadro do transporte quando ele fica na página 2) */
+async function pdfToCanvasPage(buf,pn){const pdf=await pdfjsLib.getDocument({isEvalSupported:false,data:buf.slice(0)}).promise;const page=await pdf.getPage(pn);const vp0=page.getViewport({scale:1});const vp=page.getViewport({scale:Math.min(3,1700/vp0.width)});
+  const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);await page.render({canvasContext:ctx,viewport:vp}).promise;return c}
