@@ -200,6 +200,11 @@
       "Dependência · HISTORIA I (gerada)"
     ]
   },
+  "trocaDeModelo": {
+    "umAlunoEjaParaRegular": "reg com aviso",
+    "turmaRegularParaEja": "eja/eja com aviso",
+    "turmaEjaParaRegular": "reg/reg com aviso"
+  },
   "regras": {
     "eja_9_5": true,
     "eja_10": false,

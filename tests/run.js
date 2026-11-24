@@ -104,6 +104,14 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
       res.dependenciaEmAbaCurta=await d.evaluate(async()=>{const pages=await buildPackPages();return {anos:state.periods.map(p=>p.ano),dependencias:state.deps.map(x=>x.ano+' '+x.disc+' '+x.nota),obs:obsLines(state).map(l=>l.text),paginasDeDependencia:pages.filter(p=>/Depend/.test(p.title)).map(p=>p.title)}});
       await d.evaluate(()=>{const c=document.querySelector('[data-dpend="0"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))});await d.waitForTimeout(300);
       res.dependenciaNaoCumprida=await d.evaluate(async()=>{const pages=await buildPackPages();return {obs:obsLines(state).map(l=>l.text),paginasDeDependencia:pages.filter(p=>/Depend/.test(p.title)).map(p=>p.title)}})}
+    // 7c. troca automática de modelo: EJA→Regular com um aluno, e nos dois sentidos na turma
+    {const m=await newPage(browser);await m.click('#mode-eja');await m.setInputFiles('#file',REG);await idle(m);await m.waitForTimeout(500);
+      const um=await m.evaluate(()=>state.mode+(state.modeAlert?' com aviso':' sem aviso'));
+      const t1=await newPage(browser);await t1.evaluate(()=>document.getElementById('tm-all').click());await t1.setInputFiles('#file',EJA.filter(f=>/EJA_\d/.test(f)));await esperar(t1,()=>/Turma: \d+ ata/.test(document.querySelector('#status').textContent),null,{timeout:180000});
+      const tEja=await t1.evaluate(()=>TURMA.mode+'/'+state.mode+(state.modeAlert?' com aviso':' sem aviso'));
+      const t2=await newPage(browser);await t2.click('#mode-eja');await t2.evaluate(()=>document.getElementById('tm-all').click());await t2.setInputFiles('#file',[fx('ARF_2023.xlsx')]);await esperar(t2,()=>/Turma: \d+ ata/.test(document.querySelector('#status').textContent),null,{timeout:180000});
+      const tReg=await t2.evaluate(()=>TURMA.mode+'/'+state.mode+(state.modeAlert?' com aviso':' sem aviso'));
+      res.trocaDeModelo={umAlunoEjaParaRegular:um,turmaRegularParaEja:tEja,turmaEjaParaRegular:tReg}}
     // 7. regra de aprovação (soma mínima)
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});
   }finally{await browser.close().catch(()=>{})}

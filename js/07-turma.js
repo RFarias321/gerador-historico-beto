@@ -15,7 +15,7 @@ async function tmRunIn(w,recs){CONF_RUN++;const keepS=state,keepF=files;state=w.
 function arfHas(rec,w){return (rec.alunos||[]).some(s=>(w.mat&&s.mat&&String(s.mat).replace(/\D/g,'')===String(w.mat).replace(/\D/g,''))||(w.nome&&nomeParecido(w.nome,s.nome)))}
 async function tmApplyArfs(w){for(const rec of TURMA.arfs){if(!arfHas(rec,w))continue;if((w.files||[]).some(f=>f.src&&srcFp(f)===rec.fp))continue;await tmRunIn(w,[rec])}}
 async function tmRoute(list){
-  if(TURMA.cur==null&&!TURMA.arfs.length)TURMA.mode=state.mode;tmSync();const n=list.length;let k=0,atas=0,rep=0,outros=[];
+  if(TURMA.cur==null&&!TURMA.arfs.length)TURMA.mode=state.mode;tmSync();const modoAntes=TURMA.mode;const n=list.length;let k=0,atas=0,rep=0,outros=[];
   for(const file of list){k++;setStatus(`Turma: lendo ${k} de ${n}: ${file.name}…`);
     if(/\.json$/i.test(file.name)){await openSaved(file);continue}
     const buf=await file.arrayBuffer();const fp=fileFp(buf);const rec={name:file.name,type:file.type,buf,fp};
@@ -28,7 +28,8 @@ async function tmRoute(list){
     if(probe.state.mode)TURMA.mode=probe.state.mode;
     rec.alunos=ent.arf.students.map(s=>({nome:s.nome,mat:s.mat}));rec.ano=ent.arf.ano;rec.serie=String((ent.arf.info||{}).serie||'').replace(/\D/g,'');TURMA.arfs.push(rec);atas++;
     for(const w of TURMA.alunos)if(arfHas(rec,w))await tmRunIn(w,[rec])}
-  tmBlank();renderFiles();renderAll();tmSave();tmRender();
+  tmBlank();if(TURMA.mode!==modoAntes){const nome=TURMA.mode==='eja'?'EJA · 4 módulos':'Ensino Médio Regular · 3 séries';TURMA.modeAlert=state.modeAlert=`As atas são de ${TURMA.mode==='eja'?'EJA':'Ensino Médio Regular'}. A página mudou sozinha para ${nome}. Se estiver errado, clique em Limpar turma, escolha o tipo certo no topo e anexe de novo.`}else if(TURMA.modeAlert)state.modeAlert=TURMA.modeAlert;
+  renderFiles();renderAll();tmSave();tmRender();
   setStatus(`Turma: ${atas} ata(s) anexada(s)${rep?`, ${rep} repetida(s) ignorada(s)`:''}.`+(outros.length?` ${outros.length} arquivo(s) não são atas (${outros.slice(0,3).join(', ')}${outros.length>3?'…':''}): FIAs e fichas de matrícula se anexam com o aluno aberto, no passo 3.`:''))}
 function tmTodos(){const m=new Map();for(const rec of TURMA.arfs)for(const s of rec.alunos||[]){const k=N(s.nome);if(!k)continue;const x=m.get(k)||{nome:String(s.nome).toUpperCase(),mat:s.mat||'',atas:[]};if(!x.mat&&s.mat)x.mat=s.mat;x.atas.push((rec.ano||'')+(rec.serie?' · '+rec.serie+(TURMA.mode==='eja'?'º mód.':'ª série'):''));m.set(k,x)}
   return [...m.values()].sort((a,b)=>a.nome.localeCompare(b.nome,'pt'))}
