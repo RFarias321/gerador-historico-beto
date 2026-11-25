@@ -138,6 +138,11 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
       await o.setInputFiles('#file',[{name:'historico_outra.'+tipo,mimeType:tipo==='pdf'?'application/pdf':'application/octet-stream',buffer:Buffer.from(b64,'base64')},{name:'FIA_2023.xlsx',mimeType:'application/octet-stream',buffer:fs.readFileSync(fx('FIA_2023.xlsx'))}]);await idle(o);await o.waitForTimeout(600);
       res['historicoOutraEscola_'+tipo]=await o.evaluate(()=>({anos:state.periods.map(p=>p.ano),situacao:state.periods.map(p=>p.sit),escolas:state.periods.map(p=>p.escola),notas:state.subjects.filter(s=>/PORTUG|QUIM/.test(N(s.name))).map(s=>s.name+': '+s.g.map(g=>g.nota+'/'+g.ch).join(' | '))}))}
     // 7. regra de aprovação (soma mínima)
+    res.notaDependencia=await pg.evaluate(()=>{const keep=JSON.stringify(state);state.deps=[{ano:'2024',disc:'MATEMÁTICA',nota:''}];
+      applyDepResults([{name:'MATEMÁTICA',n1:1,n2:4,n3:6,media:3.67}],2025);const a=state.deps[0].nota;
+      applyDepResults([{name:'MATEMÁTICA',n1:5,n2:5,media:5}],2025);const b=state.deps[0].nota;
+      applyDepResults([{name:'MATEMÁTICA',n1:7,n2:0.3,media:3.65}],2025);const c=state.deps[0].nota;
+      state=JSON.parse(keep);return {bimestres_1_4_6:a,segundaFichaMenor:b,terceiraFichaMaior:c}});
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});
   }finally{await browser.close().catch(()=>{})}
   return finish(res)}

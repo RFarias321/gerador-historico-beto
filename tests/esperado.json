@@ -279,6 +279,11 @@
       "QUÍMICA: / | 24/80 | 24,6/80"
     ]
   },
+  "notaDependencia": {
+    "bimestres_1_4_6": "6",
+    "segundaFichaMenor": "6",
+    "terceiraFichaMaior": "7"
+  },
   "regras": {
     "eja_9_5": true,
     "eja_10": false,

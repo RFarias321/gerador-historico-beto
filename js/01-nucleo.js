@@ -1156,13 +1156,16 @@ function applyFicha(res,p){
 function applyDepResults(subs,ano,extra){
   resetIfExample();let k=0;
   for(const r of subs){const c=canon(r.name);
-    // nota informada: média final; senão a última nota lançada (bimestre/trimestre em que passou); senão o total da ficha
+    // regra da dependência: a nota final é a MAIOR nota tirada em qualquer bimestre/trimestre (ex.: 1, 4 e 6 → 6);
+    // sem notas por bimestre, usa a média final; senão o total da ficha
     const lancadas=[r.n1,r.n2,r.n3,r.n4].filter(v=>typeof v==='number');
-    const v=r.media!=null?r.media:(lancadas.length?lancadas[lancadas.length-1]:(r.total!=null?r.total:null));if(v==null)continue;
+    const v=lancadas.length?Math.max(...lancadas):(r.media!=null?r.media:(r.total!=null?r.total:null));if(v==null)continue;
     let d=state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name)&&!x.nota)||state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name));
+    // mais de uma ficha da mesma dependência (ex.: 1º e 2º semestre): fica a maior nota entre elas
+    if(d&&d.depMax!=null&&d.nota&&v<=d.depMax){k++;continue}
     if(!d){d=state.deps.find(x=>!x.disc);if(d)d.disc=c.name}
     if(!d){d={ano:ano?String(ano):'',disc:c.name,nota:''};state.deps.push(d)}
-    d.nota=fmtIn(+v.toFixed(2));if(ano)d.anoCumpriu=String(ano);if(extra)d.extra=extra;k++}
+    d.nota=fmtIn(+v.toFixed(2));d.depMax=v;if(ano)d.anoCumpriu=String(ano);if(extra)d.extra=extra;k++}
   return k;
 }
 function applyHist(h){
