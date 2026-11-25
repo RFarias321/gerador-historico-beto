@@ -1,0 +1,45 @@
+name: Conferir atualizações das bibliotecas
+
+on:
+  schedule:
+    - cron: "17 9 3 * *"   # dia 3 de cada mês
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  conferir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Comparar versões usadas com as mais novas
+        id: comparar
+        run: |
+          node - <<'JS' > relatorio.md
+          const {execSync}=require('child_process');const fs=require('fs');
+          const v=JSON.parse(fs.readFileSync('lib/versoes.json','utf8'));const linhas=[];let novas=0;
+          for(const [nome,i] of Object.entries(v)){let ult='?';
+            try{ult=i.fonte==='sheetjs'?JSON.parse(execSync('curl -fsSL https://cdn.sheetjs.com/xlsx-latest/package/package.json').toString()).version:execSync(`npm view ${nome} version`).toString().trim()}catch(e){}
+            const dif=ult!=='?'&&ult!==i.versao;if(dif)novas++;linhas.push(`| ${nome} | ${i.versao} | ${ult} | ${dif?'**atualizar?**':'ok'} | ${i.obs||''} |`)}
+          console.log(`Conferência de ${new Date().toISOString().slice(0,10)}\n\n| Biblioteca | Usada | Mais nova | Situação | Observação |\n|---|---|---|---|---|\n${linhas.join('\n')}\n\nAntes de atualizar: troque o arquivo em \`lib/\`, rode os testes, e atualize \`lib/versoes.json\`, \`TERCEIROS.md\` e \`sw.js\` (veja MANUTENCAO.md, seção 4). Confira também os alertas de segurança de cada biblioteca.`);
+          fs.writeFileSync('novas.txt',String(novas));
+          JS
+          echo "novas=$(cat novas.txt)" >> "$GITHUB_OUTPUT"
+          cat relatorio.md
+      - name: Abrir aviso (issue) se houver versão nova
+        if: steps.comparar.outputs.novas != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          titulo="Bibliotecas: há versões novas para conferir"
+          if gh issue list --state open --search "$titulo in:title" --json number --jq 'length' | grep -q '^0$'; then
+            gh issue create --title "$titulo" --body-file relatorio.md
+          else
+            n=$(gh issue list --state open --search "$titulo in:title" --json number --jq '.[0].number')
+            gh issue comment "$n" --body-file relatorio.md
+          fi

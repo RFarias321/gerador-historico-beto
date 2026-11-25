@@ -1,0 +1,7 @@
+{
+  "jspdf": { "versao": "3.0.3", "fonte": "npm" },
+  "jszip": { "versao": "3.10.1", "fonte": "npm" },
+  "pdfjs-dist": { "versao": "3.11.174", "fonte": "npm", "obs": "mantido na 3.x com isEvalSupported:false (a 4.x exige mudar o carregamento)" },
+  "tesseract.js": { "versao": "6.0.1", "fonte": "npm" },
+  "xlsx": { "versao": "0.20.3", "fonte": "sheetjs", "obs": "SheetJS oficial (cdn.sheetjs.com); no npm parou na 0.18.5, que tem falhas" }
+}

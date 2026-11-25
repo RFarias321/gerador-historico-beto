@@ -112,6 +112,31 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
       const t2=await newPage(browser);await t2.click('#mode-eja');await t2.evaluate(()=>document.getElementById('tm-all').click());await t2.setInputFiles('#file',[fx('ARF_2023.xlsx')]);await esperar(t2,()=>/Turma: \d+ ata/.test(document.querySelector('#status').textContent),null,{timeout:180000});
       const tReg=await t2.evaluate(()=>TURMA.mode+'/'+state.mode+(state.modeAlert?' com aviso':' sem aviso'));
       res.trocaDeModelo={umAlunoEjaParaRegular:um,turmaRegularParaEja:tEja,turmaEjaParaRegular:tReg}}
+    // 7d. observações: amparo lido da ficha, amparo da ficha de dependência e regra do ano
+    {const d=await newPage(browser);await d.click('#mode-eja');await d.setInputFiles('#file',['dep_fia2017_1S.xlsx','dep_fia2017_2S.xlsx','dep_fia2021_a.xlsx','dep_fia2021_b.xlsx'].map(fx));await idle(d);await d.waitForTimeout(800);
+      const ficou=await d.evaluate(()=>obsLines(state).map(l=>l.text));
+      await d.evaluate(()=>{const s=document.querySelector('#dep-regra');s.value='cumpriu';s.dispatchEvent(new Event('change',{bubbles:true}))});await d.waitForTimeout(300);
+      const cumpriu=await d.evaluate(()=>obsLines(state).map(l=>l.text));await d.evaluate(()=>{try{localStorage.removeItem('hist.depano')}catch(e){}});
+      res.observacoesAmparo={ficou,cumpriu}}
+    // 7e. FIA x ata e carga horária mínima
+    {const c=await newPage(browser);await c.setInputFiles('#file',REG);await idle(c);await c.waitForTimeout(500);
+      res.fiaAta=await c.evaluate(()=>{const antes=conferirFiaAta().length;const s=state.subjects.find(x=>/BIOLOGIA/.test(N(x.name)));s.g[2].nota='5,00';const depois=conferirFiaAta();return {antes,depois:depois.length,aviso:/BIOLOGIA/.test(depois[0]||'')}});
+      res.chMinima=await c.evaluate(()=>{const t=chTotalCurso();try{localStorage.setItem('hist.chmin.reg','5000')}catch(e){}renderChecks();const av=[...document.querySelectorAll('#checks li')].some(l=>/abaixo do mínimo/.test(l.textContent));try{localStorage.removeItem('hist.chmin.reg')}catch(e){}return {total:t.total,padrao:CH_PADRAO.reg,avisaQuandoAbaixo:av}})}
+    // 7f. caso para suporte: sem nenhum nome/matrícula do aluno ou dos colegas
+    {const c=await newPage(browser);await c.click('#mode-eja');await c.setInputFiles('#file',EJA);await idle(c);await c.waitForTimeout(500);
+      res.casoSuporte=await c.evaluate(async()=>{let blob=null;window.saveBlob=async(fn,b)=>{blob=b};const sec=_segredos();await casoSuporte();if(!blob)return 'não gerou';
+        const z=await JSZip.loadAsync(blob);let txt='';for(const n of Object.keys(z.files))if(/\.xlsx$/.test(n)){const x=await JSZip.loadAsync(await z.files[n].async('uint8array'));for(const m of Object.keys(x.files))if(/\.xml$/.test(m))txt+=await x.files[m].async('string')}
+        const T=_nn(txt);return {planilhas:Object.keys(z.files).filter(n=>/\.xlsx$/.test(n)).length,nomesProcurados:sec.nomes.length,nomesQueSobraram:sec.nomes.filter(n=>T.includes(_nn(n))).length,matriculasQueSobraram:sec.nums.filter(n=>txt.includes(n)).length}})}
+    // 7g. histórico de outra escola (Excel e PDF), com médias, junto com a FIA da 3ª série
+    for(const tipo of ['xlsx','pdf']){const o=await newPage(browser);
+      const b64=await o.evaluate(tipo=>{const A=[['COLÉGIO ESTADUAL FICTÍCIO DE TESTE'],['HISTÓRICO ESCOLAR — ENSINO MÉDIO'],[],['COMPONENTES CURRICULARES','1ª SÉRIE','','2ª SÉRIE',''],['','2019','','2020',''],['','MÉDIA','C.H.','MÉDIA','C.H.'],
+        ['LÍNGUA PORTUGUESA',7.5,160,8,160],['MATEMÁTICA',6,160,7.25,160],['HISTÓRIA',8,80,6.5,80],['GEOGRAFIA',7,80,7,80],['QUÍMICA','','',6,80],['TOTAL','',560,'',560],['SITUAÇÃO','APROVADO','','APROVADO','']];
+        if(tipo==='xlsx'){const ws=XLSX.utils.aoa_to_sheet(A);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'H');return XLSX.write(wb,{type:'base64',bookType:'xlsx'})}
+        const doc=new jspdf.jsPDF({unit:'pt',format:'a4'});doc.setFont('helvetica','normal');doc.setFontSize(9);const X=[40,250,320,400,470];let y=60;
+        for(const l of A){l.forEach((v,j)=>{if(v===''||v==null)return;const t=String(typeof v==='number'?String(v).replace('.',','):v);const x=(j===1||j===3)&&/SÉRIE/.test(t)?X[j]+30:X[j];doc.text(t,x,y,j&&!/SÉRIE/.test(t)?{align:'left'}:{})});y+=14}
+        return doc.output('datauristring').split(',')[1]},tipo);
+      await o.setInputFiles('#file',[{name:'historico_outra.'+tipo,mimeType:tipo==='pdf'?'application/pdf':'application/octet-stream',buffer:Buffer.from(b64,'base64')},{name:'FIA_2023.xlsx',mimeType:'application/octet-stream',buffer:fs.readFileSync(fx('FIA_2023.xlsx'))}]);await idle(o);await o.waitForTimeout(600);
+      res['historicoOutraEscola_'+tipo]=await o.evaluate(()=>({anos:state.periods.map(p=>p.ano),situacao:state.periods.map(p=>p.sit),escolas:state.periods.map(p=>p.escola),notas:state.subjects.filter(s=>/PORTUG|QUIM/.test(N(s.name))).map(s=>s.name+': '+s.g.map(g=>g.nota+'/'+g.ch).join(' | '))}))}
     // 7. regra de aprovação (soma mínima)
     res.regras=await pg.evaluate(()=>{const t=(per,v)=>isDep({nota:String(v).replace('.',','),per},null);return {eja_9_5:t(2,9.5),eja_10:t(2,10),reg_tri_14_5:t(3,14.5),reg_tri_15:t(3,15),reg_bim_19_5:t(4,19.5),reg_bim_20:t(4,20)}});
   }finally{await browser.close().catch(()=>{})}

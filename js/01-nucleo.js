@@ -42,6 +42,8 @@ async function loadAssets(){
   const get=(u,t)=>fetch(u).then(r=>{if(!r.ok)throw new Error(u);return t==='json'?r.json():r.arrayBuffer()});
   const [se,sr,te,tr]=await Promise.all([get('spec_eja.json','json'),get('spec_reg.json','json'),get64('modelo_eja.txt'),get64('modelo_reg.txt')]);
   SPEC.eja=se;SPEC.reg=sr;TPL.eja=te;TPL.reg=tr;
+  /* letras do histórico 10% maiores (mais fáceis de ler), em proporção */
+  for(const sp of [se,sr])for(const st of sp.styles)if(st&&st.font&&st.font.sz)st.font.sz=Math.round(st.font.sz*FONT_K*2)/2;
   for(const sp of [se,sr]){sp.mrg=sp.merges.map(m=>{const x=m.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);const cn=s=>[...s].reduce((a,ch)=>a*26+ch.charCodeAt(0)-64,0);return [cn(x[1]),+x[2],cn(x[3]),+x[4]]})}
   const z=await JSZip.loadAsync(te);const png=await z.file('xl/media/image1.png').async('base64');
   LOGO_URL='data:image/png;base64,'+png;
@@ -214,11 +216,24 @@ function buildSheet(st){
     seq.forEach((it,i)=>{if(it.src!==m[1])return;for(let k=1;k<=h;k++)if(!seq[i+k]||seq[i+k].src!==m[1]+k)return;merges.push([m[0],i+1,m[2],i+1+h])})}
   return {spec:sp,rows,merges,mode:st.mode};
 }
+/* texto de amparo (ou observação) escrito na própria ficha: "AMPARADO PELA RESOLUÇÃO ... Nº 5.595/2021 ..." */
+function fmtAmparo(t){t=String(t||'').replace(/\s+/g,' ').trim().replace(/[.;]+$/,'');if(!t)return '';
+  for(const [ano,txt] of Object.entries(RESOLUCAO_PROMOV)){const num=(txt.match(/nº\s*([\d.]+\/\d{4})/)||[])[1];if(num&&N(t).includes(N(num)))return txt}
+  let x=t===t.toUpperCase()?t.toLowerCase():t;x=x.replace(/\bseeduc\b/gi,'SEEDUC').replace(/\bsugen\b/gi,'SUGEN').replace(/\bd\.\s?o\./gi,'D.O.').replace(/\bn[º°o]\s?(?=[\d.])/gi,'nº ').replace(/\bresolução\b/i,'Resolução').replace(/\bdeliberação\b/i,'Deliberação').replace(/\bcee\b/gi,'CEE').replace(/\bcne\b/gi,'CNE');
+  return x.charAt(0).toUpperCase()+x.slice(1)+'.'}
+function amparoDe(rows){const out=[];const add=t=>{t=fmtAmparo(t);if(t&&t.length>8&&!out.some(x=>N(x)===N(t)))out.push(t)};
+  for(const r of rows||[]){/* células mescladas repetem o mesmo texto: cada texto conta uma vez */
+    const toks=[...new Set((r.toks||[]).map(t=>String(t.t||'').replace(/\s+/g,' ').trim()).filter(Boolean))];
+    for(const t of toks){const k=t.search(/AMPARAD[OA]/i);if(k>=0)add(t.slice(k))}
+    const li=toks.findIndex(t=>/^OBSERVA[ÇC][ÕO]ES?\b/i.test(t));
+    if(li>=0){const mesmo=toks[li].replace(/^OBSERVA[ÇC][ÕO]ES?\s*:?\s*/i,'');const resto=[mesmo,...toks.slice(li+1)].filter(t=>t&&!/^OBSERVA[ÇC][ÕO]ES?\s*:?$/i.test(t)&&!/AMPARAD/i.test(t));if(resto.length)add(resto.join(' '))}}
+  return out.join(' ')}
 const RESOLUCAO_PROMOV={
   '2020':'Amparado pela Resolução SEEDUC/SUGEN nº 5.879/2020 publicada no D.O. de 14/10/2020.',
   '2021':'Amparado pela Resolução SEEDUC/SUGEN nº 6015/2021 publicada no D.O. de 14/12/2021.'};
 /* ---- observações: quebra de linha dentro das margens, fonte 7 ---- */
-const OBS_SZ=7,OBS_HT=9;
+const FONT_K=1.1;
+const OBS_SZ=8,OBS_HT=10.5;
 function extraStyle(sp,key,base,mods){
   sp.extra=sp.extra||[];const got=sp.extra.find(e=>e.key===key);if(got)return got.idx;
   const st=JSON.parse(JSON.stringify(sp.styles[base]));st.font.sz=mods.sz;st.h=mods.h;st.v=mods.v;st.wrap=!!mods.wrap;
@@ -228,7 +243,7 @@ function obsStyle(sp,src){
   const base=(sp.rows[src].cells.find(c=>c.c===2)||sp.rows[src].cells[0]).s;
   return extraStyle(sp,'obs',base,{sz:OBS_SZ,h:'left',v:'center',wrap:false});
 }
-function sitStyle(sp,base){return extraStyle(sp,'sit'+base,base,{sz:7,h:'center',v:'center',wrap:false})}
+function sitStyle(sp,base){return extraStyle(sp,'sit'+base,base,{sz:7.5,h:'center',v:'center',wrap:false})}
 function obsWidth(sp){
   const last=sp.lastcol-1;let w=0;for(let c=2;c<=last;c++){const k=sp.cols.find(q=>c>=q.min&&c<=q.max);w+=Math.round((k?k.width:8.43)*7)*0.75}
   return w-4;
@@ -250,11 +265,12 @@ function wrapObs(text,maxW){
 }
 function obsLines(st){
   const auto=[];
-  st.periods.forEach(p=>{const a=String(p.ano||'').trim();if(p.sit==='PROMOV'&&RESOLUCAO_PROMOV[a]&&!auto.some(x=>x.res&&x.ano===a))auto.push({ano:a,res:true,ph:false,text:`${a} – ${RESOLUCAO_PROMOV[a]}`})});
+  st.periods.forEach(p=>{const a=String(p.ano||'').trim();if(p.amparo){const text=`${a} – ${p.amparo}`;if(!auto.some(x=>x.text===text))auto.push({ano:a,res:true,ph:false,text})}});
+  st.periods.forEach(p=>{const a=String(p.ano||'').trim();if(p.sit==='PROMOV'&&!p.amparo&&RESOLUCAO_PROMOV[a]&&!auto.some(x=>x.res&&x.ano===a))auto.push({ano:a,res:true,ph:false,text:`${a} – ${RESOLUCAO_PROMOV[a]}`})});
   for(const d of st.deps){
     if(d.pendente){const pi=d.p!=null?d.p:d.auto;const onde=pi!=null&&LABELS[st.mode][pi]?` (${LABELS[st.mode][pi]})`:'';auto.push({pi,ano:d.ano||'',text:`${d.ano||PH} – O(a) aluno(a) não cumpriu a dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}${onde}, necessária para a certificação final do Ensino Médio.`,ph:!d.ano||!d.disc,pendente:true});continue}
     const nv=num(d.nota);const nota=d.nota?(nv!=null?nv.toFixed(2).replace('.',','):String(d.nota).trim()):'';
-    auto.push({pi:d.p!=null?d.p:d.auto,ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.`,ph:!d.ano||!d.disc||!nota});
+    auto.push({pi:d.p!=null?d.p:d.auto,ano:d.ano||'',text:`${d.ano||PH} – Aprovado em regime de dependência na disciplina ${d.disc?d.disc.trim().toUpperCase():PH}, com nota final ${nota||PH}.${d.extra?' '+d.extra:''}`,ph:!d.ano||!d.disc||!nota});
   }
   st.periods.forEach((p,pi)=>{if(p.sit==='APROV. C/DEP'&&!st.deps.some(d=>(d.p!=null||d.auto!=null)?((d.p!=null?d.p:d.auto)===pi):(d.ano&&(d.ano===p.ano||(+d.ano>+p.ano)))))auto.push({ano:p.ano||'',text:`${p.ano||PH} – Aprovado em regime de dependência na disciplina ${PH}, com nota final ${PH}.`,ph:true})});
   const out=auto.map((x,i)=>[x,i]).sort((a,b)=>((a[0].ano||'9999').localeCompare(b[0].ano||'9999'))||((a[0].pi??99)-(b[0].pi??99))||a[1]-b[1]).map(x=>x[0]);
@@ -278,6 +294,7 @@ async function makeXlsx(sheet){
   const mg=sheet.merges.map(m=>`<mergeCell ref="${colL(m[0])}${m[1]}:${colL(m[2])}${m[3]}"/>`);
   const xml=sp.head.replace('{{DIM}}',`B2:${colL(sp.lastcol-1)}${Nr-1}`)+'<sheetData>'+rx+'</sheetData>'+sp.tail.replace('{{MERGES}}',mg.length?`<mergeCells count="${mg.length}">${mg.join('')}</mergeCells>`:'');
   z.file('xl/worksheets/sheet1.xml',xml);
+  {/* mesmas letras maiores no Excel */let s0=await z.file('xl/styles.xml').async('string');s0=s0.replace(/(<fonts\b[^>]*>)([\s\S]*?)(<\/fonts>)/,(m,a,b,c)=>a+b.replace(/<sz val="([\d.]+)"\/>/g,(x,v)=>`<sz val="${Math.round(+v*FONT_K*2)/2}"/>`)+c);z.file('xl/styles.xml',s0)}
   if(sp.extra&&sp.extra.length){
     let st=await z.file('xl/styles.xml').async('string');
     const xfsM=st.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
@@ -823,14 +840,15 @@ function isFundamental(rows){
 }
 function isDependencyFile(rows){return rows.some(r=>r.toks.some(t=>{if(/=/.test(t.t))return false;const k=N(t.t);return k.length<60&&/DEPENDENCIA/.test(k)&&!/APROVADO|LEGENDA/.test(k)}))}
 function parseHistPdf(rows){
-  const h=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&r.toks.some(t=>/CARGAHORARIATOTAL/.test(N(t.t))));
+  /* "Carga Horária Total" pode quebrar em duas linhas: procura o cabeçalho perto de DISCIPLINAS */
+  const h=rows.findIndex((r,i)=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&rows.slice(Math.max(0,i-2),i+3).some(q=>q.toks.some(t=>/CARGAHORARIA/.test(N(t.t)))));
   if(h<0)return null;
   const mode=rows.slice(Math.max(0,h-2),h+3).some(r=>r.toks.some(t=>/MODULO/.test(N(t.t))))?'eja':'reg',n=mode==='eja'?4:3;
   const hr=rows.slice(Math.max(0,h-2),h+3).flatMap(r=>r.toks).sort((a,b)=>a.xc-b.xc);
   const anos=hr.filter(t=>N(t.t)==='ANO'),yrs=hr.filter(t=>/^(19|20)\d\d$/.test(t.t.trim()));
   if(anos.length<n)return null;
   const P=[];for(let p=0;p<n;p++){const a=anos[p];const y=yrs.find(q=>q.xc>a.xc&&(!anos[p+1]||q.xc<anos[p+1].xc));P.push({nx:a.xc,cx:y?y.xc:a.xc+(a.x1-a.x0)*2,ano:y?y.t.trim():''})}
-  const totX=(hr.find(t=>/CARGAHORARIATOTAL/.test(N(t.t)))||{xc:1e9}).xc;
+  const totX=(hr.find(t=>/CARGAHORARIA/.test(N(t.t)))||{xc:1e9}).xc;
   const firstX=Math.min(...P.map(p=>p.nx))-((P[0].cx-P[0].nx)/2);
   const cols=[];P.forEach((p,i)=>{cols.push({k:'n',p:i,x:p.nx},{k:'c',p:i,x:p.cx})});cols.push({k:'t',x:totX});
   const near=(x,arr)=>{let b=null,d=1e9;for(const c of arr){const e=Math.abs(c.x-x);if(e<d){d=e;b=c}}return b};
@@ -866,7 +884,8 @@ function parseHistPdf(rows){
   return res;
 }
 function parseHist(rows){
-  const h=rows.findIndex(r=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&r.toks.some(t=>/CARGAHORARIATOTAL/.test(N(t.t))));
+  /* "Carga Horária Total" pode quebrar em duas linhas: procura o cabeçalho perto de DISCIPLINAS */
+  const h=rows.findIndex((r,i)=>r.toks.some(t=>N(t.t)==='DISCIPLINAS')&&rows.slice(Math.max(0,i-2),i+3).some(q=>q.toks.some(t=>/CARGAHORARIA/.test(N(t.t)))));
   if(h<0)return null;
   const disc=rows[h].toks.find(t=>N(t.t)==='DISCIPLINAS');
   const years=rows[h].toks.filter(t=>/^20\d\d$/.test(t.t)).reduce((a,t)=>{if(!a.some(x=>x.xc===t.xc))a.push(t);return a},[]).sort((a,b)=>a.xc-b.xc);
@@ -916,7 +935,7 @@ function resolverTalvezDep(){const lista=TALVEZ_DEP;TALVEZ_DEP=[];
       pd.entry.status=pd.entry.status.replace('__talvez__',`ficha de dependência (${nomes}${pd.ano?', cumprida em '+pd.ano:''})`)}
     else{let p=inferPeriod(pd.info,pd.ctx,state.mode);if(p==null||(periodHasData(p)&&String(state.periods[p].ano)!==String(pd.ano)))p=nextFreePeriod(pd.ano);
       if(p==null||p>=state.periods.length){pd.entry.status=pd.entry.status.replace('__talvez__',`aba com ${nomes}: não sei onde colocar (confira se é ficha de dependência)`);continue}
-      applyFicha({subs:pd.subs,info:pd.info,ano:pd.ano,sit:'',freqGlobal:pd.subs.freqGlobal,escola:pd.doc.escola,nPer:pd.subs.nPer},p);pd.entry.src&&pd.entry.src.docs.push({role:'fia',sheet:pd.sheet,p,ano:pd.ano,escola:pd.doc.escola});
+      applyFicha({subs:pd.subs,info:pd.info,ano:pd.ano,sit:'',freqGlobal:pd.subs.freqGlobal,escola:pd.doc.escola,nPer:pd.subs.nPer},p);{const am=amparoDe(pd.rows);if(am)state.periods[p].amparo=am}pd.entry.src&&pd.entry.src.docs.push({role:'fia',sheet:pd.sheet,p,ano:pd.ano,escola:pd.doc.escola});
       pd.entry.status=pd.entry.status.replace('__talvez__',`${LABELS[state.mode][p]}${pd.ano?' · '+pd.ano:''} · ${pd.subs.length} disciplina(s)`)}}}
 async function handleFiles(list){
   if(!READY){setStatus('Aguarde o carregamento do modelo…');return}
@@ -957,6 +976,7 @@ async function handleFiles(list){
         if(isFundamental(g.rows)){if(!done.includes(FUND_MSG))done.push(FUND_MSG);continue}
         fundOnly=false;
         {const k=docKind(g.rows);if(k)ensureMode(k,file.name,entry)}
+        {const hg=(isPdf?parseHistPdf(g.rows):parseHist(g.rows))?null:parseHistGenerico(g.rows,isPdf);if(hg){importarHistoricoOutraEscola(hg,done);continue}}
         {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){if(outroAluno(hist.info.nome))throw new Error(OUTRO_MSG(String(hist.info.nome).toUpperCase()));applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
         if(arf){entry.arf=arf;addDoc({role:'arf',sheet:g.sheet,ano:arf.ano,escola:arf.escola,serie:(String((arf.info||{}).serie||'').match(/\d/)||[''])[0]});done.push(`ata de resultados ${arf.ano||''} · ${arf.students.length} alunos`);continue}
@@ -964,7 +984,7 @@ async function handleFiles(list){
         const info=extractInfo(g.rows);const ctx={sheet:g.sheet,file:file.name};
         if(outroAluno(info.nome))throw new Error(OUTRO_MSG(String(info.nome).toUpperCase()));
         const ano=inferYear(info,ctx,g.rows);
-        if(isDependencyFile(g.rows)||/DEPEND/.test(N(g.sheet||''))){fillAluno(info);const pd={subs,ano,entry,sheet:g.sheet,info,file:file.name};PENDING_DEPS.push(pd);addDoc({role:'dep',sheet:g.sheet,ano,escola:cleanEscola(info.escola),subjects:subs.map(x=>x.name)});entry.depDocs=entry.depDocs||[];entry.depDocs.push(pd);done.push('ficha de dependência');continue}
+        if(isDependencyFile(g.rows)||/DEPEND/.test(N(g.sheet||''))){fillAluno(info);const pd={subs,ano,entry,sheet:g.sheet,info,file:file.name,rows:g.rows};PENDING_DEPS.push(pd);addDoc({role:'dep',sheet:g.sheet,ano,escola:cleanEscola(info.escola),subjects:subs.map(x=>x.name)});entry.depDocs=entry.depDocs||[];entry.depDocs.push(pd);done.push('ficha de dependência');continue}
         if(subs.length<=3&&!findSit(g.rows)){fillAluno(info);TALVEZ_DEP.push({subs,ano,entry,sheet:g.sheet,info,file:file.name,ctx,rows:g.rows,doc:{sheet:g.sheet,ano,escola:cleanEscola(info.escola)}});done.push('__talvez__');continue}
         let p=inferPeriod(info,ctx,state.mode);
         if(p==null)p=nextFreePeriod(ano);
@@ -973,7 +993,7 @@ async function handleFiles(list){
           if(q!=null&&q<state.periods.length&&!periodHasData(q)){done.push(`aviso: ia ocupar o ${LABELS[state.mode][p]} (${state.periods[p].ano}); colocada no ${LABELS[state.mode][q]}`);p=q}
           else throw new Error(`Esta ficha de ${ano} apagaria o ${LABELS[state.mode][p]} de ${state.periods[p].ano}. Confira se ela é de outro aluno, repetida ou uma ficha de dependência.`)}
         if(p==null||p>=state.periods.length)throw new Error(state.mode==='reg'?'Esta ficha é de um 4º módulo (EJA). Clique em "EJA · 4 módulos" no topo e anexe de novo.':'Não encontrei uma coluna livre para esta ficha.');
-        applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola),nPer:subs.nPer},p);addDoc({role:'fia',sheet:g.sheet,p,ano,escola:cleanEscola(info.escola)});entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
+        applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola),nPer:subs.nPer},p);{const am=amparoDe(g.rows);if(am)state.periods[p].amparo=am}addDoc({role:'fia',sheet:g.sheet,p,ano,escola:cleanEscola(info.escola)});entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
       }
       if(entry.arf){const st=matchArf(entry.arf);if(st){applyArf(entry.arf,st);entry.arfDone=st.nome}}
@@ -997,7 +1017,7 @@ async function handleFiles(list){
   }
   if(!alive())return;
   resolverTalvezDep();renderFiles();
-  for(const pd of PENDING_DEPS){const k=applyDepResults(pd.subs,pd.ano);pd.applied=k;pd.entry.status=pd.entry.status.replace('ficha de dependência',`ficha de dependência: ${k} nota(s) nas observações`)}
+  for(const pd of PENDING_DEPS){const k=applyDepResults(pd.subs,pd.ano,amparoDe(pd.rows));pd.applied=k;pd.entry.status=pd.entry.status.replace('ficha de dependência',`ficha de dependência: ${k} nota(s) nas observações`)}
   PENDING_DEPS=[];
   renderAluno();
   for(const f of files)if(f.arf&&!f.arfDone){const st=matchArf(f.arf);if(st){applyArf(f.arf,st);f.arfDone=st.nome}}
@@ -1045,6 +1065,8 @@ function applyArf(arf,stu){
   if(p==null||!state.periods[p])return;
   const per=state.periods[p];if(arf.ano&&!per.ano)per.ano=String(arf.ano);
   const sit=mapSit(stu.sit);
+  /* guarda o que a ata diz, para comparar com a FIA */
+  state.ataNotas=state.ataNotas||{};state.ataNotas[p]={ano:String(arf.ano||''),sit,notas:stu.notas.map(x=>({disc:x.disc,nota:x.nota}))};
   if(periodHasData(p)){if(!per.sit&&sit)per.sit=sit;if(!per.freq&&stu.freq!=null)per.freq=fmtIn(stu.freq);return}
   const subs=stu.notas.map(x=>({name:x.disc,total:x.nota,media:x.nota!=null?x.nota/defaultPer():null}));
   applyFicha({subs,info:{},ano:arf.ano,sit,freqGlobal:stu.freq,escola:arf.escola},p);
@@ -1131,7 +1153,7 @@ function applyFicha(res,p){
   state.subjects=state.subjects.filter(s=>s.g.some(g=>g.nota!==''||g.ch!==''));
   sortSubjects();
 }
-function applyDepResults(subs,ano){
+function applyDepResults(subs,ano,extra){
   resetIfExample();let k=0;
   for(const r of subs){const c=canon(r.name);
     // nota informada: média final; senão a última nota lançada (bimestre/trimestre em que passou); senão o total da ficha
@@ -1140,7 +1162,7 @@ function applyDepResults(subs,ano){
     let d=state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name)&&!x.nota)||state.deps.find(x=>N(canon(x.disc||'').name)===N(c.name));
     if(!d){d=state.deps.find(x=>!x.disc);if(d)d.disc=c.name}
     if(!d){d={ano:ano?String(ano):'',disc:c.name,nota:''};state.deps.push(d)}
-    d.nota=fmtIn(+v.toFixed(2));k++}
+    d.nota=fmtIn(+v.toFixed(2));if(ano)d.anoCumpriu=String(ano);if(extra)d.extra=extra;k++}
   return k;
 }
 function applyHist(h){
@@ -1238,7 +1260,7 @@ document.addEventListener('input',e=>{
   else if(d.pe!=null)state.periods[+d.pe].escola=t.value;
   else if(d.pm!=null)state.periods[+d.pm].municipio=t.value;
   else if(d.ps!=null)state.periods[+d.ps].semestre=t.value;
-  else if(d.da!=null){state.deps[+d.da].ano=t.value.trim();state.deps[+d.da].edited=1;t.classList.toggle('empty',!t.value)}
+  else if(d.da!=null){state.deps[+d.da].ano=t.value.trim();state.deps[+d.da].anoManual=1;state.deps[+d.da].edited=1;t.classList.toggle('empty',!t.value)}
   else if(d.dd!=null){state.deps[+d.dd].disc=t.value;state.deps[+d.dd].edited=1;t.classList.toggle('empty',!t.value)}
   else if(d.dn!=null){state.deps[+d.dn].nota=t.value.trim();t.classList.toggle('empty',!t.value)}
   else if(t.id==='apikey'){try{localStorage.setItem('hist.apikey',t.value.trim())}catch(e){}return}
@@ -1348,3 +1370,61 @@ window.addEventListener('resize',schedulePreview);
   catch(e){console.error(e);setStatus('Não foi possível carregar o modelo. Recarregue a página.',true)}
   if(window.claude&&claude.use)claude.use('downloads').then(d=>{DL=d}).catch(()=>{DL=null});
 })();
+
+/* ano que sai na observação de dependência: o ano em que o aluno ficou em dependência (padrão) ou o ano em que cumpriu */
+function regraAnoDep(){try{return localStorage.getItem('hist.depano')==='cumpriu'?'cumpriu':'ficou'}catch(e){return 'ficou'}}
+function aplicarAnoDep(){const r=regraAnoDep();for(const d of state.deps){if(d.anoManual)continue;const pi=d.p!=null?d.p:d.auto;const ficou=pi!=null&&state.periods[pi]?String(state.periods[pi].ano||''):'';
+  const novo=r==='cumpriu'?(d.anoCumpriu||ficou||d.ano):(ficou||d.ano);if(novo)d.ano=novo}}
+
+/* ---------- histórico de outra escola (modelos diferentes do nosso) ----------
+   Procura a tabela de disciplinas e as colunas de cada série/módulo, com nomes variados:
+   "Disciplinas"/"Componentes curriculares", "1ª série"/"1º ano"/"1º módulo", "Nota"/"Média", "C.H."/"Carga horária". */
+function parseHistGenerico(rows,isPdf){
+  const K=t=>N(t.t);const ehDisc=t=>/^(DISCIPLINAS?|COMPONENTES?(CURRICULAR(ES)?)?|COMPONENTESCURRICULARES|AREASDECONHECIMENTO)$/.test(K(t));
+  const h=rows.findIndex(r=>r.toks.some(ehDisc));if(h<0)return null;
+  const faixa=rows.slice(Math.max(0,h-3),h+3);const hr=faixa.flatMap(r=>r.toks);
+  const serie=t=>{const m=K(t).match(/^([1-4])(SERIE|ANO|MODULO|SEMESTRE|ETAPA|FASE|PERIODO)/);return m?{n:+m[1],eja:/MODULO|SEMESTRE|ETAPA|FASE|PERIODO/.test(m[2])}:null};
+  let G=hr.map(t=>({t,s:serie(t)})).filter(x=>x.s).sort((a,b)=>a.t.xc-b.t.xc);
+  const vistos=new Set();G=G.filter(x=>{if(vistos.has(x.s.n))return false;vistos.add(x.s.n);return true});
+  if(G.length<2)return null;
+  const mode=G.some(x=>x.s.eja)||G.length===4?'eja':'reg',n=mode==='eja'?4:3;
+  const discX=Math.max(...hr.filter(ehDisc).map(t=>t.x1));
+  const notaT=hr.filter(t=>/^(NOTA|NOTAS|MEDIA|MEDIAFINAL|MF|RESULTADO|CONCEITO|PONTOS|TOTAL)$/.test(K(t))&&t.xc>discX);
+  const chT=hr.filter(t=>/^(CH|CHA|CHT|CARGAHORARIA|HORAS|HA|HORASAULA)$/.test(K(t))&&t.xc>discX);
+  const anoT=hr.filter(t=>/^(19|20)\d\d$/.test(String(t.t).trim()));
+  const P=[];for(let k=0;k<n;k++)P.push({nx:null,cx:null,ano:''});
+  const grupoDe=x=>{let b=null,d=1e9;for(const g of G){const e=Math.abs(g.t.xc-x);if(e<d){d=e;b=g}}return b?b.s.n-1:null};
+  /* cada coluna "nota"/"C.H." fica com a série cujo título está mais perto (à esquerda ou em cima) */
+  /* no Excel o título da série fica na 1ª coluna do bloco mesclado; no PDF fica centralizado sobre as colunas */
+  const lim=G.map((g,i)=>isPdf?{p:g.s.n-1,ini:i?(G[i-1].t.xc+g.t.xc)/2:discX,fim:G[i+1]?(g.t.xc+G[i+1].t.xc)/2:1e9}:{p:g.s.n-1,ini:g.t.x0,fim:G[i+1]?G[i+1].t.x0:1e9});
+  const perDe=x=>{const L=lim.find(l=>x>=l.ini&&x<l.fim);return L?L.p:grupoDe(x)};
+  for(const t of notaT){const p=perDe(t.xc);if(p!=null&&p<n&&P[p].nx==null)P[p].nx=t.xc}
+  for(const t of chT){const p=perDe(t.xc);if(p!=null&&p<n&&P[p].cx==null)P[p].cx=t.xc}
+  for(const t of anoT){const p=perDe(t.xc);if(p!=null&&p<n&&!P[p].ano)P[p].ano=String(t.t).trim()}
+  for(const g of G){const p=g.s.n-1;if(p>=n)continue;if(P[p].nx==null)P[p].nx=g.t.xc;if(P[p].cx==null)P[p].cx=P[p].nx+(isPdf?30:1)}
+  const cols=[];P.forEach((q,i)=>{if(q.nx!=null)cols.push({k:'n',p:i,x:q.nx},{k:'c',p:i,x:q.cx})});
+  const firstX=discX+(isPdf?2:0.5);const near=x=>{let b=null,d=1e9;for(const c of cols){const e=Math.abs(c.x-x);if(e<d){d=e;b=c}}return b};
+  const res={mode,info:extractInfo(rows.slice(0,Math.max(0,h-3))),periods:P.map(q=>({ano:q.ano,freq:'',sit:''})),subjects:[],escola:''};
+  for(const r of rows.slice(0,h)){const t=r.toks.map(x=>x.t).join(' ');if(/\b(COL[EÉ]GIO|ESCOLA|INSTITUTO|CENTRO|CIEP|C\.?\s?E\.?)\b/i.test(t)&&!/SECRETARIA|GOVERNO/i.test(t)){res.escola=cleanEscola(t.replace(/^.*?(?=COL[EÉ]GIO|ESCOLA|INSTITUTO|CENTRO|CIEP)/i,''));break}}
+  let i=h+1;
+  for(;i<rows.length;i++){const T=rows[i].toks;if(!T.length)continue;
+    const nm=T.filter(t=>t.x1<firstX).map(t=>t.t).join(' ').trim();const k=N(nm);
+    if(/^(TOTAL|CARGAHORARIATOTAL|SITUACAO|RESULTADO|OBSERVA|FREQUENCIA|PERCENTUAL)/.test(k))break;
+    if(!nm||/^(NOTA|CH|MEDIA|ANO|SERIE)$/.test(k)||serie({t:nm}))continue;
+    const s={name:canon(nm).idx<999?canon(nm).name:nm,g:P.map(()=>blankG())};
+    for(const t of T){if(t.x1<firstX)continue;const c=near(t.xc);if(!c)continue;const v=num(t.t);if(v==null)continue;if(c.k==='n')s.g[c.p].nota=fmtIn(v);else s.g[c.p].ch=fmtIn(v)}
+    if(s.g.some(g=>g.nota!==''||g.ch!==''))res.subjects.push(s)}
+  for(;i<rows.length;i++){const T=rows[i].toks;const k=N(T.filter(t=>t.x1<firstX).map(t=>t.t).join(' '));
+    if(/SITUACAO|RESULTADO/.test(k))for(const t of T){if(t.x1<firstX)continue;const sit=mapSit(t.t);if(!sit)continue;const p=perDe(t.xc);if(p!=null&&p<n)res.periods[p].sit=sit}
+    if(/FREQUENCIA/.test(k))for(const t of T){if(t.x1<firstX)continue;let f=num(t.t);if(f==null)continue;if(f<=1)f*=100;const p=perDe(t.xc);if(p!=null&&p<n)res.periods[p].freq=fmtIn(+f.toFixed(2))}}
+  if(res.subjects.length<3)return null;
+  /* notas em média (0 a 10): converte para total de pontos, como no histórico da escola */
+  const vals=res.subjects.flatMap(s=>s.g.map(g=>num(g.nota))).filter(v=>v!=null);
+  res.media=vals.length&&Math.max(...vals)<=10;return res}
+function importarHistoricoOutraEscola(h,done){
+  if(h.mode!==state.mode&&isPristine())setMode(h.mode);fillAluno(h.info);const L=LABELS[state.mode];const fator=defaultPer();const feitos=[],pulados=[];
+  h.periods.forEach((p,i)=>{if(i>=state.periods.length)return;const subs=h.subjects.filter(s=>s.g[i]&&(s.g[i].nota!==''||s.g[i].ch!=='')).map(s=>{const v=num(s.g[i].nota),c=num(s.g[i].ch);
+      return {name:s.name,total:v!=null?(h.media?+(v*fator).toFixed(2):v):null,media:v!=null&&h.media?v:null,ch:c}});
+    if(!subs.length)return;if(periodHasData(i)){pulados.push(L[i]);return}
+    applyFicha({subs,info:{},ano:p.ano,sit:p.sit||'',freqGlobal:p.freq?num(p.freq):null,escola:h.escola,nPer:fator},i);feitos.push(L[i]+(p.ano?' · '+p.ano:''))});
+  done.push(`histórico de outra escola${h.escola?' ('+h.escola+')':''}: ${feitos.length?feitos.join(', '):'nada novo'}${pulados.length?` · já preenchido, não mudei: ${pulados.join(', ')}`:''}${h.media?` · notas em média convertidas para total de pontos (×${fator})`:''} · confira`)}

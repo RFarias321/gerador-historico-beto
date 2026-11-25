@@ -1,7 +1,7 @@
 # Componentes de terceiros
 
 O site usa os componentes abaixo, todos hospedados no próprio site (pasta `lib/`, `ocr/`, `fontes/` e arquivos `.ttf`).
-Os textos completos das licenças estão na pasta `licencas/`.
+Os textos completos das licenças estão na pasta `licencas/`. As versões em uso ficam em `lib/versoes.json`, conferidas todo mês pela automação "Conferir atualizações das bibliotecas".
 
 | Componente | Versão | Uso | Licença | Arquivo |
 |---|---|---|---|---|

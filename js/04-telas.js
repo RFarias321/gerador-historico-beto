@@ -1,6 +1,6 @@
 /* Gerador de Histórico do Beto — telas */
 /* ===== v2: usabilidade, conferência e segurança ===== */
-const APP_VERSION='2.1',APP_DATA='24/11/2026';
+const APP_VERSION='2.2',APP_DATA='25/11/2026';
 /* janela simples dentro da página (funciona também onde confirm() é bloqueado) */
 function askModal(html,buttons,opts){opts=opts||{};return new Promise(res=>{const bg=document.createElement('div');bg.className='mdl-bg';
   bg.innerHTML=`<div class="mdl${opts.wide?' wide':''}" role="dialog" aria-modal="true"><div class="mdl-body">${html}</div><div class="mdl-foot">${buttons.map((b,i)=>`<button type="button" class="btn ${b.primary?'primary':''} small" data-mi="${i}">${esc_(b.label)}</button>`).join('')}</div></div>`;
@@ -81,11 +81,13 @@ function renderChecks(){
   state.periods.forEach((P,i)=>{const sub=state.subjects.filter(s=>s.g[i]&&s.g[i].nota!=='');if(!sub.length||sub.length>3||P.sit&&P.sit!=='APROV. C/DEP'&&sub.length>1)return;
     const ant=s=>{const k=canon(s.name).key;return state.subjects.some(x=>canon(x.name).key===k&&x.g.some((g,j)=>j!==i&&isDep(g,j)))};
     if(sub.every(ant))add('b',`O ${L[i]}${P.ano?' ('+P.ano+')':''} tem só ${sub.map(s=>s.name).join(', ')}, que já aparece(m) como dependência em outro módulo/série: parece uma ficha de dependência lida como ${L[i]}. Tire o arquivo e anexe de novo junto com as demais fichas.`,'#places')});
+  for(const x of conferirFiaAta())add('w',x,'#grades');
+  {const t=chTotalCurso(),min=chMinimo();if(t.completo&&min&&t.total<min)add('w',`Carga horária total do curso: ${t.total} h, abaixo do mínimo de ${min} h (${state.mode==='eja'?'EJA':'Regular'}) configurado no item 6. Confira se falta alguma disciplina ou C/H.`,'#grades')}
   if(!state.subjects.length)add('b','Nenhuma disciplina na lista','#grades');
   if(!out.length)add('o','Tudo preenchido. Pode baixar e imprimir.');
   const nOpen=out.filter(o=>o.l!=='o').length;const cc=$('#checks-count');cc.textContent=nOpen?String(nOpen):'';cc.hidden=!nOpen;
   box.innerHTML=out.map(o=>`<li><span class="chip ${o.l}">${o.l==='o'?'ok':o.l==='b'?'atenção':'conferir'}</span><span>${esc_(o.t)}</span>${o.go?`<button type="button" class="btn small go" data-go="${esc_(o.go)}" aria-label="Ir para: ${esc_(o.t)}">ir</button>`:''}</li>`).join('');
-  const per={};for(const o of out)if(o.l!=='o'&&o.go){const s=SEC_OF(o.go);if(s)per[s]=(per[s]||0)+1}secBadges(per);renderDocCheck()}
+  const per={};for(const o of out)if(o.l!=='o'&&o.go){const s=SEC_OF(o.go);if(s)per[s]=(per[s]||0)+1}secBadges(per);renderDocCheck();if(document.activeElement&&document.activeElement.id!=='chmin')renderChMin()}
 function goTo(sel){const el=document.querySelector(sel);if(!el)return;const sec=el.closest('.sec');if(sec)sec.classList.remove('collapsed');const det=el.closest('details')||(el.tagName==='DETAILS'?el:null);if(det)det.open=true;
   el.scrollIntoView({behavior:'smooth',block:'center'});const inp=el.matches('input,select,textarea')?el:el.querySelector('input:not([disabled]),select,textarea,button');if(inp)setTimeout(()=>inp.focus({preventScroll:true}),350)}
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){e.preventDefault();goTo(g.dataset.go)}});
@@ -130,10 +132,11 @@ function depPeriod(d){if(d.p!=null&&state.periods[d.p])return d.p;if(d.auto!=nul
 function renderDeps(){
   const L=LABELS[state.mode];const subjOpts=state.subjects.map(s=>`<option value="${esc_(s.name)}">`).join('');
   const perOpts=sel=>'<option value="">—</option>'+state.periods.map((p,i)=>`<option value="${i}"${sel===i?' selected':''}>${esc_(L[i])}${p.ano?' · '+esc_(p.ano):''}</option>`).join('');
-  $('#deps').innerHTML=(state.deps.length?`<div class="dep-row dep-head"><span>Ficou em dependência</span><span class="dep-ano-h">⚠ Ano</span><span>Disciplina</span><span>Nota final</span><span>Não cumpriu</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
+  const regra=regraAnoDep();
+  $('#deps').innerHTML=(state.deps.length?`<label class="dep-regra">Ano que sai na observação: <select id="dep-regra"><option value="ficou"${regra==='ficou'?' selected':''}>ano em que o aluno ficou em dependência</option><option value="cumpriu"${regra==='cumpriu'?' selected':''}>ano em que cumpriu a dependência</option></select></label>`:'')+(state.deps.length?`<div class="dep-row dep-head"><span>Ficou em dependência</span><span class="dep-ano-h">⚠ Ano</span><span>Disciplina</span><span>Nota final</span><span>Não cumpriu</span><span></span></div>`:'<p class="hint" style="margin:0">Nenhuma dependência. As linhas de observação não aparecem no histórico.</p>')+
     state.deps.map((d,i)=>`<div class="dep-row"><select id="dp-${i}" data-dp="${i}" aria-label="Série ou módulo em que ficou em dependência">${perOpts(depPeriod(d))}</select><input id="da-${i}" data-da="${i}" value="${esc_(d.ano)}" placeholder="ano" inputmode="numeric" aria-label="Ano em que a dependência foi cumprida" class="${d.ano?'':'empty'}"><input id="dd-${i}" data-dd="${i}" value="${esc_(d.disc)}" list="subj-list" placeholder="disciplina" aria-label="Disciplina" class="${d.disc?'':'empty'}"><input id="dn-${i}" data-dn="${i}" value="${esc_(d.pendente?'':d.nota)}" placeholder="${d.pendente?'—':'(preencher)'}" aria-label="Nota final" class="${d.nota||d.pendente?'':'empty'}" inputmode="decimal"${d.pendente?' disabled':''}><label class="dep-pend" title="Marque se o aluno não fez a dependência: a observação passa a dizer que ele deve a dependência"><input type="checkbox" data-dpend="${i}"${d.pendente?' checked':''}> não cumpriu</label><button type="button" class="ib" data-rmdep="${i}" aria-label="Remover dependência">✕</button></div>`).join('')+
     `<datalist id="subj-list">${subjOpts}</datalist>`}
-document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.dpend!=null){const d=state.deps[+t.dataset.dpend];d.pendente=t.checked;d.edited=1;renderDeps();schedulePreview();renderChecks();return}if(t.dataset&&t.dataset.dp!=null){const d=state.deps[+t.dataset.dp];d.p=t.value===''?null:+t.value;d.edited=1;schedulePreview();renderChecks()}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='dep-regra'){try{localStorage.setItem('hist.depano',t.value)}catch(_){}for(const d of state.deps)delete d.anoManual;aplicarAnoDep();renderDeps();schedulePreview();renderChecks();return}if(t.dataset&&t.dataset.dpend!=null){const d=state.deps[+t.dataset.dpend];d.pendente=t.checked;d.edited=1;renderDeps();schedulePreview();renderChecks();return}if(t.dataset&&t.dataset.dp!=null){const d=state.deps[+t.dataset.dp];d.p=t.value===''?null:+t.value;d.edited=1;aplicarAnoDep();renderDeps();schedulePreview();renderChecks()}});
 /* ---------- leitura com IA: sempre começa desligada e pede autorização ---------- */
 let AI_OK=false;
 {const _r=readWithAI;readWithAI=async function(c){if(!AI_OK){const ok=await askModal('<h3>Enviar este documento para a IA?</h3><p>Com "Ler com IA" ligado, a imagem do documento (com dados pessoais do aluno) é enviada à Anthropic para ser lida. Sem isso, a leitura é feita só neste computador.</p>',[{label:'Não enviar',value:false},{label:'Enviar e ler com IA',value:true,primary:true}],{sticky:true});
@@ -148,13 +151,13 @@ function finishPrompt(what){if(typeof TURMA!=='undefined'&&TURMA&&TURMA.on){tmFi
 {const _p=printHistorico;printHistorico=async function(){await _p.apply(this,arguments);logEmissao('Histórico (impressão)');finishPrompt('Histórico enviado para impressão.')}}
 {const _pp=printPack;printPack=async function(mode){const r=await _pp(mode);if(/página\(s\)/.test($('#status').textContent))logEmissao('Documentos para assinatura');if(/página\(s\)/.test($('#status').textContent))finishPrompt('Documentos para assinatura prontos.');return r}}
 /* ---------- depois de cada lote de arquivos: recolher o que está conferido ---------- */
-{const _hf=handleFiles;handleFiles=async function(list){AI_OK=false;const r=await _hf(list);try{renderChecks();autoCollapse()}catch(e){}return r}}
+{const _hf=handleFiles;handleFiles=async function(list){AI_OK=false;const r=await _hf(list);try{aplicarAnoDep();renderDeps();schedulePreview();renderChecks();autoCollapse()}catch(e){}return r}}
 window.addEventListener('error',e=>{try{setStatus('Algo deu errado na página. Se o problema continuar, recarregue (F5): o trabalho fica guardado. (detalhe: '+(e.message||'')+')',true)}catch(_){}});
 /* funciona sem internet (PWA): registra o service worker do site */
 function initPwa(){try{if(!('serviceWorker' in navigator)||location.protocol!=='https:'||IN_CLAUDE)return;
   const tinha=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js').catch(()=>{});
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(tinha)setStatus('Nova versão do site instalada. Recarregue a página (F5) quando terminar o aluno atual.')})}catch(e){}}
-function initV2(){initPwa();setTimeout(logRender,0);if(!IA_PERMITIDA){const r=$('#rm-ia');if(r)r.closest('label').hidden=true;for(const id of ['ia-key','ia-claude'])($('#'+id)||{}).hidden=true;const o=$('#ia-off');if(o)o.hidden=false}
+function initV2(){initPwa();{const s6=document.getElementById('sig-dir');if(s6&&!document.getElementById('chmin-box')){const h=document.createElement('div');h.innerHTML='<div class="subhead">Conferência da carga horária</div><div id="chmin-box"></div>';s6.after(h)}}setTimeout(logRender,0);if(!IA_PERMITIDA){const r=$('#rm-ia');if(r)r.closest('label').hidden=true;for(const id of ['ia-key','ia-claude'])($('#'+id)||{}).hidden=true;const o=$('#ia-off');if(o)o.hidden=false}
   initSections();document.querySelectorAll('.sec').forEach(s=>s.classList.add('collapsed'));
   {const fl=$('#files');if(fl&&!document.getElementById('files-box')){const d=document.createElement('details');d.id='files-box';d.className='files-box';d.innerHTML='<summary>Arquivos lidos</summary>';fl.parentNode.insertBefore(d,fl);d.appendChild(fl)}}
   {const cv=$('#cv');if(cv){cv.title='Clique para ampliar';cv.style.cursor='zoom-in';cv.tabIndex=0;cv.setAttribute('role','button');cv.setAttribute('aria-label','Ampliar a prévia do histórico');const pv=cv.closest('.preview');const h=pv&&pv.querySelector('.pvsub');if(h)h.textContent='folha A4 · clique para ampliar'}}
@@ -204,3 +207,20 @@ document.addEventListener('click',async e=>{const id=e.target&&e.target.id;
   if(id==='log-csv'){const a=logLer();const q=v=>'"'+String(v).replace(/"/g,'""')+'"';const lin=[['Data','Hora','Aluno','Matrícula','Ensino','Documento','Escola'].map(q).join(';')].concat(a.map(x=>{const d=new Date(x.t);return [d.toLocaleDateString('pt-BR'),d.toLocaleTimeString('pt-BR'),x.aluno,x.matricula,x.ensino,x.tipo,x.escola].map(q).join(';')}));
     await saveBlob(`Registro_emissoes_${new Date().toISOString().slice(0,10)}.csv`,new Blob(['\ufeff'+lin.join('\r\n')],{type:'text/csv'}));setStatus('Registro baixado. Ele tem dados pessoais: guarde em local seguro.')}
   if(id==='log-clear'){const ok=await askModal('<h3>Apagar o registro de emissões?</h3><p>Todas as linhas guardadas neste computador serão apagadas.</p>',[{label:'Cancelar',value:false},{label:'Apagar',value:true,primary:true}]);if(ok){logGravar([]);logRender();setStatus('Registro apagado.')}}});
+
+/* ---------- FIA x ata: notas e situação do mesmo ano devem bater ---------- */
+function conferirFiaAta(){const out=[];const A=state.ataNotas||{};const L=LABELS[state.mode];const docs=docList(files);
+  for(const [pk,at] of Object.entries(A)){const p=+pk;if(!state.periods[p])continue;if(!docs.some(x=>x.d.role==='fia'&&x.d.p===p))continue;
+    const dif=[];for(const n of at.notas||[]){const v=typeof n.nota==='number'?n.nota:num(n.nota);if(v==null)continue;const s=state.subjects.find(q=>canon(q.name).key===canon(n.disc).key);if(!s)continue;const f=num((s.g[p]||{}).nota);
+      if(f!=null&&Math.abs(f-v)>0.051)dif.push(`${s.name} (FIA ${fmtIn(f)} · ata ${fmtIn(v)})`)}
+    const P=state.periods[p];const sitDif=at.sit&&P.sit&&at.sit!==P.sit&&!(at.sit==='APROVADO'&&P.sit==='PROMOV');
+    if(dif.length||sitDif)out.push(`${L[p]}${P.ano?' · '+P.ano:''}: a FIA e a ata de resultados não batem${dif.length?' em '+dif.slice(0,4).join(', ')+(dif.length>4?` e mais ${dif.length-4}`:''):''}${sitDif?`${dif.length?'; ':' na '}situação (FIA ${P.sit} · ata ${at.sit})`:''}. Confira no Conexão qual está certo.`)}
+  return out}
+/* ---------- carga horária mínima do curso ---------- */
+const CH_PADRAO={reg:2400,eja:1200};
+function chMinimo(){try{const v=+localStorage.getItem('hist.chmin.'+state.mode);return v>0?v:CH_PADRAO[state.mode]}catch(e){return CH_PADRAO[state.mode]}}
+function chTotalCurso(){let total=0;for(const s of state.subjects)for(const g of s.g){const c=num(g.ch);if(c!=null)total+=c}
+  const completo=state.periods.every((p,i)=>periodHasData(i));return {total,completo}}
+function renderChMin(){const box=document.getElementById('chmin-box');if(!box)return;const t=chTotalCurso();
+  box.innerHTML=`<label class="f">Carga horária mínima do curso — ${state.mode==='eja'?'EJA':'Regular'} (horas)<input id="chmin" inputmode="numeric" value="${chMinimo()}"></label><p class="hint" style="margin:4px 0 0">Usada só para conferência: o site avisa se a soma do histórico ficar abaixo. Total deste histórico: <b>${t.total} h</b>. Confira o valor com a norma da SEEDUC para o curso.</p>`}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='chmin'){const v=+e.target.value;try{if(v>0)localStorage.setItem('hist.chmin.'+state.mode,String(v))}catch(_){}renderChecks()}});
