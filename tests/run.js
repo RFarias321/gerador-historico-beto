@@ -111,6 +111,13 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
       const tEja=await t1.evaluate(()=>TURMA.mode+'/'+state.mode+(state.modeAlert?' com aviso':' sem aviso'));
       const t2=await newPage(browser);await t2.click('#mode-eja');await t2.evaluate(()=>document.getElementById('tm-all').click());await t2.setInputFiles('#file',[fx('ARF_2023.xlsx')]);await esperar(t2,()=>/Turma: \d+ ata/.test(document.querySelector('#status').textContent),null,{timeout:180000});
       const tReg=await t2.evaluate(()=>TURMA.mode+'/'+state.mode+(state.modeAlert?' com aviso':' sem aviso'));
+      // aluno com fichas dos dois tipos: vale o tipo do último ano (regular 2021, depois EJA 2023-2024 → EJA; e o contrário)
+      const misto=async(arqs)=>{const x=await newPage(browser);await x.evaluate(()=>{window.outroAluno=()=>false});
+        for(const a of arqs){await x.setInputFiles('#file',[fx(a)]);await idle(x);await x.waitForTimeout(300)}
+        return x.evaluate(()=>state.mode+' | '+state.periods.map(p=>p.ano||'-').join(','))};
+      const regDepoisEja=await misto(['FIA_2021.xlsx','eja_2.xlsx','eja_3.xlsx','eja_4.xlsx']);
+      const ejaDepoisReg=await misto(['eja_1.xlsx','FIA_2022.xlsx','FIA_2023.xlsx']);
+      res.tipoDoUltimoAno={regularDepoisEja:regDepoisEja,ejaPrimeiroDepoisRegular:ejaDepoisReg};
       res.trocaDeModelo={umAlunoEjaParaRegular:um,turmaRegularParaEja:tEja,turmaEjaParaRegular:tReg}}
     // 7d. observações: amparo lido da ficha, amparo da ficha de dependência e regra do ano
     {const d=await newPage(browser);await d.click('#mode-eja');await d.setInputFiles('#file',['dep_fia2017_1S.xlsx','dep_fia2017_2S.xlsx','dep_fia2021_a.xlsx','dep_fia2021_b.xlsx'].map(fx));await idle(d);await d.waitForTimeout(800);

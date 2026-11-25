@@ -202,6 +202,10 @@
       "Dependência · HISTORIA I (gerada)"
     ]
   },
+  "tipoDoUltimoAno": {
+    "regularDepoisEja": "eja | 2021,2023,2024,2024",
+    "ejaPrimeiroDepoisRegular": "reg | 2023,2022,2023"
+  },
   "trocaDeModelo": {
     "umAlunoEjaParaRegular": "reg com aviso",
     "turmaRegularParaEja": "eja/eja com aviso",

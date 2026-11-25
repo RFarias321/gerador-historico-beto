@@ -915,13 +915,24 @@ const EJA_MSG='documento de EJA: a página mudou para EJA · 4 módulos';
 const isRegDoc=rows=>rows.some(r=>(r.toks||[]).some(t=>/^(MODALIDADE)?REGULAR$|ENSINOMEDIOREGULAR|MODALIDADEREGULAR/.test(N(t.t))));
 const docKind=rows=>{if(isEjaDoc(rows))return 'eja';if(isRegDoc(rows))return 'reg';const h=new Set(rows.flatMap(r=>(r.toks||[]).map(t=>N(t.t))));if(['1B','2B','3B','4B'].every(x=>h.has(x))||['1T','2T','3T'].every(x=>h.has(x)))return 'reg';return null};
 const isEjaDoc=rows=>rows.some(r=>(r.toks||[]).some(t=>{const k=N(t.t);return /EDUCACAODEJOVENSEADULTOS|EJANEM|^EJA[A-Z0-9_]|^TURMAEJA|^EJA$/.test(k)}));
-function ensureMode(k,name,entry){
+/* tipo de ensino do aluno: vale o do ÚLTIMO ano (onde ele se formou). Ex.: 1ª série no regular em 2021 e EJA até 2025 → EJA */
+function ultimoTipo(){const a=state.kindAno||{},n=state.kindN||{};if(a.reg==null||a.eja==null)return null;if(a.eja!==a.reg)return a.eja>a.reg?'eja':'reg';
+  /* mesmo ano nos dois: desempata pelo tipo com mais fichas */
+  return (n.eja||0)>(n.reg||0)?'eja':(n.reg||0)>(n.eja||0)?'reg':null}
+function ensureMode(k,name,entry,ano){
   if(k==='eja')state.ejaSeen=1;else state.regSeen=1;
+  const kn=state.kindN||(state.kindN={});entry._kinds=entry._kinds||{};if(!entry._kinds[k]){entry._kinds[k]=1;kn[k]=(kn[k]||0)+1}
+  const ka=state.kindAno||(state.kindAno={});const y=+ano||0;if(y&&(ka[k]==null||y>ka[k]))ka[k]=y;else if(ka[k]==null)ka[k]=0;
+  const nome=t=>t==='eja'?'EJA · 4 módulos':'Ensino Médio Regular · 3 séries',tipo=t=>t==='eja'?'EJA':'Ensino Médio Regular';
+  if(state.ejaSeen&&state.regSeen){const u=ultimoTipo();
+    if(!u){if(state.mode!==k)state.modeAlert=`O aluno tem fichas de EJA e do Ensino Médio Regular, e não consegui ver qual é a do último ano. A página ficou em ${nome(state.mode)}. Se o aluno se formou no outro tipo, clique nele no topo.`;return}
+    const msg=`O aluno tem fichas do Ensino Médio Regular (até ${ka.reg||'?'}) e de EJA (até ${ka.eja||'?'}). Vale o tipo do último ano: ${tipo(u)}.`;
+    if(u==='reg'&&state.mode==='eja'&&state.periods.length>3&&periodHasData(3)){state.modeAlert=msg+' A página continua em EJA porque o 4º módulo já tem notas; confira.';return}
+    if(state.mode!==u){setMode(u);entry.modeNote='a página mudou para '+nome(u)+' (tipo do último ano)'}
+    state.modeAlert=msg+' Confira se as fichas do outro tipo ficaram na coluna certa.';return}
   if(state.mode===k)return;
-  const nome=k==='eja'?'EJA · 4 módulos':'Ensino Médio Regular · 3 séries',outro=k==='eja'?'Ensino Médio Regular':'EJA';
-  if(k==='eja'?state.regSeen&&state.ejaSeen:state.ejaSeen&&state.regSeen){state.modeAlert=`O arquivo “${name}” parece ser de ${k==='eja'?'EJA':'Ensino Médio Regular'}, mas já há documentos do ${outro} para este aluno. Confira se todos os arquivos são do mesmo aluno e do mesmo tipo de ensino.`;return}
-  setMode(k);state.modeAlert=`O arquivo “${name}” é de ${k==='eja'?'EJA':'Ensino Médio Regular'}. A página estava em ${outro} e mudou sozinha para ${nome}. Se estiver errado, clique no tipo certo no topo e anexe de novo.`;
-  const msg='documento de '+(k==='eja'?'EJA':'Ensino Médio Regular')+': a página mudou para '+nome;entry.modeNote=msg}
+  setMode(k);state.modeAlert=`O arquivo “${name}” é de ${tipo(k)}. A página estava em ${tipo(k==='eja'?'reg':'eja')} e mudou sozinha para ${nome(k)}. Se estiver errado, clique no tipo certo no topo e anexe de novo.`;
+  entry.modeNote='documento de '+tipo(k)+': a página mudou para '+nome(k)}
 function fileFp(buf){const u=new Uint8Array(buf);let h=0x811c9dc5;for(let i=0;i<u.length;i++){h^=u[i];h=Math.imul(h,0x01000193)}return u.length+':'+(h>>>0).toString(16)}
 function srcFp(f){if(!f||!f.src||!f.src.buf)return null;if(!f.src.fp)f.src.fp=fileFp(f.src.buf);return f.src.fp}
 let TALVEZ_DEP=[];
@@ -975,7 +986,7 @@ async function handleFiles(list){
       for(const g of groups){
         if(isFundamental(g.rows)){if(!done.includes(FUND_MSG))done.push(FUND_MSG);continue}
         fundOnly=false;
-        {const k=docKind(g.rows);if(k)ensureMode(k,file.name,entry)}
+        {const k=docKind(g.rows);if(k)ensureMode(k,file.name,entry,inferYear(extractInfo(g.rows),{sheet:g.sheet,file:file.name},g.rows))}
         {const hg=(isPdf?parseHistPdf(g.rows):parseHist(g.rows))?null:parseHistGenerico(g.rows,isPdf);if(hg){importarHistoricoOutraEscola(hg,done);continue}}
         {const hist=isPdf?parseHistPdf(g.rows):parseHist(g.rows);if(hist){if(outroAluno(hist.info.nome))throw new Error(OUTRO_MSG(String(hist.info.nome).toUpperCase()));applyHist(hist);done.push('histórico importado ('+(hist.mode==='eja'?'EJA':'Regular')+', '+hist.subjects.length+' disciplinas)');continue}}
         const arf=parseArf(g.rows,isPdf);
@@ -992,6 +1003,9 @@ async function handleFiles(list){
         if(p!=null&&p<state.periods.length&&periodHasData(p)&&state.periods[p].ano&&ano&&String(state.periods[p].ano)!==String(ano)){const q=nextFreePeriod(ano);
           if(q!=null&&q<state.periods.length&&!periodHasData(q)){done.push(`aviso: ia ocupar o ${LABELS[state.mode][p]} (${state.periods[p].ano}); colocada no ${LABELS[state.mode][q]}`);p=q}
           else throw new Error(`Esta ficha de ${ano} apagaria o ${LABELS[state.mode][p]} de ${state.periods[p].ano}. Confira se ela é de outro aluno, repetida ou uma ficha de dependência.`)}
+        /* 4ª ficha (ou ficha da 4ª série/módulo) com a página no regular: só cabe na EJA, que tem 4 colunas */
+        if(state.mode==='reg'&&ultimoTipo()!=='reg'&&(p==null||p>=3)&&(p===3||(p==null&&[0,1,2].every(periodHasData)))){
+          setMode('eja');state.modeAlert=`Há 4 fichas (séries ou módulos) para este aluno, e o regular só tem 3. A página mudou para EJA · 4 módulos. Se estiver errado, clique no tipo certo no topo.`;entry.modeNote='4ª ficha: a página mudou para EJA · 4 módulos';if(p==null)p=nextFreePeriod(ano)}
         if(p==null||p>=state.periods.length)throw new Error(state.mode==='reg'?'Esta ficha é de um 4º módulo (EJA). Clique em "EJA · 4 módulos" no topo e anexe de novo.':'Não encontrei uma coluna livre para esta ficha.');
         applyFicha({subs,info,ano,sit:findSit(g.rows),freqGlobal:subs.freqGlobal,escola:cleanEscola(info.escola),nPer:subs.nPer},p);{const am=amparoDe(g.rows);if(am)state.periods[p].amparo=am}addDoc({role:'fia',sheet:g.sheet,p,ano,escola:cleanEscola(info.escola)});entry.parsed=entry.parsed||[];entry.parsed.push({subs,info,ano,p});
         done.push(`${LABELS[state.mode][p]}${ano?' · '+ano:''} · ${subs.length} disciplinas`);
