@@ -17,3 +17,5 @@ Os textos completos das licenças estão na pasta `licencas/`. As versões em us
 | IBM Plex Mono | 5.3.0 (Fontsource) | números da interface | SIL OFL 1.1 | `licencas/fonte-ibm-plex-mono.txt` |
 
 Testes automáticos (não vão para o site): Playwright (Apache-2.0) e axe-core (MPL-2.0).
+
+Dados públicos: `js/00-escolas-rj.js` tem código, nome, endereço, bairro, CEP e município das escolas da rede estadual do RJ, tirados dos microdados do Censo Escolar 2024 do INEP (dados abertos, download.inep.gov.br). Para atualizar, baixe os microdados de um ano mais novo e gere o arquivo de novo (veja `MANUTENCAO.md`).

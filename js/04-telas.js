@@ -1,6 +1,6 @@
 /* Gerador de Histórico do Beto — telas */
 /* ===== v2: usabilidade, conferência e segurança ===== */
-const APP_VERSION='2.2',APP_DATA='25/11/2026';
+const APP_VERSION='2.3',APP_DATA='28/11/2026';
 /* janela simples dentro da página (funciona também onde confirm() é bloqueado) */
 function askModal(html,buttons,opts){opts=opts||{};return new Promise(res=>{const bg=document.createElement('div');bg.className='mdl-bg';
   bg.innerHTML=`<div class="mdl${opts.wide?' wide':''}" role="dialog" aria-modal="true"><div class="mdl-body">${html}</div><div class="mdl-foot">${buttons.map((b,i)=>`<button type="button" class="btn ${b.primary?'primary':''} small" data-mi="${i}">${esc_(b.label)}</button>`).join('')}</div></div>`;
@@ -66,6 +66,8 @@ function renderChecks(){
   const box=$('#checks');if(isPristine()){$('#checks-count').hidden=true;box.innerHTML='<li><span class="chip o" style="background:var(--accent-soft);color:var(--accent-2)">início</span><span>Anexe os documentos do aluno no passo 1. O que precisar de atenção aparece aqui.</span></li>';secBadges({});return}
   const out=[];const A=state.aluno;const L=LABELS[state.mode];const add=(l,t,go)=>out.push({l,t,go});
   if(state.modeAlert)add('w',state.modeAlert,'#mode-alert');
+  {const P=escolaDaFicha();if(P&&String(esc.censo||'')!==P.censo){const x=escolaPorCenso(P.censo);add('w',`A FIA do último ano é da escola ${x?x.curto:P.escola} (censo ${P.censo}), mas os dados da escola no item 6 são de ${esc.curto||'outra escola'}${esc.censo?' (censo '+esc.censo+')':''}. No item 6, clique em "Usar a escola da ficha" ou digite o censo.`,'#es-censo')}}
+  for(const [k,l] of [['decreto','Decreto'],['do','D.O.'],['ua','U.A.']])if(!esc[k]){add('w',`Dados da escola: falta ${l} (item 6).`,'#es-'+k)}
   for(const f of files){if(f.ocr&&f.ok)add('w',`“${f.name}” é foto ou digitalização: os dados lidos podem ter erros. Se puder, use o PDF original do Conexão.`,'#files');if(f.err)add('b',`“${f.name}”: ${f.status}`,'#files')}
   for(const x of docChecklist(state,files))if(x.k!=='o'&&!/^Dependência/.test(x.t))add(x.k==='b'?'w':'w',`Falta: ${x.t}${x.s&&x.s!=='falta'?' ('+x.s+')':''}`,x.go);
   const miss=ALUNO_FIELDS.filter(([k])=>!A[k]).map(([,l])=>l.replace('Filiação — ',''));if(miss.length)add('w','Dados do aluno vazios: '+miss.join(', '),'#aluno');
@@ -176,7 +178,7 @@ document.addEventListener('click',e=>{if(e.target&&e.target.id==='cv')bigPreview
 document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='cv'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();bigPreview()}});
 
 /* ---------- nome da escola: um campo completa os outros ---------- */
-const ESC_TIPOS=[['CENTRO ESTADUAL DE EDUCAÇÃO DE JOVENS E ADULTOS','CEEJA'],['CENTRO INTEGRADO DE EDUCAÇÃO PÚBLICA','CIEP'],['COLÉGIO ESTADUAL INTEGRADO','CEI'],['INSTITUTO DE EDUCAÇÃO','IE'],['ESCOLA TÉCNICA ESTADUAL','ETE'],['COLÉGIO ESTADUAL','CE'],['COLÉGIO MUNICIPAL','CM'],['COLÉGIO FEDERAL','CF'],['ESCOLA ESTADUAL','EE'],['ESCOLA MUNICIPAL','EM'],['ESCOLA TÉCNICA','ET']];
+const ESC_TIPOS=[['CENTRO ESTADUAL DE EDUCAÇÃO DE JOVENS E ADULTOS','CEEJA'],['CENTRO ESTADUAL DE EDUCAÇÃO DE JOVENS E ADULTOS','CEJA'],['CENTRO INTEGRADO DE EDUCAÇÃO PÚBLICA','CIEP'],['COLÉGIO ESTADUAL INTEGRADO','CEI'],['INSTITUTO DE EDUCAÇÃO','IE'],['ESCOLA TÉCNICA ESTADUAL','ETE'],['COLÉGIO ESTADUAL','CE'],['COLÉGIO MUNICIPAL','CM'],['COLÉGIO FEDERAL','CF'],['ESCOLA ESTADUAL','EE'],['ESCOLA MUNICIPAL','EM'],['ESCOLA TÉCNICA','ET']];
 const _nk=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[.]/g,'').replace(/\s+/g,' ').trim();
 function escParse(v){const k=_nk(v);for(const [full,ab] of ESC_TIPOS){const f=_nk(full);if(k.startsWith(f+' ')){return {full,ab,nome:String(v).trim().split(/\s+/).slice(full.split(' ').length).join(' ')}}}
   for(const [full,ab] of ESC_TIPOS){if(k.startsWith(ab+' ')){const raw=String(v).trim().replace(/^[A-Za-z.]+\s+/,'');return {full,ab,nome:raw}}}return null}
@@ -224,3 +226,28 @@ function chTotalCurso(){let total=0;for(const s of state.subjects)for(const g of
 function renderChMin(){const box=document.getElementById('chmin-box');if(!box)return;const t=chTotalCurso();
   box.innerHTML=`<label class="f">Carga horária mínima do curso — ${state.mode==='eja'?'EJA':'Regular'} (horas)<input id="chmin" inputmode="numeric" value="${chMinimo()}"></label><p class="hint" style="margin:4px 0 0">Usada só para conferência: o site avisa se a soma do histórico ficar abaixo. Total deste histórico: <b>${t.total} h</b>. Confira o valor com a norma da SEEDUC para o curso.</p>`}
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='chmin'){const v=+e.target.value;try{if(v>0)localStorage.setItem('hist.chmin.'+state.mode,String(v))}catch(_){}renderChecks()}});
+
+/* ---------- escola pelo código do Censo Escolar (tabela pública do INEP, sem internet) ---------- */
+let _escMap=null;
+function escolaPorCenso(c){c=String(c||'').replace(/\D/g,'');if(c.length!==8||typeof ESCOLAS_RJ!=='string')return null;
+  if(!_escMap){_escMap=new Map();for(const l of ESCOLAS_RJ.split('\n')){const f=l.split('|');_escMap.set(f[0],f)}}
+  const f=_escMap.get(c);if(!f)return null;const [censo,curto,endereco,bairro,cep,municipio]=f;const p=escParse(curto);
+  return {censo,curto,nome:p?p.full+' '+p.nome.toUpperCase():curto,unid:p?_tc(p.full)+' '+_tc(p.nome):_tc(curto),endereco,bairro,cep,municipio,uf:'RJ'}}
+/* preenche o item 6 com a escola do censo; decreto, D.O. e U.A. não estão no censo e ficam em branco para preencher */
+function aplicarEscola(e){const old=Object.assign({},esc);const mesma=_nk(old.curto)===_nk(e.curto);
+  esc=Object.assign({},esc,{nome:e.nome,curto:e.curto,endereco:e.endereco,municipio:e.municipio,uf:e.uf,cep:e.cep,censo:e.censo});
+  if(mesma){for(const k of ['nome','endereco'])esc[k]=old[k]||esc[k]}else{esc.decreto='';esc.do='';esc.ua=''}
+  state.periods.forEach(P=>{if(P.escola===old.curto)P.escola=esc.curto;if(P.municipio===`${old.municipio}/${old.uf}`)P.municipio=`${esc.municipio}/${esc.uf}`});
+  if(old.municipio&&state.dataLocal&&state.dataLocal.startsWith(titleCase(old.municipio)+','))state.dataLocal=state.dataLocal.replace(titleCase(old.municipio),titleCase(esc.municipio));
+  store.set('hist.esc',esc);if(!mesma){for(const w of ['sec','dir'])sig[w]=Object.assign({},sig[w],{escola:e.unid});store.set('hist.sig',sig)}
+  const foco=document.activeElement&&document.activeElement.id;renderSig();if(foco){const f=document.getElementById(foco);if(f)f.focus()}try{renderPlaces()}catch(_){}{const d=$('#dataLocal');if(d)d.value=state.dataLocal}
+  const n=$('#esc-censo-nota');if(n){n.hidden=false;n.textContent=mesma?`Censo ${e.censo}: ${e.curto}.`:`Censo ${e.censo}: ${e.curto} (${e.bairro}, ${titleCase(e.municipio)}). Nome, endereço, município e CEP vieram do Censo Escolar ${ESCOLAS_RJ_ANO} do INEP, sem acentos: confira. Preencha decreto, D.O. e U.A.`}
+  schedulePreview();renderChecks()}
+document.addEventListener('input',e=>{const t=e.target;if(!t||t.id!=='es-censo')return;const c=t.value.replace(/\D/g,'');const n=$('#esc-censo-nota');
+  if(c.length<8){if(n)n.hidden=true;return}const x=escolaPorCenso(c);
+  if(!x){if(n){n.hidden=false;n.textContent=`O censo ${c} não está na lista das escolas estaduais do RJ (INEP ${ESCOLAS_RJ_ANO}). Preencha os dados à mão.`}return}
+  /* o campo já gravou o número em esc.censo; troca quando a escola do número for outra */
+  if(_nk(esc.curto)!==_nk(x.curto)||!esc.nome)aplicarEscola(x)});
+/* escola da FIA do último ano diferente da escola do item 6 */
+function escolaDaFicha(){let b=null;state.periods.forEach((P,i)=>{if(P.censo&&periodHasData(i)&&(!b||(+P.ano||0)>=(+b.ano||0)))b=P});return b}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='esc-usar-ficha'){const P=escolaDaFicha();const x=P&&escolaPorCenso(P.censo);if(x)aplicarEscola(x)}});

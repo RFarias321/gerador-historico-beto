@@ -81,6 +81,10 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
     await pg.evaluate(()=>{for(const [k,v] of [['sec,nome','Prof. Secretário Teste'],['sec,mat','0000000-1'],['dir,nome','Prof. Diretor Teste'],['dir,mat','0000000-2']]){const i=document.querySelector(`[data-sg="${k}"]`);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}});
     res.item6=await pg.evaluate(()=>{const s=document.querySelector('.sec[data-sec="6"]');return s.classList.contains('collapsed')+' '+s.querySelector('.sec-badge').textContent});
     res.nomeEscola=await pg.evaluate(()=>{const i=document.querySelector('#es-curto');i.value='IE Carmela Dutra';i.dispatchEvent(new Event('input',{bubbles:true}));const r=[esc.nome,sig.sec.escola,sig.dir.escola];document.getElementById('esc-reset').click();return r});
+    res.escolaPeloCenso=await pg.evaluate(()=>{const i=document.querySelector('#es-censo');const antes=Object.assign({},esc);i.value='33071969';i.dispatchEvent(new Event('input',{bubbles:true}));
+      const r={nome:esc.nome,curto:esc.curto,endereco:esc.endereco,municipio:esc.municipio,cep:esc.cep,decreto:esc.decreto,assinatura:sig.dir.escola,aviso:/U\.A\./.test(document.querySelector('#checks').textContent),
+        inexistente:(()=>{const i=document.querySelector('#es-censo');i.value='99999999';i.dispatchEvent(new Event('input',{bubbles:true}));return document.querySelector('#esc-censo-nota').textContent})()};
+      document.getElementById('esc-reset').click();return r});
     res.itensFechados=await pg.evaluate(()=>[...document.querySelectorAll('.sec')].map(s=>s.dataset.sec+(s.classList.contains('collapsed')?' fechado':' aberto')));
     res.previaAmpliada=await pg.evaluate(()=>{document.getElementById('cv').click();const ok=!!document.querySelector('.big-pv canvas');document.querySelector('[data-z="x"]').click();return ok});
     // 8. segurança: IA desligada, política de segurança ativa, arquivo salvo com senha
@@ -117,6 +121,10 @@ async function main(){const browser=await pw[BROWSER].launch();const res={arquiv
         return x.evaluate(()=>state.mode+' | '+state.periods.map(p=>p.ano||'-').join(','))};
       const regDepoisEja=await misto(['FIA_2021.xlsx','eja_2.xlsx','eja_3.xlsx','eja_4.xlsx']);
       const ejaDepoisReg=await misto(['eja_1.xlsx','FIA_2022.xlsx','FIA_2023.xlsx']);
+      res.escolaDaFicha=await (async()=>{const x=await newPage(browser);await x.evaluate(()=>{window.outroAluno=()=>false});for(const a of ['FIA_2021.xlsx','FIA_2022.xlsx']){await x.setInputFiles('#file',[fx(a)]);await idle(x);await x.waitForTimeout(300)}
+        const aviso=await x.evaluate(()=>/FIA do último ano é da escola/.test(document.querySelector('#checks').textContent));
+        await x.evaluate(()=>document.getElementById('esc-usar-ficha').click());await x.waitForTimeout(300);
+        return x.evaluate(a=>{const r={aviso:a,escola:esc.curto,censo:esc.censo,avisoDepois:/FIA do último ano é da escola/.test(document.querySelector('#checks').textContent)};document.getElementById('esc-reset').click();return r},aviso)})();
       res.tipoDoUltimoAno={regularDepoisEja:regDepoisEja,ejaPrimeiroDepoisRegular:ejaDepoisReg};
       res.trocaDeModelo={umAlunoEjaParaRegular:um,turmaRegularParaEja:tEja,turmaEjaParaRegular:tReg}}
     // 7d. observações: amparo lido da ficha, amparo da ficha de dependência e regra do ano

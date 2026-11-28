@@ -65,3 +65,7 @@ Hoje o repositório está numa conta pessoal. Para não depender de uma pessoa s
 - A leitura com IA está desligada (`IA_PERMITIDA=false` em `js/01-nucleo.js`). Só ligue com autorização formal da SEEDUC e ajustando a CSP.
 - Arquivos salvos usam AES-GCM 256 com chave PBKDF2-SHA256 (310 mil iterações), criados no navegador.
 - Nomes e matrículas de quem assina ficam só no navegador de cada escola (`localStorage`), nunca no código.
+
+## Lista de escolas (Censo Escolar)
+
+`js/00-escolas-rj.js` vem dos microdados do Censo Escolar do INEP (`https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_AAAA.zip`). Filtro: `SG_UF=RJ`, `TP_DEPENDENCIA=2` (estadual), `TP_SITUACAO_FUNCIONAMENTO` 1 ou 2. Campos: `CO_ENTIDADE|NO_ENTIDADE|DS_ENDERECO NU_ENDERECO DS_COMPLEMENTO|NO_BAIRRO|CO_CEP|NO_MUNICIPIO`, em ordem de código. Atualize uma vez por ano, quando o INEP publicar o novo censo, e mude `ESCOLAS_RJ_ANO`.

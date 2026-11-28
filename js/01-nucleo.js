@@ -1141,6 +1141,7 @@ function resetIfExample(){if(state.example){const keep=state.mode;state=blankSta
 function applyFicha(res,p){
   resetIfExample();fillAluno(res.info);
   const per=state.periods[p];if(res.ano)per.ano=String(res.ano);
+  {const m=String((res.info||{}).escola||'').match(/^\s*(\d{8})\s*-/);if(m)per.censo=m[1]}
   state.deps=state.deps.filter(x=>!(x.auto===p&&!x.nota&&!x.edited));
   let tf=0,chs=0,fr=[],deps=[];
   for(const r of res.subs){

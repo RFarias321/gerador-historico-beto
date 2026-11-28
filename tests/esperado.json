@@ -133,6 +133,17 @@
     "Instituto de Educação Carmela Dutra",
     "Instituto de Educação Carmela Dutra"
   ],
+  "escolaPeloCenso": {
+    "nome": "COLÉGIO ESTADUAL VISCONDE DE CAIRU",
+    "curto": "CE VISCONDE DE CAIRU",
+    "endereco": "RUA SOARES 95",
+    "municipio": "RIO DE JANEIRO",
+    "cep": "20780-070",
+    "decreto": "",
+    "assinatura": "Colégio Estadual Visconde de Cairu",
+    "aviso": true,
+    "inexistente": "O censo 99999999 não está na lista das escolas estaduais do RJ (INEP 2024). Preencha os dados à mão."
+  },
   "itensFechados": [
     "2 fechado",
     "3 fechado",
@@ -201,6 +212,12 @@
     "paginasDeDependencia": [
       "Dependência · HISTORIA I (gerada)"
     ]
+  },
+  "escolaDaFicha": {
+    "aviso": true,
+    "escola": "CE PRESIDENTE JOAO GOULART",
+    "censo": "33077177",
+    "avisoDepois": false
   },
   "tipoDoUltimoAno": {
     "regularDepoisEja": "eja | 2021,2023,2024,2024",
